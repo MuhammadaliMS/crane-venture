@@ -7,8 +7,9 @@ import {
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 import {
   companies, flags, activityFeed, formatCurrency, getHealthColor, getRAGColor,
-  getActionColor, getFlagIcon, type MonthlyFinancials
+  getActionColor, type MonthlyFinancials
 } from './mock-data';
+import { FlagIcon } from './FlagIcon';
 
 export function CompanyDetail() {
   const { id } = useParams();
@@ -158,7 +159,7 @@ export function CompanyDetail() {
 
         {companyFlags.length > 0 && (
           <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-3">
-            <span className="text-lg">{getFlagIcon(companyFlags[0].type)}</span>
+            <FlagIcon type={companyFlags[0].type} size={18} />
             <div className="flex-1">
               <p className="text-[13px]">{companyFlags[0].headline}</p>
             </div>

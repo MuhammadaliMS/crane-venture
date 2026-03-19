@@ -188,7 +188,7 @@ export function Layout() {
                   <p className="text-[11px] text-muted-foreground">{currentUser.role}</p>
                 </div>
               )}
-              <button onClick={() => setCollapsed(!collapsed)} className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted transition-colors">
+              <button onClick={() => setCollapsed(!collapsed)} className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted transition-colors" aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
                 {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
               </button>
             </div>
@@ -238,6 +238,7 @@ export function Layout() {
             <button
               onClick={() => navigate('/search')}
               className="flex items-center gap-2 px-3 py-1.5 text-[13px] text-muted-foreground bg-muted rounded-lg hover:bg-accent transition-colors"
+              aria-label="Search companies, documents, metrics"
             >
               <Search className="w-3.5 h-3.5" />
               <span>Search...</span>
@@ -250,17 +251,24 @@ export function Layout() {
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
                 className="relative p-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted"
+                aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ''}`}
+                aria-expanded={showNotifications}
               >
                 <Bell className="w-4 h-4" />
                 {notificationCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-medium animate-pulse">
+                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-medium" aria-label={`${notificationCount} notifications`}>
                     {notificationCount}
                   </span>
                 )}
               </button>
               {/* Notification dropdown */}
               {showNotifications && (
-                <div className="absolute right-0 top-full mt-2 w-[360px] bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
+                <div
+                  className="absolute right-0 top-full mt-2 w-[360px] bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden"
+                  role="dialog"
+                  aria-label="Notifications"
+                  onKeyDown={(e) => { if (e.key === 'Escape') setShowNotifications(false); }}
+                >
                   <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
                     <h3 className="text-[13px] font-medium">Notifications</h3>
                     <button onClick={() => setShowNotifications(false)} className="text-muted-foreground hover:text-foreground">

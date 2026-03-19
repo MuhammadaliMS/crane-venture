@@ -8,8 +8,9 @@ import {
 import { SparklineChart } from './SparklineChart';
 import {
   currentUser, companies, flags, todos, formatCurrency,
-  getHealthColor, getFlagIcon, type Todo
+  getHealthColor, type Todo
 } from './mock-data';
+import { FlagIcon } from './FlagIcon';
 
 export function Dashboard() {
   const navigate = useNavigate();
@@ -92,7 +93,7 @@ export function Dashboard() {
           <div className="divide-y divide-red-100">
             {urgentAlerts.map(flag => (
               <div key={flag.id} className="p-4 flex items-center gap-3">
-                <span className="text-lg shrink-0">{getFlagIcon(flag.type)}</span>
+                <FlagIcon type={flag.type} size={18} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
                     <button
@@ -290,7 +291,7 @@ export function Dashboard() {
                   onClick={() => navigate(`/company/${flag.companyId}`)}
                   className="w-full p-3 flex items-start gap-2.5 text-left hover:bg-muted/30 transition-colors"
                 >
-                  <span className="text-sm mt-0.5">{getFlagIcon(flag.type)}</span>
+                  <FlagIcon type={flag.type} size={14} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 mb-0.5">
                       <span className="text-[12px] font-medium">{flag.companyName}</span>

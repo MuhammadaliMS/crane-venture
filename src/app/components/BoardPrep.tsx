@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { FileText, Download, Share2, Sparkles, ChevronDown, ChevronRight, ExternalLink } from 'lucide-react';
-import { companies, flags, getHealthColor, formatCurrency, getFlagIcon } from './mock-data';
+import { FileText, Download, Share2, Sparkles, ChevronDown, ChevronRight, ExternalLink, TrendingUp, Users, Target, Flame, Rocket, Banknote } from 'lucide-react';
+import { companies, flags, getHealthColor, formatCurrency } from './mock-data';
+import { FlagIcon } from './FlagIcon';
 
 export function BoardPrep() {
   const navigate = useNavigate();
@@ -139,17 +140,19 @@ export function BoardPrep() {
           </button>
           {expandedSections.has('changes') && (
             <div className="px-4 pb-4 pt-0">
-              <ul className="space-y-2">
+              <ul className="space-y-2.5">
                 {[
-                  { icon: '📈', text: `MRR grew from ${formatCurrency(company.mrrTrend[2] * 1000)} to ${formatCurrency(company.mrr)} (+${company.arrGrowth}% MoM average)` },
-                  { icon: '👥', text: `Team grew from ${company.headcount - 2} to ${company.headcount} — hired 2 engineers` },
-                  { icon: '🎯', text: `Customer count increased from ${company.customers - 4} to ${company.customers}` },
-                  { icon: '🔥', text: `Burn rate increased 8% QoQ, driven by new hires` },
-                  { icon: '🚀', text: 'Shipped v2.0 with enterprise SSO and audit logging' },
-                  { icon: '💰', text: 'Founder exploring Series A timing for Q3 2026' },
+                  { Icon: TrendingUp, color: '#10B981', text: `MRR grew from ${formatCurrency(company.mrrTrend[2] * 1000)} to ${formatCurrency(company.mrr)} (+${company.arrGrowth}% MoM average)` },
+                  { Icon: Users, color: '#3B82F6', text: `Team grew from ${company.headcount - 2} to ${company.headcount} — hired 2 engineers` },
+                  { Icon: Target, color: '#8B5CF6', text: `Customer count increased from ${company.customers - 4} to ${company.customers}` },
+                  { Icon: Flame, color: '#F97316', text: `Burn rate increased 8% QoQ, driven by new hires` },
+                  { Icon: Rocket, color: '#3B82F6', text: 'Shipped v2.0 with enterprise SSO and audit logging' },
+                  { Icon: Banknote, color: '#10B981', text: 'Founder exploring Series A timing for Q3 2026' },
                 ].map((item, i) => (
-                  <li key={i} className="flex items-start gap-2 text-[13px]">
-                    <span>{item.icon}</span>
+                  <li key={i} className="flex items-start gap-2.5 text-[13px]">
+                    <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0 mt-0.5" style={{ background: item.color + '15' }}>
+                      <item.Icon className="w-3.5 h-3.5" style={{ color: item.color }} />
+                    </div>
                     <span>{item.text}</span>
                   </li>
                 ))}
@@ -169,7 +172,7 @@ export function BoardPrep() {
               <div className="px-4 pb-4 pt-0 space-y-2">
                 {companyFlags.map(flag => (
                   <div key={flag.id} className="flex items-start gap-2 bg-amber-50/50 rounded-lg p-3">
-                    <span>{getFlagIcon(flag.type)}</span>
+                    <FlagIcon type={flag.type} size={14} />
                     <div>
                       <p className="text-[13px]">{flag.headline}</p>
                       <p className="text-[11px] text-muted-foreground mt-1">{flag.explanation}</p>

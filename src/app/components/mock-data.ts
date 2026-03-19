@@ -820,17 +820,35 @@ export function getActionColor(action: ActionType): string {
   }
 }
 
-export function getFlagIcon(type: FlagType): string {
+// Flag icon mapping — returns Lucide icon name string for use with FlagIcon component
+// IMPORTANT: Do NOT use emojis as icons. Use SVG icons (Lucide) for consistent rendering.
+export function getFlagIconName(type: FlagType): string {
   switch (type) {
-    case 'Runway Alert': return '🔴';
-    case 'Burn Acceleration': return '🔥';
-    case 'Growth Inflection': return '📈';
-    case 'New Sales Motion': return '🚀';
-    case 'Key Departure': return '👤';
-    case 'Board Coming Up': return '📋';
-    case 'Engagement Gap': return '📭';
-    case 'Fundraising Signal': return '💰';
-    case 'Market Signal': return '📊';
-    case 'Pivot Signal': return '🔄';
+    case 'Runway Alert': return 'alert-circle';
+    case 'Burn Acceleration': return 'flame';
+    case 'Growth Inflection': return 'trending-up';
+    case 'New Sales Motion': return 'rocket';
+    case 'Key Departure': return 'user-minus';
+    case 'Board Coming Up': return 'clipboard-list';
+    case 'Engagement Gap': return 'mail-x';
+    case 'Fundraising Signal': return 'banknote';
+    case 'Market Signal': return 'bar-chart-3';
+    case 'Pivot Signal': return 'refresh-cw';
+  }
+}
+
+// Color mapping for flag type icons
+export function getFlagIconColor(type: FlagType): string {
+  switch (type) {
+    case 'Runway Alert': return '#EF4444';
+    case 'Burn Acceleration': return '#F97316';
+    case 'Growth Inflection': return '#10B981';
+    case 'New Sales Motion': return '#3B82F6';
+    case 'Key Departure': return '#EF4444';
+    case 'Board Coming Up': return '#8B5CF6';
+    case 'Engagement Gap': return '#F59E0B';
+    case 'Fundraising Signal': return '#10B981';
+    case 'Market Signal': return '#6366F1';
+    case 'Pivot Signal': return '#F59E0B';
   }
 }

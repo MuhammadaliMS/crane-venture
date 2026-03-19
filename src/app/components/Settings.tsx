@@ -103,9 +103,9 @@ export function Settings() {
                         <p className="text-[14px] font-medium">{c.name}</p>
                         <p className="text-[11px] text-muted-foreground">{c.desc}</p>
                       </div>
-                      {c.status === 'Connected' && <CheckCircle className="w-5 h-5 text-emerald-500" />}
-                      {c.status === 'Error' && <AlertCircle className="w-5 h-5 text-red-500 animate-pulse" />}
-                      {c.status === 'Disconnected' && <XCircle className="w-5 h-5 text-gray-300" />}
+                      {c.status === 'Connected' && <CheckCircle className="w-5 h-5 text-emerald-500" aria-label="Connected" />}
+                      {c.status === 'Error' && <AlertCircle className="w-5 h-5 text-red-500" aria-label="Connection error" />}
+                      {c.status === 'Disconnected' && <XCircle className="w-5 h-5 text-gray-300" aria-label="Disconnected" />}
                     </div>
                     <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                       <span className={`px-2 py-0.5 rounded-full font-medium ${

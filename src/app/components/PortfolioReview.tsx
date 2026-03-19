@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Play, SkipForward, Check, ChevronRight, Download, Clock, Send, FileText, Upload, Users, Sparkles, CheckCircle, AlertCircle, Edit3 } from 'lucide-react';
 import { SparklineChart } from './SparklineChart';
-import { companies, flags, formatCurrency, getHealthColor, getRAGColor, getActionColor, getFlagIcon, teamMembers, type RAGStatus } from './mock-data';
+import { companies, flags, formatCurrency, getHealthColor, getRAGColor, getActionColor, teamMembers, type RAGStatus } from './mock-data';
+import { FlagIcon } from './FlagIcon';
 
 export function PortfolioReview() {
   const navigate = useNavigate();
@@ -651,7 +652,7 @@ export function PortfolioReview() {
               <p className="text-[12px] text-muted-foreground mb-2">Active Alerts</p>
               {currentFlags.map(flag => (
                 <div key={flag.id} className="flex items-start gap-2 bg-amber-50 rounded-lg p-3 mb-1">
-                  <span>{getFlagIcon(flag.type)}</span>
+                  <FlagIcon type={flag.type} size={14} />
                   <div>
                     <p className="text-[12px]">{flag.headline}</p>
                   </div>
