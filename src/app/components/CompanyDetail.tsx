@@ -6,20 +6,30 @@ import {
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 import {
-  companies, flags, activityFeed, formatCurrency, getHealthColor, getRAGColor,
+  companies, formatCurrency, getHealthColor, getRAGColor,
   getActionColor, type MonthlyFinancials
 } from './mock-data';
 import { FlagIcon } from './FlagIcon';
+import { useWorkflow } from './WorkflowContext';
+import { LogNoteModal, NewTodoModal, ScheduleCheckInModal } from './ActionModals';
+import { FlagActionDropdown } from './FlagActionDropdown';
 
 export function CompanyDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
+  const [showLogNote, setShowLogNote] = useState(false);
+  const [showNewTodo, setShowNewTodo] = useState(false);
+  const [showCheckIn, setShowCheckIn] = useState(false);
+  const [showAllFlags, setShowAllFlags] = useState(false);
+  const { flags, activityFeed, getNotesForCompany, todos } = useWorkflow();
   const company = companies.find(c => c.id === id);
   if (!company) return <div className="p-8 text-center">Company not found</div>;
 
   const companyFlags = flags.filter(f => f.companyId === id);
   const companyActivity = activityFeed.filter(a => a.companyName === company.name);
+  const companyNotes = getNotesForCompany(id || '');
+  const companyTodos = todos.filter(t => t.companyName === company.name && !t.completed);
   const isExited = company.lifecycle === 'Exited' || company.lifecycle === 'Wound Down';
 
   const tabs = [
@@ -137,35 +147,50 @@ export function CompanyDetail() {
           </div>
           {!isExited && (
             <div className="flex items-center gap-2 shrink-0">
-              <button className="text-[12px] px-3 py-1.5 border border-border rounded-lg hover:bg-muted transition-colors flex items-center gap-1">
+              <button onClick={() => setShowLogNote(true)} className="text-[12px] px-3 py-1.5 border border-border rounded-lg hover:bg-muted transition-colors flex items-center gap-1">
                 <StickyNote className="w-3 h-3" /> Log Note
               </button>
-              <button className="text-[12px] px-3 py-1.5 border border-border rounded-lg hover:bg-muted transition-colors flex items-center gap-1">
+              <button onClick={() => setShowNewTodo(true)} className="text-[12px] px-3 py-1.5 border border-border rounded-lg hover:bg-muted transition-colors flex items-center gap-1">
                 <Plus className="w-3 h-3" /> To-Do
               </button>
-              <button className="text-[12px] px-3 py-1.5 border border-border rounded-lg hover:bg-muted transition-colors flex items-center gap-1">
+              <button onClick={() => setShowCheckIn(true)} className="text-[12px] px-3 py-1.5 border border-border rounded-lg hover:bg-muted transition-colors flex items-center gap-1">
                 <CalendarDays className="w-3 h-3" /> Check-in
               </button>
               <button className="text-[12px] px-3 py-1.5 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity flex items-center gap-1"
                 onClick={() => navigate('/board-prep')}>
                 <FileText className="w-3 h-3" /> Board Prep
               </button>
-              <button className="text-[12px] px-3 py-1.5 border border-border rounded-lg hover:bg-muted transition-colors flex items-center gap-1">
+              <a href="https://app.attio.com" target="_blank" rel="noopener noreferrer" className="text-[12px] px-3 py-1.5 border border-border rounded-lg hover:bg-muted transition-colors flex items-center gap-1">
                 <ExternalLink className="w-3 h-3" /> Attio
-              </button>
+              </a>
             </div>
           )}
         </div>
 
         {companyFlags.length > 0 && (
-          <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-3">
-            <FlagIcon type={companyFlags[0].type} size={18} />
-            <div className="flex-1">
-              <p className="text-[13px]">{companyFlags[0].headline}</p>
+          <div className="mt-4 space-y-2">
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-3">
+              <FlagIcon type={companyFlags[0].type} size={18} />
+              <div className="flex-1">
+                <p className="text-[13px]">{companyFlags[0].headline}</p>
+              </div>
+              <FlagActionDropdown flag={companyFlags[0]} variant="button" />
+              {companyFlags.length > 1 && (
+                <button onClick={() => setShowAllFlags(!showAllFlags)} className="text-[12px] text-amber-700 hover:underline">
+                  {showAllFlags ? 'Hide' : `+${companyFlags.length - 1} more`}
+                </button>
+              )}
             </div>
-            <button className="text-[12px] text-amber-700 hover:underline">
-              Review All Flags ({companyFlags.length})
-            </button>
+            {showAllFlags && companyFlags.slice(1).map(flag => (
+              <div key={flag.id} className="bg-amber-50/60 border border-amber-200/60 rounded-lg p-3 flex items-center gap-3">
+                <FlagIcon type={flag.type} size={16} />
+                <div className="flex-1">
+                  <p className="text-[13px]">{flag.headline}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{flag.suggestedAction}</p>
+                </div>
+                <FlagActionDropdown flag={flag} variant="button" />
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -491,14 +516,31 @@ export function CompanyDetail() {
         <div className="grid grid-cols-2 gap-6">
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-[13px]">Notes</h3>
-              <button className="text-[12px] px-3 py-1 bg-primary text-primary-foreground rounded-lg flex items-center gap-1">
+              <h3 className="text-[13px] font-medium">Notes</h3>
+              <button onClick={() => setShowLogNote(true)} className="text-[12px] px-3 py-1 bg-primary text-primary-foreground rounded-lg flex items-center gap-1">
                 <Plus className="w-3 h-3" /> New Note
               </button>
             </div>
             <div className="space-y-2">
-              {mockNotes.map((note, i) => (
-                <div key={i} className="bg-card border border-border rounded-lg p-3">
+              {/* Real notes from WorkflowContext */}
+              {companyNotes.map((note) => (
+                <div key={note.id} className="bg-card border border-border rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px]">{note.author[0]}</span>
+                    <span className="text-[12px] font-medium">{note.author}</span>
+                    <span className="text-[10px] text-muted-foreground">{new Date(note.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded ml-auto">{note.tag}</span>
+                  </div>
+                  <p className="text-[12px] text-muted-foreground whitespace-pre-line">{note.content}</p>
+                </div>
+              ))}
+              {/* Static seed notes */}
+              {[
+                { author: 'Anna', date: '2026-03-12', content: 'Strong quarter — enterprise traction picking up. Founder considering bringing on VP Sales.', tag: 'General' },
+                { author: 'Scott', date: '2026-02-20', content: 'Discussed competitive landscape. Main threat is from larger players entering the space.', tag: 'Founder Check-in' },
+                { author: 'Anna', date: '2026-01-15', content: 'Board went well. Agreed to extend runway planning horizon to 18 months.', tag: 'Board Prep' },
+              ].map((note, i) => (
+                <div key={`seed-${i}`} className="bg-card border border-border rounded-lg p-3">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px]">{note.author[0]}</span>
                     <span className="text-[12px]">{note.author}</span>
@@ -508,35 +550,44 @@ export function CompanyDetail() {
                   <p className="text-[12px] text-muted-foreground">{note.content}</p>
                 </div>
               ))}
+              {companyNotes.length === 0 && (
+                <p className="text-[12px] text-muted-foreground text-center py-4">
+                  No notes yet. Click "Log Note" to start recording.
+                </p>
+              )}
             </div>
           </div>
           <div>
-            <h3 className="text-[13px] mb-3">Actions</h3>
-            <div className="grid grid-cols-3 gap-2">
-              {['To Do', 'In Progress', 'Done'].map(col => (
-                <div key={col} className="bg-muted/30 rounded-xl p-2">
-                  <p className="text-[11px] text-muted-foreground mb-2 text-center">{col}</p>
-                  {col === 'To Do' && (
-                    <div className="bg-card border border-border rounded-lg p-2 text-[11px]">
-                      <p>Schedule runway review</p>
-                      <p className="text-muted-foreground mt-1">Due: Mar 25</p>
-                    </div>
-                  )}
-                  {col === 'In Progress' && (
-                    <div className="bg-card border border-border rounded-lg p-2 text-[11px]">
-                      <p>Connect with VP Sales candidates</p>
-                      <p className="text-muted-foreground mt-1">Due: Apr 1</p>
-                    </div>
-                  )}
-                  {col === 'Done' && (
-                    <div className="bg-card border border-border rounded-lg p-2 text-[11px] opacity-60">
-                      <p>Review Q4 board deck</p>
-                      <p className="text-muted-foreground mt-1">Completed Mar 10</p>
-                    </div>
-                  )}
+            <h3 className="text-[13px] font-medium mb-3">Pending Actions</h3>
+            <div className="space-y-2">
+              {companyTodos.map(todo => (
+                <div key={todo.id} className={`bg-card border rounded-lg p-3 ${
+                  new Date(todo.dueDate) < new Date() ? 'border-red-200 bg-red-50/30' : 'border-border'
+                }`}>
+                  <p className="text-[12px]">{todo.title}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className={`text-[10px] ${new Date(todo.dueDate) < new Date() ? 'text-red-600 font-medium' : 'text-muted-foreground'}`}>
+                      Due: {new Date(todo.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                    </span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                      todo.priority === 'high' ? 'bg-red-50 text-red-600' :
+                      todo.priority === 'medium' ? 'bg-amber-50 text-amber-600' :
+                      'bg-gray-50 text-gray-500'
+                    }`}>{todo.priority}</span>
+                    {todo.source === 'flag' && (
+                      <span className="text-[10px] px-1.5 py-0.5 bg-amber-50 text-amber-600 rounded">from alert</span>
+                    )}
+                  </div>
                 </div>
               ))}
+              {companyTodos.length === 0 && (
+                <p className="text-[12px] text-muted-foreground text-center py-4">No pending actions</p>
+              )}
             </div>
+            <button onClick={() => setShowNewTodo(true)}
+              className="w-full mt-3 text-[12px] text-center py-2 border border-dashed border-border rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground flex items-center justify-center gap-1">
+              <Plus className="w-3 h-3" /> Add Action Item
+            </button>
           </div>
         </div>
       )}
@@ -587,6 +638,11 @@ export function CompanyDetail() {
           </div>
         </div>
       )}
+
+      {/* Action Modals */}
+      <LogNoteModal open={showLogNote} onClose={() => setShowLogNote(false)} companyId={id} companyName={company.name} />
+      <NewTodoModal open={showNewTodo} onClose={() => setShowNewTodo(false)} companyName={company.name} />
+      <ScheduleCheckInModal open={showCheckIn} onClose={() => setShowCheckIn(false)} companyName={company.name} />
     </div>
   );
 }

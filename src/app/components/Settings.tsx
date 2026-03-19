@@ -1,9 +1,12 @@
 import { useState } from 'react';
-import { CheckCircle, XCircle, AlertCircle, Plus, Users, Database, Bell, Building2, Globe, Settings2, Landmark, FileText, Table } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, Plus, Users, Database, Bell, Building2, Globe, Settings2, Landmark, FileText, Table, RotateCcw } from 'lucide-react';
 import { teamMembers, companies, funds } from './mock-data';
+import { useWorkflow } from './WorkflowContext';
 
 export function Settings() {
   const [activeTab, setActiveTab] = useState('sources');
+  const { resetAll } = useWorkflow();
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const tabs = [
     { id: 'sources', label: 'Data Sources', icon: Database },
@@ -430,6 +433,38 @@ export function Settings() {
               </div>
             </div>
           )}
+          {/* Reset section — always shown at bottom */}
+          <div className="mt-8 pt-6 border-t border-border">
+            <h3 className="text-[14px] font-medium mb-2">Demo Controls</h3>
+            <p className="text-[12px] text-muted-foreground mb-3">
+              Reset all workflow data (notes, to-dos, flag actions, review progress) back to the initial demo state.
+              This clears localStorage and reloads mock data.
+            </p>
+            {!showResetConfirm ? (
+              <button
+                onClick={() => setShowResetConfirm(true)}
+                className="text-[12px] px-4 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors flex items-center gap-2"
+              >
+                <RotateCcw className="w-3.5 h-3.5" /> Reset Demo Data
+              </button>
+            ) : (
+              <div className="flex items-center gap-3">
+                <span className="text-[12px] text-red-600 font-medium">Are you sure? This cannot be undone.</span>
+                <button
+                  onClick={() => { resetAll(); setShowResetConfirm(false); }}
+                  className="text-[12px] px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Yes, Reset Everything
+                </button>
+                <button
+                  onClick={() => setShowResetConfirm(false)}
+                  className="text-[12px] px-4 py-2 border border-border rounded-lg hover:bg-muted transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
