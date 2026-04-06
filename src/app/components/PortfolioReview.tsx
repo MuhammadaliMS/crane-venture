@@ -39,6 +39,16 @@ type ReviewRecord = {
   actionsCreated: { company: string; action: string; assignee: string }[];
   commentary: string;
   exported?: boolean;
+  companyReviews?: {
+    company: string;
+    comment: string;
+    sendStatus: 'Sent' | 'Not Sent' | 'Draft';
+    recentProgress: string;
+    summary: string;
+    keyConcerns: string;
+    actionPoints: string;
+    inductionAction: string;
+  }[];
 };
 
 type MonthlyReviewRecord = {
@@ -134,6 +144,13 @@ const quarterlyReviewsHistory: ReviewRecord[] = [
       { company: sortedCompanies[5]?.name || 'Co', action: 'Support hiring of VP Engineering', assignee: 'Scott' },
     ],
     commentary: 'Q4 2025 quarterly review completed. Asset Metrix XLSX exported and uploaded. LP Report PDF generated. 8 RAG changes across portfolio — broadly positive trajectory.',
+    companyReviews: [
+      { company: sortedCompanies[0]?.name || 'Co', comment: 'Strong quarter with key enterprise wins. Pricing strategy needs board review.', sendStatus: 'Sent', recentProgress: 'Closed 3 enterprise deals; ARR up 26% QoQ', summary: 'Excellent growth trajectory. Enterprise pipeline maturing well with shorter sales cycles.', keyConcerns: 'CAC rising as market matures. Need to watch unit economics closely next quarter.', actionPoints: 'Review pricing strategy ahead of next board. Prepare Series B materials.', inductionAction: 'N/A — existing portfolio company' },
+      { company: sortedCompanies[1]?.name || 'Co', comment: 'Expansion revenue driving growth. SMB churn needs attention.', sendStatus: 'Sent', recentProgress: 'ARR grew from £1.1M to £1.4M. 15 new logos added.', summary: 'ARR growth continues above plan. Expansion revenue is the key driver.', keyConcerns: 'SMB segment churn elevated at 4.2% monthly. Must address or refocus upmarket.', actionPoints: 'Deep-dive on churn drivers with founder. Consider dedicated retention hire.', inductionAction: 'N/A — existing portfolio company' },
+      { company: sortedCompanies[2]?.name || 'Co', comment: 'Burn increased with new hires but product roadmap on track.', sendStatus: 'Sent', recentProgress: 'Hired VP Eng and 3 engineers. Beta of v2 launched.', summary: 'Investing phase — burn up but justified by product acceleration.', keyConcerns: 'Runway now 10 months. Series A needed in next 2 quarters.', actionPoints: 'Intro to 3 Series A funds. Support pitch deck review.', inductionAction: 'Complete Series A readiness checklist' },
+      { company: sortedCompanies[3]?.name || 'Co', comment: 'Growth slowing. Founder pivoting GTM strategy.', sendStatus: 'Draft', recentProgress: 'MRR flat for second consecutive month. New outbound channel launched.', summary: 'Stalling growth is concerning. Founder is responsive and pivoting approach.', keyConcerns: 'Two consecutive flat months. If Q1 doesn\'t recover, may need to reassess.', actionPoints: 'Monthly check-in cadence increased to fortnightly. GTM review session booked.', inductionAction: 'N/A — existing portfolio company' },
+      { company: sortedCompanies[4]?.name || 'Co', comment: 'Solid performance. Green RAG maintained.', sendStatus: 'Sent', recentProgress: 'Signed first US customer. Revenue mix diversifying.', summary: 'Consistent performer. International expansion opens new growth vector.', keyConcerns: 'US go-to-market requires local presence — cost implications.', actionPoints: 'Connect with US-based advisors in network. Review expansion budget.', inductionAction: 'N/A — existing portfolio company' },
+    ],
   },
   {
     id: 'qr-2025-q3',
@@ -154,6 +171,11 @@ const quarterlyReviewsHistory: ReviewRecord[] = [
       { company: sortedCompanies[5]?.name || 'Co', action: 'Coordinate bridge round syndicate', assignee: 'Anna' },
     ],
     commentary: 'Q3 2025 complete. Nebula Data ARR surging. Pulsetrack runway critical — bridge round initiated.',
+    companyReviews: [
+      { company: sortedCompanies[0]?.name || 'Co', comment: 'Good quarter. Pipeline building nicely.', sendStatus: 'Sent', recentProgress: 'Added 8 new pipeline opportunities. Win rate improving.', summary: 'Healthy progress on all fronts. Pipeline is strongest it has been.', keyConcerns: 'Sales team capacity — may need additional hire to convert pipeline.', actionPoints: 'Discuss hiring plan with founder at next board.', inductionAction: 'N/A — existing portfolio company' },
+      { company: sortedCompanies[1]?.name || 'Co', comment: 'ARR milestone hit. Strong quarter.', sendStatus: 'Sent', recentProgress: 'Crossed £1M ARR milestone. Net revenue retention at 125%.', summary: 'Breakout quarter. Product-market fit clearly strengthening.', keyConcerns: 'Engineering bandwidth stretched. Technical debt accumulating.', actionPoints: 'Support eng hiring. Review tech debt backlog with CTO.', inductionAction: 'N/A — existing portfolio company' },
+      { company: sortedCompanies[5]?.name || 'Co', comment: 'Runway critical. Bridge round coordinated.', sendStatus: 'Sent', recentProgress: 'Secured bridge term sheet. Runway extended to 14 months.', summary: 'Crisis averted with bridge round. Now must demonstrate growth to justify Series A.', keyConcerns: 'Must show meaningful traction in next 2 quarters to raise Series A.', actionPoints: 'Coordinate bridge round syndicate. Monthly metrics review.', inductionAction: 'Post-bridge monitoring framework setup' },
+    ],
   },
   {
     id: 'qr-2025-q2',
@@ -297,6 +319,68 @@ function ReviewDetailExpanded({ review, navigate }: { review: ReviewRecord; navi
           )}
         </div>
       </div>
+
+      {/* Per-company review details */}
+      {review.companyReviews && review.companyReviews.length > 0 && (
+        <div>
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-3">Company Commentary</p>
+          <div className="space-y-3">
+            {review.companyReviews.map((cr, idx) => {
+              const comp = sortedCompanies.find(c => c.name === cr.company);
+              return (
+                <div key={idx} className="bg-white rounded-lg border border-slate-200/60 p-3 space-y-2.5">
+                  {/* Company header with send status */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {comp && <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: getRAGColor(comp.rag) }} />}
+                      <span className="text-[13px] font-medium text-slate-800">{cr.company}</span>
+                    </div>
+                    <span className={`text-[11px] px-2 py-0.5 rounded-lg font-medium ${
+                      cr.sendStatus === 'Sent' ? 'bg-emerald-50 text-emerald-700' :
+                      cr.sendStatus === 'Draft' ? 'bg-amber-50 text-amber-700' :
+                      'bg-slate-50 text-slate-500'
+                    }`}>{cr.sendStatus}</span>
+                  </div>
+
+                  {/* Comment */}
+                  <div>
+                    <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-slate-400 mb-0.5">Comment</p>
+                    <p className="text-[12px] leading-relaxed text-slate-600">{cr.comment}</p>
+                  </div>
+
+                  {/* Recent Progress */}
+                  <div>
+                    <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-slate-400 mb-0.5">Recent Progress</p>
+                    <p className="text-[12px] leading-relaxed text-slate-600">{cr.recentProgress}</p>
+                  </div>
+
+                  {/* Summary */}
+                  <div>
+                    <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-slate-400 mb-0.5">Summary</p>
+                    <p className="text-[12px] leading-relaxed text-slate-600">{cr.summary}</p>
+                  </div>
+
+                  {/* Concerns + Action Points + Induction Action in a row */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-slate-400 mb-0.5">Key Concerns</p>
+                      <p className="text-[12px] leading-relaxed text-slate-600">{cr.keyConcerns}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-slate-400 mb-0.5">Action Points</p>
+                      <p className="text-[12px] leading-relaxed text-slate-600">{cr.actionPoints}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-slate-400 mb-0.5">Induction Action</p>
+                      <p className="text-[12px] leading-relaxed text-slate-600">{cr.inductionAction}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Companies reviewed chips */}
       <div>
@@ -617,7 +701,7 @@ export function QuarterlyReview() {
   const [otherDevelopments, setOtherDevelopments] = useState('');
   const [companyCommentary, setCompanyCommentary] = useState<Record<string, {
     recentProgress: string; rag: RAGStatus; summary: string; keyConcerns: string; actionPoints: string;
-    equityFundraising: string; debtFundraising: string; burnReduction: string; nearTermExit: string;
+    equityFundraising: string; debtFundraising: string; burnReduction: string; nearTermExit: string; inductionAction: string;
   }>>({});
   const [expandedReview, setExpandedReview] = useState<string | null>(null);
 
@@ -1104,6 +1188,14 @@ export function QuarterlyReview() {
                           className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white resize-none h-20"
                           defaultValue={cc.actionPoints}
                           onBlur={e => update('actionPoints', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] text-slate-500">Induction Action</label>
+                        <textarea
+                          className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white resize-none h-20"
+                          defaultValue={cc.inductionAction}
+                          onBlur={e => update('inductionAction', e.target.value)}
                         />
                       </div>
                     </div>
