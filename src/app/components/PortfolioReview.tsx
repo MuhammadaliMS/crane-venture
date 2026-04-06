@@ -1,30 +1,341 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Play, SkipForward, Check, ChevronRight, Download, Clock, Send, FileText, Upload, Users, Sparkles, CheckCircle, AlertCircle, Edit3 } from 'lucide-react';
+import {
+  Play, SkipForward, Check, ChevronRight, Download, Clock, Send, FileText,
+  Upload, Users, Sparkles, CheckCircle, AlertCircle, Printer, Plus, Calendar,
+  ChevronDown, ArrowRight,
+} from 'lucide-react';
 import { SparklineChart } from './SparklineChart';
-import { companies, flags, formatCurrency, getHealthColor, getRAGColor, getActionColor, teamMembers, type RAGStatus } from './mock-data';
+import { companies, funds, flags, formatCurrency, getHealthColor, getRAGColor, getActionColor, teamMembers, type RAGStatus } from './mock-data';
 import { FlagIcon } from './FlagIcon';
+import { generateAssetMetrixXLSX, generateFundSummaryCSV, downloadCSV } from './ExportUtils';
+import LPReportPreview from './LPReportPreview';
+import { useFundFilter, useMilestone } from './Layout';
 
-export function PortfolioReview() {
+// ── Shared data ───────────────────────────────────────────────────────
+const activeCompanies = companies.filter(c => c.lifecycle === 'Active — Core');
+const sortedCompanies = [...activeCompanies].sort((a, b) => {
+  const order: Record<string, number> = { 'Lean In': 0, 'Lean In / Anticipate': 1, 'Watch': 2, 'De-prioritise': 3 };
+  return (order[a.action] || 0) - (order[b.action] || 0);
+});
+
+// ── Mock review history ───────────────────────────────────────────────
+type ReviewRecord = {
+  id: string;
+  date: string;
+  month?: string;          // e.g. "March 2026"
+  quarter?: string;        // e.g. "Q1 2026"
+  type: 'Monthly' | 'Quarterly LP';
+  companies: number;
+  changes: number;
+  status: 'Complete' | 'In Progress' | 'Draft';
+  completedBy: string;
+  duration: string;
+  companiesReviewed: string[];
+  ragChanges: { company: string; from: RAGStatus; to: RAGStatus }[];
+  metricMovements: { company: string; metric: string; from: string; to: string; direction: 'up' | 'down' }[];
+  flagsRaised: { company: string; flag: string; urgency: 'high' | 'medium' | 'low' }[];
+  flagsResolved: { company: string; flag: string }[];
+  actionsCreated: { company: string; action: string; assignee: string }[];
+  commentary: string;
+  exported?: boolean;
+};
+
+type MonthlyReviewRecord = {
+  id: string;
+  date: string;
+  month: string;
+  status: 'Complete' | 'In Progress';
+  completedBy: string;
+  companyComments: { company: string; comment: string }[];
+};
+
+const monthlyReviewsHistory: MonthlyReviewRecord[] = [
+  {
+    id: 'mr-2026-03', date: 'Mar 10, 2026', month: 'March 2026', status: 'Complete', completedBy: 'Anna, Marcus',
+    companyComments: [
+      { company: sortedCompanies[0]?.name || 'Co', comment: 'Strong enterprise pipeline building. Two new logos signed this month. Sales cycle shortening.' },
+      { company: sortedCompanies[1]?.name || 'Co', comment: 'ARR growth continues. Expansion revenue from existing customers driving numbers. Need to watch churn in SMB segment.' },
+      { company: sortedCompanies[2]?.name || 'Co', comment: 'Burn rate increased due to new hires. Product roadmap on track. Series A prep underway.' },
+      { company: sortedCompanies[3]?.name || 'Co', comment: 'Growth slowing — MRR flat for second month. Founder aware, pivoting GTM strategy.' },
+      { company: sortedCompanies[4]?.name || 'Co', comment: 'Runway getting tight. Need to discuss bridge options. Product-market fit still strong.' },
+      { company: sortedCompanies[5]?.name || 'Co', comment: 'Post-bridge, team is executing well. New VP Eng started. Rebuilding velocity.' },
+    ],
+  },
+  {
+    id: 'mr-2026-02', date: 'Feb 10, 2026', month: 'February 2026', status: 'Complete', completedBy: 'Anna, Sarah',
+    companyComments: [
+      { company: sortedCompanies[0]?.name || 'Co', comment: 'Good month. Closed a key healthcare customer. Pipeline healthy.' },
+      { company: sortedCompanies[1]?.name || 'Co', comment: 'Q4 numbers came in strong. Board meeting went well. Planning international expansion.' },
+      { company: sortedCompanies[2]?.name || 'Co', comment: 'Stable. Hiring plan on track. No concerns.' },
+      { company: sortedCompanies[3]?.name || 'Co', comment: 'First signs of slower growth. Will monitor closely next month.' },
+      { company: sortedCompanies[4]?.name || 'Co', comment: 'Product launch went well. Early usage metrics positive.' },
+      { company: sortedCompanies[5]?.name || 'Co', comment: 'Bridge round closed. Runway extended to 14 months. Relief all round.' },
+      { company: sortedCompanies[6]?.name || 'Co', comment: 'Quiet month. Founder focused on hiring CTO replacement.' },
+      { company: sortedCompanies[7]?.name || 'Co', comment: 'Revenue ticking up. New channel partnership showing early traction.' },
+    ],
+  },
+  {
+    id: 'mr-2026-01', date: 'Jan 10, 2026', month: 'January 2026', status: 'Complete', completedBy: 'Anna',
+    companyComments: [
+      { company: sortedCompanies[0]?.name || 'Co', comment: 'Post-holiday ramp. Team back and focused. Q1 targets set.' },
+      { company: sortedCompanies[2]?.name || 'Co', comment: 'Burn crept up in December. Watching this month.' },
+      { company: sortedCompanies[4]?.name || 'Co', comment: 'Preparing for product launch in Feb. Beta feedback positive.' },
+      { company: sortedCompanies[5]?.name || 'Co', comment: 'Bridge round in progress. Expect to close within 2 weeks.' },
+      { company: sortedCompanies[8]?.name || 'Co', comment: 'Steady state. No issues flagged.' },
+    ],
+  },
+  {
+    id: 'mr-2025-12', date: 'Dec 8, 2025', month: 'December 2025', status: 'Complete', completedBy: 'Full team',
+    companyComments: [
+      { company: sortedCompanies[0]?.name || 'Co', comment: 'Year-end close looking strong. ARR ahead of plan.' },
+      { company: sortedCompanies[1]?.name || 'Co', comment: 'Solid Q4. Enterprise deals landing. Board happy.' },
+      { company: sortedCompanies[2]?.name || 'Co', comment: 'New hire ramp increasing costs. Expected to level out in Q1.' },
+      { company: sortedCompanies[3]?.name || 'Co', comment: 'Customer concentration risk flagged. Top 3 clients = 60% revenue.' },
+      { company: sortedCompanies[5]?.name || 'Co', comment: 'Runway critical. Bridge round being coordinated. Syndicate lined up.' },
+    ],
+  },
+  {
+    id: 'mr-2025-11', date: 'Nov 10, 2025', month: 'November 2025', status: 'Complete', completedBy: 'Anna, Marcus',
+    companyComments: [
+      { company: sortedCompanies[0]?.name || 'Co', comment: 'Series A positioning underway. Warm intros to 3 funds.' },
+      { company: sortedCompanies[1]?.name || 'Co', comment: 'Expansion into DACH market progressing. First LOI signed.' },
+      { company: sortedCompanies[3]?.name || 'Co', comment: 'Founder call — discussed go-to-market shift. Cautiously optimistic.' },
+      { company: sortedCompanies[4]?.name || 'Co', comment: 'Beta users growing. Conversion rate improving.' },
+      { company: sortedCompanies[5]?.name || 'Co', comment: 'Runway dropping. Need to action bridge round next month.' },
+      { company: sortedCompanies[6]?.name || 'Co', comment: 'CTO departure announced. Succession plan in motion.' },
+      { company: sortedCompanies[7]?.name || 'Co', comment: 'Exploring new channel partnerships. Pipeline healthy.' },
+    ],
+  },
+];
+
+const quarterlyReviewsHistory: ReviewRecord[] = [
+  {
+    id: 'qr-2025-q4',
+    date: 'Jan 15, 2026', quarter: 'Q4 2025', type: 'Quarterly LP', companies: 12, changes: 8, status: 'Complete',
+    completedBy: 'Full team', duration: '2h 15min', exported: true,
+    companiesReviewed: sortedCompanies.map(c => c.name),
+    ragChanges: [
+      { company: sortedCompanies[0]?.name || 'Co', from: 'Green', to: 'Amber' },
+      { company: sortedCompanies[5]?.name || 'Co', from: 'Red', to: 'Amber' },
+    ],
+    metricMovements: [
+      { company: sortedCompanies[0]?.name || 'Co', metric: 'ARR', from: '£380K', to: '£480K', direction: 'up' },
+      { company: sortedCompanies[5]?.name || 'Co', metric: 'Runway', from: '4mo', to: '14mo', direction: 'up' },
+    ],
+    flagsRaised: [
+      { company: sortedCompanies[0]?.name || 'Co', flag: 'CAC increasing as market matures', urgency: 'medium' },
+    ],
+    flagsResolved: [
+      { company: sortedCompanies[5]?.name || 'Co', flag: 'Runway extended after bridge round' },
+    ],
+    actionsCreated: [
+      { company: sortedCompanies[0]?.name || 'Co', action: 'Review pricing strategy ahead of next board', assignee: 'Anna' },
+      { company: sortedCompanies[5]?.name || 'Co', action: 'Support hiring of VP Engineering', assignee: 'Scott' },
+    ],
+    commentary: 'Q4 2025 quarterly review completed. Asset Metrix XLSX exported and uploaded. LP Report PDF generated. 8 RAG changes across portfolio — broadly positive trajectory.',
+  },
+  {
+    id: 'qr-2025-q3',
+    date: 'Oct 12, 2025', quarter: 'Q3 2025', type: 'Quarterly LP', companies: 11, changes: 5, status: 'Complete',
+    completedBy: 'Full team', duration: '1h 50min', exported: true,
+    companiesReviewed: sortedCompanies.slice(0, 11).map(c => c.name),
+    ragChanges: [
+      { company: sortedCompanies[3]?.name || 'Co', from: 'Green', to: 'Amber' },
+    ],
+    metricMovements: [
+      { company: sortedCompanies[1]?.name || 'Co', metric: 'ARR', from: '£1.1M', to: '£1.4M', direction: 'up' },
+    ],
+    flagsRaised: [
+      { company: sortedCompanies[5]?.name || 'Co', flag: 'Runway below 6 months — bridge required', urgency: 'high' },
+    ],
+    flagsResolved: [],
+    actionsCreated: [
+      { company: sortedCompanies[5]?.name || 'Co', action: 'Coordinate bridge round syndicate', assignee: 'Anna' },
+    ],
+    commentary: 'Q3 2025 complete. Nebula Data ARR surging. Pulsetrack runway critical — bridge round initiated.',
+  },
+  {
+    id: 'qr-2025-q2',
+    date: 'Jul 8, 2025', quarter: 'Q2 2025', type: 'Quarterly LP', companies: 10, changes: 3, status: 'Complete',
+    completedBy: 'Full team', duration: '1h 40min', exported: true,
+    companiesReviewed: sortedCompanies.slice(0, 10).map(c => c.name),
+    ragChanges: [
+      { company: sortedCompanies[0]?.name || 'Co', from: 'Amber', to: 'Green' },
+    ],
+    metricMovements: [
+      { company: sortedCompanies[0]?.name || 'Co', metric: 'MRR', from: '£25K', to: '£32K', direction: 'up' },
+    ],
+    flagsRaised: [],
+    flagsResolved: [
+      { company: sortedCompanies[0]?.name || 'Co', flag: 'Engagement gap resolved' },
+    ],
+    actionsCreated: [],
+    commentary: 'Q2 2025 complete. Portfolio in steady state. Arcline upgraded to Green after strong enterprise wins.',
+  },
+  {
+    id: 'qr-2025-q1',
+    date: 'Apr 10, 2025', quarter: 'Q1 2025', type: 'Quarterly LP', companies: 10, changes: 6, status: 'Complete',
+    completedBy: 'Full team', duration: '2h 05min', exported: true,
+    companiesReviewed: sortedCompanies.slice(0, 10).map(c => c.name),
+    ragChanges: [
+      { company: sortedCompanies[2]?.name || 'Co', from: 'Green', to: 'Amber' },
+      { company: sortedCompanies[4]?.name || 'Co', from: 'Amber', to: 'Green' },
+    ],
+    metricMovements: [],
+    flagsRaised: [],
+    flagsResolved: [],
+    actionsCreated: [],
+    commentary: 'Q1 2025 quarterly review. 6 RAG changes. Two new companies onboarded.',
+  },
+];
+
+// ── Shared expandable review detail ───────────────────────────────────
+function ReviewDetailExpanded({ review, navigate }: { review: ReviewRecord; navigate: ReturnType<typeof useNavigate> }) {
+  return (
+    <div className="px-4 pb-4 pt-3 bg-slate-50/50 border-t border-slate-100 space-y-4">
+      {/* Summary line */}
+      <div className="flex items-center gap-4 text-[12px] text-slate-500">
+        <span>By <span className="text-slate-700 font-medium">{review.completedBy}</span></span>
+        <span>·</span>
+        <span>Duration: {review.duration}</span>
+        <span>·</span>
+        <span>{review.companiesReviewed.length} companies reviewed</span>
+        {review.exported && (
+          <>
+            <span>·</span>
+            <span className="text-emerald-600 flex items-center gap-1"><Download className="w-3 h-3" /> Exported</span>
+          </>
+        )}
+      </div>
+
+      {/* Commentary */}
+      {review.commentary && (
+        <div className="bg-white rounded-lg border border-slate-200/60 p-3">
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-1">Review Summary</p>
+          <p className="text-[12px] leading-relaxed text-slate-600">{review.commentary}</p>
+        </div>
+      )}
+
+      {/* Two-column: RAG Changes + Metric Movements */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-white rounded-lg border border-slate-200/60 p-3">
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-2">RAG Status Changes</p>
+          {review.ragChanges.length > 0 ? (
+            <div className="space-y-1.5">
+              {review.ragChanges.map((rc, j) => (
+                <div key={j} className="flex items-center gap-2 text-[12px]">
+                  <span className="text-slate-700 font-medium min-w-[80px]">{rc.company}</span>
+                  <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: getRAGColor(rc.from) }} />
+                  <span className="text-slate-400">→</span>
+                  <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: getRAGColor(rc.to) }} />
+                  <span className="text-[11px] text-slate-400">{rc.from} → {rc.to}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[11px] text-slate-400">No RAG changes this review</p>
+          )}
+        </div>
+
+        <div className="bg-white rounded-lg border border-slate-200/60 p-3">
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-2">Key Metric Movements</p>
+          {review.metricMovements.length > 0 ? (
+            <div className="space-y-1.5">
+              {review.metricMovements.map((mm, j) => (
+                <div key={j} className="flex items-center gap-2 text-[12px]">
+                  <span className="text-slate-700 font-medium min-w-[80px]">{mm.company}</span>
+                  <span className="text-slate-500">{mm.metric}:</span>
+                  <span className="font-mono-num text-slate-500">{mm.from}</span>
+                  <span className="text-slate-400">→</span>
+                  <span className={`font-mono-num font-medium ${mm.direction === 'up' ? 'text-emerald-600' : 'text-red-500'}`}>{mm.to}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[11px] text-slate-400">No significant metric movements</p>
+          )}
+        </div>
+      </div>
+
+      {/* Two-column: Flags + Actions */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-white rounded-lg border border-slate-200/60 p-3">
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-2">Flags</p>
+          <div className="space-y-1.5">
+            {review.flagsRaised.map((f, j) => (
+              <div key={`r-${j}`} className="flex items-start gap-2 text-[12px]">
+                <span className={`shrink-0 mt-0.5 w-1.5 h-1.5 rounded-full ${f.urgency === 'high' ? 'bg-red-500' : 'bg-amber-500'}`} />
+                <span className="text-slate-600"><span className="font-medium text-slate-700">{f.company}:</span> {f.flag}</span>
+              </div>
+            ))}
+            {review.flagsResolved.map((f, j) => (
+              <div key={`v-${j}`} className="flex items-start gap-2 text-[12px]">
+                <CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                <span className="text-slate-500"><span className="font-medium text-slate-600">{f.company}:</span> {f.flag}</span>
+              </div>
+            ))}
+            {review.flagsRaised.length === 0 && review.flagsResolved.length === 0 && (
+              <p className="text-[11px] text-slate-400">No flag activity</p>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg border border-slate-200/60 p-3">
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-2">Actions Created</p>
+          {review.actionsCreated.length > 0 ? (
+            <div className="space-y-1.5">
+              {review.actionsCreated.map((a, j) => (
+                <div key={j} className="flex items-start gap-2 text-[12px]">
+                  <span className="shrink-0 mt-0.5 w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                  <span className="text-slate-600"><span className="font-medium text-slate-700">{a.company}:</span> {a.action} <span className="text-slate-400">→ {a.assignee}</span></span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[11px] text-slate-400">No actions created</p>
+          )}
+        </div>
+      </div>
+
+      {/* Companies reviewed chips */}
+      <div>
+        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-2">Companies Reviewed</p>
+        <div className="flex flex-wrap gap-1.5">
+          {review.companiesReviewed.map(name => {
+            const comp = sortedCompanies.find(c => c.name === name);
+            return (
+              <button
+                key={name}
+                onClick={() => comp && navigate(`/company/${comp.id}`)}
+                className="text-[11px] px-2 py-1 bg-white border border-slate-200 rounded-lg text-slate-600 hover:border-indigo-300 hover:text-indigo-600 transition-colors flex items-center gap-1.5"
+              >
+                {comp && <div className="w-2 h-2 rounded-full" style={{ background: getRAGColor(comp.rag) }} />}
+                {name}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// ██ MONTHLY REVIEW ██
+// ══════════════════════════════════════════════════════════════════════
+export function MonthlyReview() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<'select' | 'monthly' | 'quarterly' | 'founder-validation'>('select');
-  const [quarterlyStep, setQuarterlyStep] = useState(1);
+  const [mode, setMode] = useState<'list' | 'active'>('list');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [reviewed, setReviewed] = useState<Set<string>>(new Set());
   const [skipped, setSkipped] = useState<Set<string>>(new Set());
   const [commentaries, setCommentaries] = useState<Record<string, string>>({});
-  const [managersCommentary, setManagersCommentary] = useState('');
-  const [otherDevelopments, setOtherDevelopments] = useState('');
-  const [companyCommentary, setCompanyCommentary] = useState<Record<string, {
-    recentProgress: string; rag: RAGStatus; summary: string; keyConcerns: string; actionPoints: string;
-    equityFundraising: string; debtFundraising: string; burnReduction: string; nearTermExit: string;
-  }>>({});
+  const [expandedReview, setExpandedReview] = useState<string | null>(null);
 
-  const activeCompanies = companies.filter(c => c.lifecycle === 'Active — Core');
-  const sortedCompanies = [...activeCompanies].sort((a, b) => {
-    const order: Record<string, number> = { 'Lean In': 0, 'Lean In / Anticipate': 1, 'Watch': 2, 'De-prioritise': 3 };
-    return (order[a.action] || 0) - (order[b.action] || 0);
-  });
+  const { fundFilter, setFundFilter } = useFundFilter();
+  const { milestone } = useMilestone();
+  const isM1 = milestone === 'm1';
 
   const current = sortedCompanies[currentIndex];
   const currentFlags = flags.filter(f => f.companyId === current?.id);
@@ -40,652 +351,891 @@ export function PortfolioReview() {
     if (currentIndex < sortedCompanies.length - 1) setCurrentIndex(currentIndex + 1);
   };
 
-  if (mode === 'select') {
-    return (
-      <div className="p-6 max-w-[900px] mx-auto space-y-6">
-        <div className="text-center py-6">
-          <h2 className="text-[20px] mb-2">Portfolio Review</h2>
-          <p className="text-[13px] text-muted-foreground">Choose a review mode to get started</p>
-        </div>
-        <div className="grid grid-cols-3 gap-4">
-          <button onClick={() => setMode('monthly')}
-            className="bg-card border-2 border-primary/30 rounded-xl p-5 text-left hover:shadow-lg hover:border-primary/50 transition-all ring-2 ring-primary/10 relative">
-            <div className="absolute top-3 right-3 text-[10px] px-2 py-0.5 bg-primary text-primary-foreground rounded-full font-medium">
-              Recommended
-            </div>
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mb-3">
-              <Clock className="w-5 h-5 text-blue-600" />
-            </div>
-            <h3 className="text-[15px] font-semibold mb-1">Monthly Internal Review</h3>
-            <p className="text-[12px] text-muted-foreground">
-              30-45 min team review. Step through companies in priority order with inline notes.
-            </p>
-            <p className="text-[12px] text-primary mt-3 flex items-center gap-1 font-medium">
-              Start review <ChevronRight className="w-3 h-3" />
-            </p>
-          </button>
-          <button onClick={() => { setMode('quarterly'); setQuarterlyStep(1); }}
-            className="bg-card border border-border rounded-xl p-5 text-left hover:shadow-md hover:border-primary/30 transition-all">
-            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mb-3">
-              <Download className="w-5 h-5 text-purple-600" />
-            </div>
-            <h3 className="text-[15px] mb-1">Quarterly LP Report</h3>
-            <p className="text-[12px] text-muted-foreground">
-              6-step workflow: auto-extract, founder validate, team commentary, manager's commentary, GP approval, report generation.
-            </p>
-            <p className="text-[11px] text-primary mt-3 flex items-center gap-1">
-              Start workflow <ChevronRight className="w-3 h-3" />
-            </p>
-          </button>
-          <button onClick={() => setMode('founder-validation')}
-            className="bg-card border border-border rounded-xl p-5 text-left hover:shadow-md hover:border-primary/30 transition-all">
-            <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center mb-3">
-              <Send className="w-5 h-5 text-emerald-600" />
-            </div>
-            <h3 className="text-[15px] mb-1">Founder Validation</h3>
-            <p className="text-[12px] text-muted-foreground">
-              Pre-populated forms sent to founders. They accept, edit, or flag missing data. Replaces Gigs Excel plugin.
-            </p>
-            <p className="text-[11px] text-primary mt-3 flex items-center gap-1">
-              Review & send <ChevronRight className="w-3 h-3" />
-            </p>
-          </button>
-        </div>
-
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <h4 className="text-[13px] mb-2 flex items-center gap-2">
-            <FileText className="w-4 h-4 text-blue-600" /> Quarterly LP Report Workflow
-          </h4>
-          <div className="grid grid-cols-6 gap-2 text-[11px] text-muted-foreground">
-            {[
-              { step: '1', label: 'Auto-Extract', desc: 'Pull metrics from board decks & emails' },
-              { step: '2', label: 'Founder Validate', desc: 'Founders review pre-filled data' },
-              { step: '3', label: 'Team Commentary', desc: 'Qualitative updates per company' },
-              { step: '4', label: "Manager's Commentary", desc: 'GP writes fund-level narrative' },
-              { step: '5', label: 'GP Approval', desc: 'Final review and sign-off' },
-              { step: '6', label: 'Generate Report', desc: 'PDF + Asset Metrix CSV' },
-            ].map(s => (
-              <div key={s.step} className="text-center">
-                <div className="w-7 h-7 mx-auto mb-1 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-[12px]">{s.step}</div>
-                <p className="text-foreground text-[11px]">{s.label}</p>
-                <p className="text-[10px]">{s.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <h3 className="text-[13px] mb-3">Recent Reviews</h3>
-          <div className="bg-card border border-border rounded-xl divide-y divide-border">
-            {[
-              { date: 'Mar 10, 2026', type: 'Monthly', companies: 12, changes: 3, status: 'Complete' },
-              { date: 'Feb 10, 2026', type: 'Monthly', companies: 12, changes: 5, status: 'Complete' },
-              { date: 'Jan 15, 2026', type: 'Quarterly LP', companies: 12, changes: 8, status: 'Complete' },
-              { date: 'Jan 10, 2026', type: 'Monthly', companies: 12, changes: 2, status: 'Complete' },
-            ].map((review, i) => (
-              <div key={i} className="p-3 flex items-center gap-3 text-[13px] hover:bg-muted/20 cursor-pointer">
-                <span className={`text-[11px] px-2 py-0.5 rounded-md ${
-                  review.type === 'Quarterly LP' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
-                }`}>{review.type}</span>
-                <span className="flex-1">{review.date}</span>
-                <span className="text-muted-foreground">{review.companies} companies</span>
-                <span className="text-muted-foreground">{review.changes} changes</span>
-                <ChevronRight className="w-3 h-3 text-muted-foreground" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Quarterly LP Report — 6-step workflow
-  if (mode === 'quarterly') {
-    const steps = [
-      { num: 1, label: 'Auto-Extract Metrics' },
-      { num: 2, label: 'Founder Validation' },
-      { num: 3, label: 'Team Commentary' },
-      { num: 4, label: "Manager's Commentary" },
-      { num: 5, label: 'GP Approval' },
-      { num: 6, label: 'Generate Report' },
-    ];
+  // ── List view ─────────────────────────────────────────────────────
+  if (mode === 'list') {
+    // Determine current month for the "new review" card
+    const currentMonth = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+    const hasCurrentMonth = monthlyReviewsHistory.some(r => r.month === currentMonth);
 
     return (
-      <div className="p-6 max-w-[1100px] mx-auto space-y-6">
+      <div className="max-w-[900px] mx-auto space-y-6">
         <div className="flex items-center justify-between">
-          <button onClick={() => setMode('select')} className="text-[13px] text-muted-foreground hover:text-foreground">← Back</button>
-          <h2 className="text-[16px]">Q1 2026 LP Report</h2>
-          <span className="text-[12px] text-muted-foreground">Step {quarterlyStep} of 6</span>
-        </div>
-
-        {/* Step Progress */}
-        <div className="flex items-center gap-1">
-          {steps.map(s => (
-            <button key={s.num} onClick={() => setQuarterlyStep(s.num)}
-              className={`flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] transition-colors ${
-                quarterlyStep === s.num ? 'bg-primary text-primary-foreground' :
-                quarterlyStep > s.num ? 'bg-emerald-100 text-emerald-700' : 'bg-muted text-muted-foreground'
-              }`}>
-              {quarterlyStep > s.num ? <CheckCircle className="w-3.5 h-3.5" /> : <span>{s.num}.</span>}
-              {s.label}
+          <div>
+            <h1 className="text-[24px] font-semibold tracking-tight text-slate-800">Monthly Reviews</h1>
+            <p className="text-[13px] text-slate-500 mt-1">
+              Internal team review — step through companies, update RAG status, add notes
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <select
+              value={fundFilter}
+              onChange={e => setFundFilter(e.target.value as any)}
+              className="text-[13px] border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-700"
+            >
+              <option value="all">All Funds</option>
+              {funds.map(f => <option key={f.id} value={f.name}>{f.name}</option>)}
+            </select>
+            <button
+              onClick={() => { setMode('active'); setCurrentIndex(0); setReviewed(new Set()); setSkipped(new Set()); }}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg text-[13px] hover:bg-indigo-600 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" /> Start New Review
             </button>
-          ))}
+          </div>
         </div>
 
-        {/* Step 1: Auto-Extract */}
-        {quarterlyStep === 1 && (
-          <div className="space-y-4">
-            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="w-4 h-4 text-emerald-600" />
-                <h3 className="text-[14px]">Auto-Extraction Complete</h3>
-              </div>
-              <p className="text-[12px] text-muted-foreground">
-                Metrics extracted from board decks, transcripts, and emails for {activeCompanies.length} companies.
-                Each field shows source, confidence, and passage it was derived from.
-              </p>
-            </div>
-            <div className="bg-card border border-border rounded-xl divide-y divide-border">
-              {sortedCompanies.map(c => (
-                <div key={c.id} className="p-3 flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-md flex items-center justify-center text-white text-[11px]" style={{ background: c.logoColor }}>{c.name[0]}</div>
+        {/* Review history list */}
+        <div>
+          <h3 className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400 mb-3">Review History</h3>
+          <div className="bg-white rounded-xl border border-slate-200/60 divide-y divide-slate-100">
+            {monthlyReviewsHistory.map((review) => (
+              <div key={review.id}>
+                <button
+                  onClick={() => setExpandedReview(expandedReview === review.id ? null : review.id)}
+                  className="w-full p-3.5 flex items-center gap-3 text-[13px] hover:bg-slate-50 transition-colors text-left"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                    <Calendar className="w-4.5 h-4.5 text-indigo-500" />
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <span className="text-[13px]">{c.name}</span>
-                    <p className="text-[11px] text-muted-foreground">14 of 14 fields extracted</p>
+                    <p className="text-[14px] font-medium text-slate-800">{review.month}</p>
+                    <p className="text-[12px] text-slate-500 mt-0.5">{review.date} · {review.completedBy}</p>
                   </div>
-                  <span className="text-[11px] px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-lg flex items-center gap-1">
-                    <CheckCircle className="w-3 h-3" /> High confidence
-                  </span>
-                  <span className="text-[10px] text-muted-foreground">Board deck + email</span>
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-end">
-              <button onClick={() => setQuarterlyStep(2)} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-[13px]">
-                Next: Founder Validation →
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Step 2: Founder Validation */}
-        {quarterlyStep === 2 && (
-          <div className="space-y-4">
-            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-              <h3 className="text-[14px] mb-1">Founder Data Validation</h3>
-              <p className="text-[12px] text-muted-foreground">
-                Lightweight web forms pre-populated with extracted data. Founders accept/edit per field.
-                Only missing fields require manual input. Completable in &lt; 5 minutes, mobile-friendly.
-              </p>
-            </div>
-            <div className="bg-card border border-border rounded-xl divide-y divide-border">
-              {sortedCompanies.map(c => {
-                const lastDays = Math.floor((new Date().getTime() - new Date(c.lastUpdate).getTime()) / (1000 * 60 * 60 * 24));
-                return (
-                  <div key={c.id} className="p-3 flex items-center gap-3">
-                    <div className="w-7 h-7 rounded-md flex items-center justify-center text-white text-[11px]" style={{ background: c.logoColor }}>{c.name[0]}</div>
-                    <div className="flex-1">
-                      <span className="text-[13px]">{c.name}</span>
-                      <p className="text-[11px] text-muted-foreground">{c.currency} · {c.stage} · Updated {lastDays}d ago</p>
-                    </div>
-                    <span className="text-[11px] px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-lg flex items-center gap-1">
-                      <CheckCircle className="w-3 h-3" /> Pre-filled
-                    </span>
-                    <button className="text-[11px] px-3 py-1.5 bg-primary text-primary-foreground rounded-lg flex items-center gap-1">
-                      <Send className="w-3 h-3" /> Send
-                    </button>
+                  <div className="flex items-center gap-4 flex-shrink-0">
+                    <p className="text-[12px] text-slate-500">{review.companyComments.length} companies</p>
+                    <span className={`text-[11px] px-2.5 py-1 rounded-lg font-medium ${
+                      review.status === 'Complete' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+                    }`}>{review.status}</span>
+                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${expandedReview === review.id ? 'rotate-180' : ''}`} />
                   </div>
-                );
-              })}
-            </div>
-            <div className="flex justify-between">
-              <button onClick={() => setQuarterlyStep(1)} className="text-[13px] text-muted-foreground">← Back</button>
-              <div className="flex gap-2">
-                <button className="px-4 py-2 border border-border rounded-lg text-[13px] flex items-center gap-1">
-                  <Send className="w-3.5 h-3.5" /> Send All
                 </button>
-                <button onClick={() => setQuarterlyStep(3)} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-[13px]">
-                  Next: Team Commentary →
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Step 3: Team Commentary */}
-        {quarterlyStep === 3 && (
-          <div className="space-y-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-              <h3 className="text-[14px] mb-1">Team Commentary</h3>
-              <p className="text-[12px] text-muted-foreground">
-                Each team member completes qualitative fields matching the LP report structure:
-                Recent Progress, RAG Status, Summary, Key Concerns, Action Points, and fundraising status.
-              </p>
-            </div>
-            <div className="space-y-3">
-              {sortedCompanies.map(c => {
-                const cc = companyCommentary[c.id] || {
-                  recentProgress: c.recentProgress, rag: c.rag, summary: c.summary,
-                  keyConcerns: c.keyConcerns.join('\n'), actionPoints: c.actionPoints.join('\n'),
-                  equityFundraising: c.equityFundraisingStatus, debtFundraising: c.debtFundraisingStatus,
-                  burnReduction: c.burnReductionActions, nearTermExit: c.nearTermExit,
-                };
-                return (
-                  <div key={c.id} className="bg-card border border-border rounded-xl p-4">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-8 h-8 rounded-md flex items-center justify-center text-white text-[12px]" style={{ background: c.logoColor }}>{c.name[0]}</div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[13px]">{c.name}</span>
-                          <div className="w-2.5 h-2.5 rounded-full" style={{ background: getRAGColor(c.rag) }} />
-                          <span className="text-[11px] text-muted-foreground">{c.stage} · {c.fund}</span>
+                {expandedReview === review.id && (
+                  <div className="px-4 pb-4 pt-2 border-t border-slate-100 space-y-2">
+                    {review.companyComments.map((cc, j) => {
+                      const comp = sortedCompanies.find(c => c.name === cc.company);
+                      return (
+                        <div key={j} className="flex items-start gap-3 py-2 border-b border-slate-50 last:border-0">
+                          <button
+                            onClick={() => comp && navigate(`/company/${comp.id}`)}
+                            className="flex items-center gap-2 min-w-[140px] flex-shrink-0 hover:text-indigo-600 transition-colors"
+                          >
+                            {comp && <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: getRAGColor(comp.rag) }} />}
+                            <span className="text-[12px] font-medium text-slate-700">{cc.company}</span>
+                          </button>
+                          <p className="text-[12px] text-slate-500 leading-relaxed">{cc.comment}</p>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <div className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px]">{c.ownerAvatar}</div>
-                        <span className="text-[11px] text-muted-foreground">{c.owner}</span>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[11px] text-muted-foreground">RAG Status</label>
-                        <select className="w-full text-[12px] border border-border rounded-lg px-2 py-1.5 mt-1 bg-card" defaultValue={c.rag}>
-                          <option value="Green">Green</option><option value="Amber">Amber</option>
-                          <option value="Red">Red</option><option value="Grey">Grey</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="text-[11px] text-muted-foreground">Equity Fundraising</label>
-                        <input className="w-full text-[12px] border border-border rounded-lg px-2 py-1.5 mt-1 bg-card" defaultValue={cc.equityFundraising} />
-                      </div>
-                      <div className="col-span-2">
-                        <label className="text-[11px] text-muted-foreground">Summary</label>
-                        <textarea className="w-full text-[12px] border border-border rounded-lg px-3 py-2 mt-1 bg-card resize-none h-14" defaultValue={cc.summary} />
-                      </div>
-                      <div>
-                        <label className="text-[11px] text-muted-foreground">Key Concerns</label>
-                        <textarea className="w-full text-[12px] border border-border rounded-lg px-3 py-2 mt-1 bg-card resize-none h-14" defaultValue={cc.keyConcerns} />
-                      </div>
-                      <div>
-                        <label className="text-[11px] text-muted-foreground">Action Points</label>
-                        <textarea className="w-full text-[12px] border border-border rounded-lg px-3 py-2 mt-1 bg-card resize-none h-14" defaultValue={cc.actionPoints} />
-                      </div>
-                    </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
-            </div>
-            <div className="flex justify-between">
-              <button onClick={() => setQuarterlyStep(2)} className="text-[13px] text-muted-foreground">← Back</button>
-              <button onClick={() => setQuarterlyStep(4)} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-[13px]">
-                Next: Manager's Commentary →
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Step 4: Manager's Commentary */}
-        {quarterlyStep === 4 && (
-          <div className="space-y-4">
-            <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
-              <h3 className="text-[14px] mb-1 flex items-center gap-2">
-                <Edit3 className="w-4 h-4 text-purple-600" /> Manager's Commentary
-              </h3>
-              <p className="text-[12px] text-muted-foreground">
-                Fund-level narrative for the LP report. The system provides a pre-assembled data pack with
-                auto-generated charts. Write the market outlook and portfolio narrative below.
-              </p>
-            </div>
-
-            {/* Pre-assembled data summary */}
-            <div className="grid grid-cols-4 gap-3">
-              {[
-                { label: 'TVPI (Net)', value: '1.72x', trend: '+0.04 vs Q4' },
-                { label: 'Active Core', value: `${activeCompanies.length}`, trend: 'companies' },
-                { label: 'Follow-ons', value: '2', trend: 'This quarter' },
-                { label: 'NAV Change', value: '+£4.7M', trend: 'vs prior quarter' },
-              ].map(m => (
-                <div key={m.label} className="bg-card border border-border rounded-lg p-3">
-                  <p className="text-[11px] text-muted-foreground">{m.label}</p>
-                  <p className="text-[18px]">{m.value}</p>
-                  <p className="text-[10px] text-muted-foreground">{m.trend}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* AI Suggested outline */}
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-              <p className="text-[12px] flex items-center gap-2 mb-2">
-                <Sparkles className="w-4 h-4 text-amber-500" />
-                <span className="text-amber-700">AI-suggested outline (editable)</span>
-              </p>
-              <ul className="text-[12px] text-muted-foreground space-y-1 list-disc pl-4">
-                <li>Portfolio continues to deliver strong performance with TVPI at 1.72x</li>
-                <li>Cortex AI emerging as breakout with Series B imminent — potential 3x+ return</li>
-                <li>Two companies (Pulsetrack, Stackpilot) in Red status — active management in progress</li>
-                <li>Fund I 80% deployed with £14M available for follow-ons</li>
-              </ul>
-            </div>
-
-            <div>
-              <label className="text-[12px] text-muted-foreground">Market Outlook & Portfolio Narrative</label>
-              <textarea
-                className="w-full text-[13px] border border-border rounded-lg px-4 py-3 mt-1 bg-card resize-none h-40"
-                placeholder="Write the Manager's Commentary for the LP report..."
-                value={managersCommentary}
-                onChange={e => setManagersCommentary(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className="text-[12px] text-muted-foreground">Other Significant Developments</label>
-              <textarea
-                className="w-full text-[12px] border border-border rounded-lg px-3 py-2 mt-1 bg-card resize-none h-20"
-                placeholder="Team hires, events, fund updates..."
-                value={otherDevelopments}
-                onChange={e => setOtherDevelopments(e.target.value)}
-              />
-            </div>
-
-            <div className="flex justify-between">
-              <button onClick={() => setQuarterlyStep(3)} className="text-[13px] text-muted-foreground">← Back</button>
-              <button onClick={() => setQuarterlyStep(5)} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-[13px]">
-                Next: GP Approval →
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Step 5: GP Approval */}
-        {quarterlyStep === 5 && (
-          <div className="space-y-4">
-            <div className="bg-card border border-border rounded-xl p-6">
-              <h3 className="text-[16px] mb-2">GP Review & Approval</h3>
-              <p className="text-[12px] text-muted-foreground mb-4">
-                Review the compiled report: fund-level data + per-company commentary side by side.
-                Approve, request edits, or add notes.
-              </p>
-
-              {/* Completion Dashboard */}
-              <div className="grid grid-cols-3 gap-3 mb-6">
-                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-center">
-                  <p className="text-[20px] text-emerald-700">{activeCompanies.length}</p>
-                  <p className="text-[11px] text-muted-foreground">Companies Reviewed</p>
-                </div>
-                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-center">
-                  <p className="text-[20px] text-emerald-700">{managersCommentary ? '1' : '0'}/1</p>
-                  <p className="text-[11px] text-muted-foreground">Manager's Commentary</p>
-                </div>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
-                  <p className="text-[20px] text-blue-700">Ready</p>
-                  <p className="text-[11px] text-muted-foreground">Report Status</p>
-                </div>
+                )}
               </div>
-
-              {/* Company status list */}
-              <div className="bg-muted/20 rounded-lg divide-y divide-border">
-                {sortedCompanies.map(c => (
-                  <div key={c.id} className="p-3 flex items-center gap-3">
-                    <CheckCircle className="w-4 h-4 text-emerald-500" />
-                    <div className="w-6 h-6 rounded flex items-center justify-center text-white text-[10px]" style={{ background: c.logoColor }}>{c.name[0]}</div>
-                    <span className="text-[13px] flex-1">{c.name}</span>
-                    <div className="w-3 h-3 rounded-full" style={{ background: getRAGColor(c.rag) }} />
-                    <span className="text-[11px] text-muted-foreground">{c.rag}</span>
-                    <span className="text-[11px] text-emerald-600">Complete</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex justify-between">
-              <button onClick={() => setQuarterlyStep(4)} className="text-[13px] text-muted-foreground">← Back</button>
-              <div className="flex gap-2">
-                <button className="px-4 py-2 border border-amber-300 text-amber-700 rounded-lg text-[13px]">Request Edits</button>
-                <button onClick={() => setQuarterlyStep(6)} className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-[13px] flex items-center gap-1">
-                  <Check className="w-4 h-4" /> Approve & Generate
-                </button>
-              </div>
-            </div>
+            ))}
           </div>
-        )}
-
-        {/* Step 6: Report Generation */}
-        {quarterlyStep === 6 && (
-          <div className="space-y-4">
-            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-6 text-center">
-              <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
-              <h3 className="text-[18px] mb-2">Report Approved</h3>
-              <p className="text-[13px] text-muted-foreground mb-4">
-                Q1 2026 LP Report is ready for generation. ~75% auto-assembled from platform data.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <button className="bg-card border border-border rounded-xl p-5 hover:shadow-md transition-shadow text-left">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mb-3">
-                  <Download className="w-5 h-5 text-blue-600" />
-                </div>
-                <h3 className="text-[14px] mb-1">LP Report PDF</h3>
-                <p className="text-[11px] text-muted-foreground">
-                  Full quarterly report matching Crane I structure: cover, standing data, commentary, company snapshots, data pages.
-                </p>
-              </button>
-              <button className="bg-card border border-border rounded-xl p-5 hover:shadow-md transition-shadow text-left">
-                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mb-3">
-                  <Upload className="w-5 h-5 text-purple-600" />
-                </div>
-                <h3 className="text-[14px] mb-1">Asset Metrix CSV</h3>
-                <p className="text-[11px] text-muted-foreground">
-                  Mapped to Asset Metrix ingestion schema. All required fields included with FX conversion.
-                </p>
-              </button>
-              <button className="bg-card border border-border rounded-xl p-5 hover:shadow-md transition-shadow text-left">
-                <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mb-3">
-                  <FileText className="w-5 h-5 text-gray-600" />
-                </div>
-                <h3 className="text-[14px] mb-1">Internal Summary</h3>
-                <p className="text-[11px] text-muted-foreground">
-                  Changes made during this review cycle. RAG movements, commentary updates, follow-on activity.
-                </p>
-              </button>
-            </div>
-
-            <div className="flex justify-between">
-              <button onClick={() => setQuarterlyStep(5)} className="text-[13px] text-muted-foreground">← Back</button>
-              <button onClick={() => setMode('select')} className="px-4 py-2 border border-border rounded-lg text-[13px]">Done</button>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  if (mode === 'founder-validation') {
-    return (
-      <div className="p-6 max-w-[1000px] mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <button onClick={() => setMode('select')} className="text-[13px] text-muted-foreground hover:text-foreground">← Back</button>
-          <button className="text-[12px] px-4 py-2 bg-primary text-primary-foreground rounded-lg flex items-center gap-1">
-            <Send className="w-3.5 h-3.5" /> Send All for Validation
-          </button>
-        </div>
-
-        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-          <h3 className="text-[14px] mb-2">Founder Data Validation</h3>
-          <p className="text-[12px] text-muted-foreground">
-            Replaces the Gigs Excel plugin. Pre-populated from auto-extraction. Founders accept, edit, or flag missing data.
-            Stage-specific field visibility: pre-revenue companies skip P&L fields. Completable in &lt; 5 minutes, mobile-friendly, no login required.
-          </p>
-        </div>
-
-        <div className="space-y-3">
-          {sortedCompanies.map(c => {
-            const dataComplete = c.mrr > 0 && c.burn > 0 && c.headcount > 0;
-            const lastUpdateDays = Math.floor((new Date().getTime() - new Date(c.lastUpdate).getTime()) / (1000 * 60 * 60 * 24));
-            return (
-              <div key={c.id} className="bg-card border border-border rounded-xl p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-8 h-8 rounded-md flex items-center justify-center text-white text-[12px]" style={{ background: c.logoColor }}>{c.name[0]}</div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[13px]">{c.name}</span>
-                      <span className="text-[11px] px-1.5 py-0.5 bg-muted rounded">{c.stage}</span>
-                      <span className="text-[10px] text-muted-foreground">{c.currency}</span>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">
-                      Source: board deck + email · Last update: {lastUpdateDays}d ago
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {dataComplete ? (
-                      <span className="text-[11px] px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-lg flex items-center gap-1">
-                        <Check className="w-3 h-3" /> Auto-extracted
-                      </span>
-                    ) : (
-                      <span className="text-[11px] px-2 py-0.5 bg-amber-100 text-amber-700 rounded-lg">Missing data</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-7 gap-2 mb-3">
-                  {[
-                    { label: 'ARR', value: formatCurrency(c.mrr * 12, c.currency), source: 'Board deck' },
-                    { label: 'Revenue', value: formatCurrency(c.mrr, c.currency), source: 'Board deck' },
-                    { label: 'Burn', value: formatCurrency(c.burn, c.currency) + '/mo', source: 'Board deck' },
-                    { label: 'Cash Bal', value: formatCurrency(c.monthlyFinancials.length > 0 ? c.monthlyFinancials[c.monthlyFinancials.length - 1].cashBalance || 0 : 0, c.currency), source: 'Calculated' },
-                    { label: 'Runway', value: c.runway + 'mo', source: 'Calculated' },
-                    { label: 'Headcount', value: c.headcount.toString(), source: 'Email' },
-                    { label: 'Customers', value: c.customers.toString(), source: 'Board deck' },
-                  ].map(m => (
-                    <div key={m.label} className="bg-muted/30 rounded-lg p-2">
-                      <p className="text-[10px] text-muted-foreground">{m.label}</p>
-                      <p className="text-[13px]">{m.value}</p>
-                      <p className="text-[9px] text-muted-foreground">{m.source}</p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button className="text-[11px] px-3 py-1.5 bg-primary text-primary-foreground rounded-lg flex items-center gap-1">
-                    <Send className="w-3 h-3" /> Send to Founder
-                  </button>
-                  <span className="text-[11px] text-muted-foreground">Secure token link — no login required</span>
-                </div>
-              </div>
-            );
-          })}
         </div>
       </div>
     );
   }
 
-  // Monthly review mode
+  // ── Active monthly review flow ────────────────────────────────────
   return (
-    <div className="p-6 max-w-[1000px] mx-auto space-y-4">
+    <div className="max-w-[1100px] mx-auto space-y-4">
       <div className="flex items-center justify-between">
-        <button onClick={() => setMode('select')} className="text-[13px] text-muted-foreground hover:text-foreground">← Back</button>
-        <span className="text-[12px] text-muted-foreground">
-          {currentIndex + 1} of {sortedCompanies.length} companies
+        <button onClick={() => setMode('list')} className="text-[13px] text-slate-500 hover:text-slate-700 transition-colors">← Back to Reviews</button>
+        <h2 className="text-[18px] font-semibold tracking-tight text-slate-800">Monthly Internal Review</h2>
+        <span className="text-[12px] text-slate-500">
+          {reviewed.size + skipped.size} of {sortedCompanies.length} complete
         </span>
       </div>
 
-      <div className="bg-muted rounded-full h-2 overflow-hidden">
-        <div className="bg-primary h-full transition-all duration-300 rounded-full" style={{ width: `${progress}%` }} />
+      {/* Progress bar */}
+      <div className="bg-slate-200 rounded-full h-2 overflow-hidden">
+        <div className="bg-indigo-500 h-full transition-all duration-300 rounded-full" style={{ width: `${progress}%` }} />
       </div>
 
-      {current && (
-        <div className="bg-card border border-border rounded-xl p-6 space-y-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-[18px]" style={{ background: current.logoColor }}>
-              {current.name[0]}
-            </div>
-            <div className="flex-1">
+      <div className="flex gap-4">
+        {/* Left sidebar — company list for jumping */}
+        <div className="w-[240px] flex-shrink-0">
+          <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400 mb-2">Companies</p>
+          <div className="bg-white rounded-xl border border-slate-200/60 divide-y divide-slate-100 max-h-[600px] overflow-y-auto">
+            {sortedCompanies.map((c, i) => {
+              const isReviewed = reviewed.has(c.id);
+              const isSkipped = skipped.has(c.id);
+              const isCurrent = i === currentIndex;
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => setCurrentIndex(i)}
+                  className={`w-full p-2.5 flex items-center gap-2 text-left transition-colors ${
+                    isCurrent ? 'bg-indigo-50 border-l-2 border-l-indigo-500' :
+                    isReviewed ? 'bg-emerald-50/50' :
+                    isSkipped ? 'bg-slate-50' :
+                    'hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="w-6 h-6 rounded flex items-center justify-center text-white text-[10px] flex-shrink-0" style={{ background: c.logoColor }}>{c.name[0]}</div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-[12px] truncate ${isCurrent ? 'text-indigo-700 font-medium' : 'text-slate-700'}`}>{c.name}</p>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      {c.ragHistory.slice(-3).map((r, ri) => (
+                        <div key={ri} className="w-2 h-2 rounded-full" style={{ background: getRAGColor(r) }} />
+                      ))}
+                    </div>
+                  </div>
+                  {isReviewed && <CheckCircle className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />}
+                  {isSkipped && <SkipForward className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />}
+                </button>
+              );
+            })}
+          </div>
+          {/* Summary counts */}
+          <div className="mt-3 flex items-center gap-3 text-[11px] text-slate-500">
+            <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3 text-emerald-500" /> {reviewed.size}</span>
+            <span className="flex items-center gap-1"><SkipForward className="w-3 h-3 text-slate-400" /> {skipped.size}</span>
+            <span>{sortedCompanies.length - reviewed.size - skipped.size} remaining</span>
+          </div>
+        </div>
+
+        {/* Right — main review area */}
+        <div className="flex-1">
+          {current && (
+            <div className="bg-white rounded-xl border border-slate-200/60 p-6 space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-[18px]" style={{ background: current.logoColor }}>
+                  {current.name[0]}
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-[18px] font-semibold text-slate-800">{current.name}</h2>
+                    <span className="text-[11px] px-2 py-0.5 bg-slate-100 rounded-md">{current.stage}</span>
+                    <span className="text-[11px] px-2 py-0.5 bg-slate-100 rounded-md">{current.fund}</span>
+                    <span className="text-[11px] px-2 py-0.5 rounded-md" style={{ background: getActionColor(current.action) + '15', color: getActionColor(current.action) }}>
+                      {current.action}
+                    </span>
+                  </div>
+                  <p className="text-[13px] text-slate-500">{current.description}</p>
+                </div>
+              </div>
+
+              {/* RAG History strip */}
               <div className="flex items-center gap-2">
-                <h2 className="text-[18px]">{current.name}</h2>
-                <span className="text-[11px] px-2 py-0.5 bg-muted rounded-md">{current.stage}</span>
-                <span className="text-[11px] px-2 py-0.5 bg-muted rounded-md">{current.fund}</span>
-                <span className="text-[11px] px-2 py-0.5 rounded-md" style={{ background: getActionColor(current.action) + '15', color: getActionColor(current.action) }}>
-                  {current.action}
-                </span>
-                {/* RAG strip */}
-                <div className="flex items-center gap-1 ml-2">
+                <span className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400">RAG History</span>
+                <div className="flex items-center gap-1.5">
                   {current.ragHistory.map((r, i) => (
-                    <div key={i} className="w-3 h-3 rounded-full" style={{ background: getRAGColor(r) }} title={`Q${i + 1}: ${r}`} />
+                    <div key={i} className="flex items-center gap-1">
+                      <div className="w-3.5 h-3.5 rounded-full" style={{ background: getRAGColor(r) }} title={`Q${i + 1}: ${r}`} />
+                      <span className="text-[10px] text-slate-400">Q{i + 1}</span>
+                    </div>
                   ))}
                 </div>
               </div>
-              <p className="text-[13px] text-muted-foreground">{current.description}</p>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-5 gap-3">
-            <div className="bg-muted/30 rounded-lg p-3">
-              <p className="text-[11px] text-muted-foreground">Health</p>
-              <div className="flex items-center gap-1.5 mt-1">
-                <div className="w-2.5 h-2.5 rounded-full" style={{ background: getHealthColor(current.health) }} />
-                <span className="text-[13px]">{current.health}</span>
-              </div>
-            </div>
-            <div className="bg-muted/30 rounded-lg p-3">
-              <p className="text-[11px] text-muted-foreground">MRR</p>
-              <p className="text-[13px] mt-1">{formatCurrency(current.mrr, current.currency)}</p>
-              <span className={`text-[11px] ${current.arrGrowth >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>
-                {current.arrGrowth >= 0 ? '+' : ''}{current.arrGrowth}%
-              </span>
-            </div>
-            <div className="bg-muted/30 rounded-lg p-3">
-              <p className="text-[11px] text-muted-foreground">Burn</p>
-              <p className="text-[13px] mt-1">{formatCurrency(current.burn, current.currency)}/mo</p>
-            </div>
-            <div className="bg-muted/30 rounded-lg p-3">
-              <p className="text-[11px] text-muted-foreground">Runway</p>
-              <p className={`text-[13px] mt-1 ${current.runway < 6 ? 'text-destructive' : ''}`}>{current.runway}mo</p>
-            </div>
-            <div className="bg-muted/30 rounded-lg p-3">
-              <p className="text-[11px] text-muted-foreground">MoIC</p>
-              <p className="text-[13px] mt-1">{current.accounting.moic.toFixed(1)}x</p>
-            </div>
-          </div>
-
-          {currentFlags.length > 0 && (
-            <div>
-              <p className="text-[12px] text-muted-foreground mb-2">Active Alerts</p>
-              {currentFlags.map(flag => (
-                <div key={flag.id} className="flex items-start gap-2 bg-amber-50 rounded-lg p-3 mb-1">
-                  <FlagIcon type={flag.type} size={14} />
-                  <div>
-                    <p className="text-[12px]">{flag.headline}</p>
+              {/* Key metrics inline */}
+              <div className="grid grid-cols-5 gap-3">
+                <div className="bg-slate-50 rounded-lg p-3">
+                  <p className="text-[11px] text-slate-500">Health</p>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ background: getHealthColor(current.health) }} />
+                    <span className="text-[13px] text-slate-700">{current.health}</span>
                   </div>
                 </div>
-              ))}
+                <div className="bg-slate-50 rounded-lg p-3">
+                  <p className="text-[11px] text-slate-500">MRR</p>
+                  <p className="text-[13px] mt-1 font-mono-num text-slate-700">{formatCurrency(current.mrr, current.currency)}</p>
+                  <span className={`text-[11px] font-mono-num ${current.arrGrowth >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {current.arrGrowth >= 0 ? '+' : ''}{current.arrGrowth}%
+                  </span>
+                </div>
+                <div className="bg-slate-50 rounded-lg p-3">
+                  <p className="text-[11px] text-slate-500">Burn</p>
+                  <p className="text-[13px] mt-1 font-mono-num text-slate-700">{formatCurrency(current.burn, current.currency)}/mo</p>
+                </div>
+                <div className="bg-slate-50 rounded-lg p-3">
+                  <p className="text-[11px] text-slate-500">Runway</p>
+                  <p className={`text-[13px] mt-1 font-mono-num ${current.runway < 6 ? 'text-red-600' : 'text-slate-700'}`}>{current.runway}mo</p>
+                </div>
+                <div className="bg-slate-50 rounded-lg p-3">
+                  <p className="text-[11px] text-slate-500">MoIC</p>
+                  <p className="text-[13px] mt-1 font-mono-num text-slate-700">{current.accounting.moic.toFixed(1)}x</p>
+                </div>
+              </div>
+
+              {currentFlags.length > 0 && (
+                <div>
+                  <p className="text-[12px] text-slate-500 mb-2">Active Alerts</p>
+                  {currentFlags.map(flag => (
+                    <div key={flag.id} className="flex items-start gap-2 bg-amber-50 rounded-lg p-3 mb-1">
+                      <FlagIcon type={flag.type} size={14} />
+                      <div>
+                        <p className="text-[12px] text-slate-700">{flag.headline}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div>
+                <label className="text-[12px] text-slate-500 flex items-center gap-1">
+                  <Users className="w-3 h-3" /> Team Commentary
+                </label>
+                <textarea
+                  className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white resize-none h-20"
+                  placeholder={`Add commentary for ${current.name}...`}
+                  value={commentaries[current.id] || ''}
+                  onChange={e => setCommentaries(prev => ({ ...prev, [current.id]: e.target.value }))}
+                />
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <button onClick={handleReview} className="px-4 py-2 bg-indigo-500 text-white rounded-lg text-[13px] hover:bg-indigo-600 transition-colors flex items-center gap-1.5">
+                  <Check className="w-4 h-4" /> Mark Reviewed
+                </button>
+                <button onClick={handleSkip} className="px-4 py-2 border border-slate-200 rounded-lg text-[13px] hover:bg-slate-50 flex items-center gap-1.5">
+                  <SkipForward className="w-4 h-4" /> Skip
+                </button>
+                <button onClick={() => navigate(`/company/${current.id}`)} className="ml-auto text-[12px] text-indigo-500 hover:text-indigo-700 flex items-center gap-1">
+                  View Full Detail <ChevronRight className="w-3 h-3" />
+                </button>
+              </div>
             </div>
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
+// ══════════════════════════════════════════════════════════════════════
+// ██ QUARTERLY REVIEW ██
+// ══════════════════════════════════════════════════════════════════════
+export function QuarterlyReview() {
+  const navigate = useNavigate();
+  const [mode, setMode] = useState<'list' | 'active' | 'lp-report-preview'>('list');
+  const [selectedFund, setSelectedFund] = useState(funds[0]);
+  const [quarterlyStep, setQuarterlyStep] = useState(1);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [managersCommentary, setManagersCommentary] = useState('');
+  const [otherDevelopments, setOtherDevelopments] = useState('');
+  const [companyCommentary, setCompanyCommentary] = useState<Record<string, {
+    recentProgress: string; rag: RAGStatus; summary: string; keyConcerns: string; actionPoints: string;
+    equityFundraising: string; debtFundraising: string; burnReduction: string; nearTermExit: string;
+  }>>({});
+  const [expandedReview, setExpandedReview] = useState<string | null>(null);
+
+  const { fundFilter, setFundFilter } = useFundFilter();
+  const { milestone } = useMilestone();
+  const isM1 = milestone === 'm1';
+
+  // Mock founder submission data for Q1 2026
+  const founderSubmissionStatus: Record<string, 'submitted' | 'partial' | 'sent' | 'not_sent'> = {
+    '1': 'submitted', '2': 'sent', '3': 'sent', '4': 'partial', '5': 'not_sent',
+  };
+  const getFounderStatus = (id: string) => founderSubmissionStatus[id] ?? (parseInt(id) % 3 === 0 ? 'partial' : 'submitted');
+  const founderStatusConfig = {
+    submitted: { label: 'Submitted', dot: '#10b981', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
+    partial:   { label: 'Partial',   dot: '#f59e0b', bg: 'bg-amber-50',   text: 'text-amber-700',   border: 'border-amber-200' },
+    sent:      { label: 'Awaiting',  dot: '#6366f1', bg: 'bg-indigo-50',  text: 'text-indigo-700',  border: 'border-indigo-200' },
+    not_sent:  { label: 'Not sent',  dot: '#94a3b8', bg: 'bg-slate-50',   text: 'text-slate-400',   border: 'border-slate-200' },
+  };
+
+  // Commentary completeness
+  const isCommentaryDone = (id: string) => {
+    const cc = companyCommentary[id];
+    if (!cc) return false;
+    return (cc.summary || '').trim().length > 0 && (cc.keyConcerns || '').trim().length > 0;
+  };
+  const doneCount = sortedCompanies.filter(c => isCommentaryDone(c.id)).length;
+  const qCurrent = sortedCompanies[currentIndex];
+  const qCurrentFlags = flags.filter(f => f.companyId === qCurrent?.id);
+
+  // ── List view ─────────────────────────────────────────────────────
+  if (mode === 'list') {
+    return (
+      <div className="max-w-[900px] mx-auto space-y-6">
+        <div className="flex items-center justify-between">
           <div>
-            <label className="text-[12px] text-muted-foreground flex items-center gap-1">
-              <Users className="w-3 h-3" /> Team Commentary
-            </label>
-            <textarea
-              className="w-full text-[12px] border border-border rounded-lg px-3 py-2 mt-1 bg-background resize-none h-20"
-              placeholder={`Add commentary for ${current.name}...`}
-              value={commentaries[current.id] || ''}
-              onChange={e => setCommentaries(prev => ({ ...prev, [current.id]: e.target.value }))}
-            />
+            <h1 className="text-[24px] font-semibold tracking-tight text-slate-800">Quarterly Reviews</h1>
+            <p className="text-[13px] text-slate-500 mt-1">
+              Full team review — add commentary per company, then export Asset Metrix XLSX{!isM1 && ' or LP Report PDF'}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <select
+              value={fundFilter}
+              onChange={e => setFundFilter(e.target.value as any)}
+              className="text-[13px] border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-700"
+            >
+              <option value="all">All Funds</option>
+              {funds.map(f => <option key={f.id} value={f.name}>{f.name}</option>)}
+            </select>
+            <button
+              onClick={() => { setMode('active'); setCurrentIndex(0); setQuarterlyStep(1); }}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg text-[13px] hover:bg-indigo-600 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" /> Start Q1 2026 Review
+            </button>
+          </div>
+        </div>
+
+        {/* Upcoming / Current quarter callout */}
+        <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center">
+              <Calendar className="w-5 h-5 text-indigo-600" />
+            </div>
+            <div>
+              <p className="text-[14px] font-medium text-indigo-900">Q1 2026 — Ready for Review</p>
+              <p className="text-[12px] text-indigo-600 mt-0.5">
+                {sortedCompanies.length} companies · Founder data collection {Math.round(sortedCompanies.length * 0.6)} of {sortedCompanies.length} submitted
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => { setMode('active'); setCurrentIndex(0); setQuarterlyStep(1); }}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg text-[13px] hover:bg-indigo-600 transition-colors"
+          >
+            Begin Review <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* Review history list */}
+        <div>
+          <h3 className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400 mb-3">Past Quarterly Reviews</h3>
+          <div className="bg-white rounded-xl border border-slate-200/60 divide-y divide-slate-100">
+            {quarterlyReviewsHistory.map((review) => (
+              <div key={review.id}>
+                <button
+                  onClick={() => setExpandedReview(expandedReview === review.id ? null : review.id)}
+                  className="w-full p-3.5 flex items-center gap-3 text-[13px] hover:bg-slate-50 transition-colors text-left"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
+                    <FileText className="w-4.5 h-4.5 text-purple-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[14px] font-medium text-slate-800">{review.quarter}</p>
+                    <p className="text-[12px] text-slate-500 mt-0.5">{review.date} · {review.completedBy} · {review.duration}</p>
+                  </div>
+                  <div className="flex items-center gap-4 flex-shrink-0">
+                    <div className="text-right">
+                      <p className="text-[12px] text-slate-700">{review.companies} companies</p>
+                      <p className="text-[11px] text-slate-400">{review.changes} RAG changes</p>
+                    </div>
+                    {review.exported && (
+                      <span className="text-[11px] px-2.5 py-1 rounded-lg font-medium bg-purple-50 text-purple-700 flex items-center gap-1">
+                        <Download className="w-3 h-3" /> Exported
+                      </span>
+                    )}
+                    <span className={`text-[11px] px-2.5 py-1 rounded-lg font-medium ${
+                      review.status === 'Complete' ? 'bg-emerald-50 text-emerald-700' :
+                      review.status === 'In Progress' ? 'bg-amber-50 text-amber-700' :
+                      'bg-slate-50 text-slate-500'
+                    }`}>{review.status}</span>
+                    <ChevronRight className={`w-4 h-4 text-slate-400 transition-transform ${expandedReview === review.id ? 'rotate-90' : ''}`} />
+                  </div>
+                </button>
+                {expandedReview === review.id && (
+                  <ReviewDetailExpanded review={review} navigate={navigate} />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── LP Report Preview ─────────────────────────────────────────────
+  if (mode === 'lp-report-preview') {
+    return (
+      <LPReportPreview
+        fund={selectedFund}
+        companies={companies.filter(c => c.fund === selectedFund.name)}
+        managersCommentary={managersCommentary}
+        otherDevelopments={otherDevelopments}
+        reportDate="31 March 2026"
+        onClose={() => { setMode('active'); setQuarterlyStep(2); }}
+      />
+    );
+  }
+
+  // ── Active quarterly review flow ──────────────────────────────────
+  const steps = [
+    { num: 1, label: 'Team Commentary' },
+    { num: 2, label: 'Export' },
+  ];
+
+  return (
+    <div className="max-w-[1100px] mx-auto space-y-5">
+      <div className="flex items-center justify-between">
+        <button onClick={() => setMode('list')} className="text-[13px] text-slate-500 hover:text-slate-700 transition-colors">← Back to Reviews</button>
+        <h2 className="text-[18px] font-semibold tracking-tight text-slate-800">
+          {isM1 ? 'Q1 2026 Quarterly Review' : 'Q1 2026 LP Report'}
+        </h2>
+        {!isM1 && <span className="text-[12px] text-slate-500">Step {quarterlyStep} of 2</span>}
+        {isM1 && (
+          <button
+            onClick={() => { generateAssetMetrixXLSX(selectedFund, companies); }}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg text-[13px] hover:bg-indigo-600 transition-colors"
+          >
+            <Download className="w-3.5 h-3.5" /> Export Asset Metrix
+          </button>
+        )}
+      </div>
+
+      {/* 2-step stepper (hidden in M1) */}
+      {!isM1 && <div className="flex items-center gap-2">
+        {steps.map((s) => (
+          <button key={s.num} onClick={() => setQuarterlyStep(s.num)}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[12px] font-medium transition-all ${
+              quarterlyStep === s.num ? 'bg-indigo-500 text-white ring-2 ring-indigo-500 ring-offset-2' :
+              quarterlyStep > s.num ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
+            }`}>
+            {quarterlyStep > s.num ? <CheckCircle className="w-3.5 h-3.5" /> : (
+              <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[11px]">{s.num}</span>
+            )}
+            {s.label}
+          </button>
+        ))}
+      </div>}
+
+      {/* ── Step 1: Team Commentary — sidebar + main panel ─────── */}
+      {quarterlyStep === 1 && (
+        <div className="flex gap-4">
+          {/* Left sidebar */}
+          <div className="w-[220px] flex-shrink-0">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400">Companies</p>
+              <span className="text-[11px] text-slate-500">{doneCount}/{sortedCompanies.length} done</span>
+            </div>
+            <div className="bg-white rounded-xl border border-slate-200/60 divide-y divide-slate-100 max-h-[680px] overflow-y-auto">
+              {sortedCompanies.map((c, i) => {
+                const isCurrent = i === currentIndex;
+                const done = isCommentaryDone(c.id);
+                const fStatus = getFounderStatus(c.id);
+                const fCfg = founderStatusConfig[fStatus];
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => setCurrentIndex(i)}
+                    className={`w-full p-2.5 flex items-center gap-2 text-left transition-colors ${
+                      isCurrent ? 'bg-indigo-50 border-l-2 border-l-indigo-500' :
+                      done ? 'bg-emerald-50/40' : 'hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="w-6 h-6 rounded flex items-center justify-center text-white text-[10px] flex-shrink-0" style={{ background: c.logoColor }}>{c.name[0]}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-[12px] truncate ${isCurrent ? 'text-indigo-700 font-medium' : 'text-slate-700'}`}>{c.name}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: getRAGColor(c.rag) }} title={c.rag} />
+                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: fCfg.dot }} title={`Founder: ${fCfg.label}`} />
+                        <span className="text-[10px] text-slate-400 truncate">{c.stage}</span>
+                      </div>
+                    </div>
+                    {done && <CheckCircle className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-2.5 space-y-1">
+              <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                <div className="w-2 h-2 rounded-full bg-slate-300" />RAG status
+                <div className="w-2 h-2 rounded-full bg-indigo-400 ml-2" />Founder form
+              </div>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3 pt-2">
-            <button onClick={handleReview} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-[13px] flex items-center gap-1.5">
-              <Check className="w-4 h-4" /> Mark Reviewed
+          {/* Right — company commentary panel */}
+          {qCurrent && (
+            <div className="flex-1 min-w-0 space-y-3">
+              {/* Company header */}
+              <div className="bg-white rounded-xl border border-slate-200/60 p-4">
+                <div className="flex items-start gap-4">
+                  <div className="w-11 h-11 rounded-xl flex items-center justify-center text-white text-[16px] flex-shrink-0" style={{ background: qCurrent.logoColor }}>
+                    {qCurrent.name[0]}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-[17px] font-semibold text-slate-800">{qCurrent.name}</h2>
+                      <div className="w-2.5 h-2.5 rounded-full" style={{ background: getRAGColor(qCurrent.rag) }} title={qCurrent.rag} />
+                      <span className="text-[11px] px-2 py-0.5 bg-slate-100 rounded-md text-slate-600">{qCurrent.stage}</span>
+                      <span className="text-[11px] px-2 py-0.5 bg-slate-100 rounded-md text-slate-600">{qCurrent.fund}</span>
+                      <div className="flex items-center gap-1 ml-auto">
+                        {(qCurrent.ownerAvatars || []).map((a: string, i: number) => (
+                          <div key={i} className="w-5 h-5 rounded-full bg-indigo-500 text-white flex items-center justify-center text-[9px]">{a}</div>
+                        ))}
+                        <span className="text-[11px] text-slate-500">{qCurrent.owners.join(', ')}</span>
+                      </div>
+                    </div>
+                    <p className="text-[12px] text-slate-500 mt-0.5">{qCurrent.description}</p>
+                  </div>
+                  <button onClick={() => navigate(`/company/${qCurrent.id}`)} className="text-[11px] text-indigo-500 hover:text-indigo-700 flex items-center gap-0.5 flex-shrink-0">
+                    Full detail <ChevronRight className="w-3 h-3" />
+                  </button>
+                </div>
+
+                {/* KPIs strip */}
+                <div className="grid grid-cols-6 gap-2 mt-3">
+                  {[
+                    { label: 'MRR', value: formatCurrency(qCurrent.mrr, qCurrent.currency) },
+                    { label: 'ARR', value: formatCurrency(qCurrent.mrr * 12, qCurrent.currency) },
+                    { label: 'Burn/mo', value: formatCurrency(qCurrent.burn, qCurrent.currency) },
+                    { label: 'Runway', value: qCurrent.runway + ' mo', red: qCurrent.runway < 6 },
+                    { label: 'Headcount', value: qCurrent.headcount.toString() },
+                    { label: 'Customers', value: qCurrent.customers.toString() },
+                  ].map(m => (
+                    <div key={m.label} className="bg-slate-50 rounded-lg p-2.5">
+                      <p className="text-[10px] text-slate-400">{m.label}</p>
+                      <p className={`text-[13px] font-semibold font-mono-num mt-0.5 ${m.red ? 'text-red-600' : 'text-slate-700'}`}>{m.value}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Founder submission panel */}
+              {(() => {
+                const fStatus = getFounderStatus(qCurrent.id);
+                const fCfg = founderStatusConfig[fStatus];
+                return (
+                  <div className={`rounded-xl border p-3.5 ${fCfg.bg} ${fCfg.border}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <p className="text-[12px] font-medium text-slate-700">Founder Submission — Q1 2026</p>
+                        <span className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md border ${fCfg.bg} ${fCfg.text} ${fCfg.border}`}>
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: fCfg.dot }} />
+                          {fCfg.label}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {(fStatus === 'submitted' || fStatus === 'partial') && (
+                          <button onClick={() => navigate(`/form/${qCurrent.id}`)} className="text-[11px] text-indigo-500 hover:text-indigo-700 flex items-center gap-0.5">
+                            View form <ChevronRight className="w-3 h-3" />
+                          </button>
+                        )}
+                        <button className={`flex items-center gap-1 text-[11px] px-3 py-1.5 rounded-lg transition-colors ${
+                          fStatus === 'not_sent'
+                            ? 'bg-indigo-500 text-white hover:bg-indigo-600'
+                            : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                        }`}>
+                          <Send className="w-3 h-3" />
+                          {fStatus === 'not_sent' ? 'Send form' : fStatus === 'sent' ? 'Resend reminder' : 'Resend form'}
+                        </button>
+                      </div>
+                    </div>
+                    {(fStatus === 'submitted' || fStatus === 'partial') ? (
+                      <div className="overflow-hidden rounded-lg border border-white/80 max-h-[420px] overflow-y-auto">
+                        <table className="w-full text-[11px]">
+                          <thead className="sticky top-0 z-10">
+                            <tr className="bg-white/90 backdrop-blur border-b border-slate-100/50">
+                              <th className="text-left px-2.5 py-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.06em] w-[160px]">Metric</th>
+                              {['Jan 2026', 'Feb 2026', 'Mar 2026'].map(m => (
+                                <th key={m} className="text-right px-2.5 py-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.06em]">{m}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(() => {
+                              const allMetrics: { label: string; key: string; isCurrency: boolean; isPercentage?: boolean; section: string }[] = [
+                                { label: 'Revenue (core)', key: 'revenue', isCurrency: true, section: 'Revenue & Growth' },
+                                { label: 'Revenue (other)', key: 'revenueOther', isCurrency: true, section: 'Revenue & Growth' },
+                                { label: 'ARR', key: 'arr', isCurrency: true, section: 'Revenue & Growth' },
+                                { label: 'Bookings', key: 'bookings', isCurrency: true, section: 'Revenue & Growth' },
+                                { label: 'No. of Customers', key: 'customerCount', isCurrency: false, section: 'Revenue & Growth' },
+                                { label: 'Net Retention Rate %', key: 'netRetentionRate', isCurrency: false, isPercentage: true, section: 'Revenue & Growth' },
+                                { label: 'Cost of Sales', key: 'cogs', isCurrency: true, section: 'Costs' },
+                                { label: 'R&D Costs', key: 'rdCosts', isCurrency: true, section: 'Costs' },
+                                { label: 'Sales & Marketing', key: 'salesMarketingCosts', isCurrency: true, section: 'Costs' },
+                                { label: 'General & Admin', key: 'generalAdminCosts', isCurrency: true, section: 'Costs' },
+                                { label: 'EBITDA / (LBITDA)', key: 'ebitda', isCurrency: true, section: 'Profitability' },
+                                { label: 'Cash Balance', key: 'cashBalance', isCurrency: true, section: 'Cash Position' },
+                                { label: 'Net Assets / (Liabilities)', key: 'netAssetsLiabilities', isCurrency: true, section: 'Cash Position' },
+                                { label: 'Cash Burn in Month', key: 'monthlyNetBurn', isCurrency: true, section: 'Cash Position' },
+                                { label: 'Headcount — Male (FTE)', key: 'headcountMale', isCurrency: false, section: 'Team & Diversity' },
+                                { label: 'Headcount — Female (FTE)', key: 'headcountFemale', isCurrency: false, section: 'Team & Diversity' },
+                                { label: 'Headcount — Ethnic Minority (FTE)', key: 'headcountEthnicMinority', isCurrency: false, section: 'Team & Diversity' },
+                                { label: 'Board — Male', key: 'boardMale', isCurrency: false, section: 'Team & Diversity' },
+                                { label: 'Board — Female', key: 'boardFemale', isCurrency: false, section: 'Team & Diversity' },
+                                { label: 'Board — Ethnic Minority', key: 'boardEthnicMinority', isCurrency: false, section: 'Team & Diversity' },
+                              ];
+                              let lastSection = '';
+                              return allMetrics.map(metric => {
+                                const showSection = metric.section !== lastSection;
+                                lastSection = metric.section;
+                                return (
+                                  <>
+                                    {showSection && (
+                                      <tr key={`section-${metric.section}`}>
+                                        <td colSpan={4} className="px-2.5 pt-2 pb-1 text-[10px] font-semibold text-slate-500 uppercase tracking-[0.08em] bg-slate-50/30 border-t border-slate-100/50">
+                                          {metric.section}
+                                        </td>
+                                      </tr>
+                                    )}
+                                    <tr key={metric.key} className="hover:bg-white/40 border-t border-slate-50/50">
+                                      <td className="px-2.5 py-1 text-slate-600">{metric.label}</td>
+                                      {['2026-01', '2026-02', '2026-03'].map(iso => {
+                                        const mData = qCurrent.monthlyFinancials.find((f: any) => f.month === iso);
+                                        const val = mData?.[metric.key as keyof typeof mData];
+                                        return (
+                                          <td key={iso} className="px-2.5 py-1 text-right font-mono-num text-slate-700">
+                                            {val != null
+                                              ? metric.isCurrency ? formatCurrency(val as number, qCurrent.currency)
+                                              : metric.isPercentage ? val + '%'
+                                              : val.toString()
+                                              : <span className="text-slate-300">—</span>
+                                            }
+                                          </td>
+                                        );
+                                      })}
+                                    </tr>
+                                  </>
+                                );
+                              });
+                            })()}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : fStatus === 'sent' ? (
+                      <p className="text-[12px] text-slate-500">Form sent — awaiting founder response. You can send a reminder or proceed with last known values.</p>
+                    ) : (
+                      <p className="text-[12px] text-slate-500">No form has been sent to this founder for Q1 2026. Send the form to collect validated data.</p>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Alerts */}
+              {qCurrentFlags.length > 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 space-y-2">
+                  <p className="text-[11px] font-medium text-amber-700 uppercase tracking-[0.06em]">Active Alerts</p>
+                  {qCurrentFlags.map(flag => (
+                    <div key={flag.id} className="flex items-start gap-2">
+                      <FlagIcon type={flag.type} size={13} />
+                      <p className="text-[12px] text-slate-700">{flag.headline}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Team Commentary fields */}
+              {(() => {
+                const cc = companyCommentary[qCurrent.id] || {
+                  recentProgress: qCurrent.recentProgress, rag: qCurrent.rag, summary: qCurrent.summary,
+                  keyConcerns: qCurrent.keyConcerns.join('\n'), actionPoints: qCurrent.actionPoints.join('\n'),
+                  equityFundraising: qCurrent.equityFundraisingStatus, debtFundraising: qCurrent.debtFundraisingStatus,
+                  burnReduction: qCurrent.burnReductionActions, nearTermExit: qCurrent.nearTermExit,
+                };
+                const update = (field: string, value: string) => setCompanyCommentary(prev => ({
+                  ...prev,
+                  [qCurrent.id]: { ...(prev[qCurrent.id] || cc), [field]: value },
+                }));
+                const summaryWords = (cc.summary || '').split(/\s+/).filter(Boolean).length;
+                const concernsWords = (cc.keyConcerns || '').split(/\s+/).filter(Boolean).length;
+                const actionsWords = (cc.actionPoints || '').split(/\s+/).filter(Boolean).length;
+
+                return (
+                  <div className="bg-white rounded-xl border border-slate-200/60 p-4 space-y-3">
+                    <p className="text-[12px] font-medium text-slate-700">Team Commentary</p>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <label className="text-[11px] text-slate-500">RAG Status</label>
+                        <select
+                          className="w-full text-[12px] border border-slate-200 rounded-lg px-2 py-1.5 mt-1 bg-white"
+                          defaultValue={cc.rag}
+                          onChange={e => update('rag', e.target.value)}
+                        >
+                          <option>Green</option><option>Amber</option><option>Red</option><option>Grey</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[11px] text-slate-500">Equity Fundraising</label>
+                        <input
+                          className="w-full text-[12px] border border-slate-200 rounded-lg px-2 py-1.5 mt-1 bg-white"
+                          defaultValue={cc.equityFundraising}
+                          onBlur={e => update('equityFundraising', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] text-slate-500">Debt Fundraising</label>
+                        <input
+                          className="w-full text-[12px] border border-slate-200 rounded-lg px-2 py-1.5 mt-1 bg-white"
+                          defaultValue={cc.debtFundraising}
+                          onBlur={e => update('debtFundraising', e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] text-slate-500">Recent Progress</label>
+                      <textarea
+                        className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white resize-none h-12"
+                        defaultValue={cc.recentProgress}
+                        onBlur={e => update('recentProgress', e.target.value)}
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <label className="text-[11px] text-slate-500">Summary <span className="text-red-400">*</span></label>
+                        <span className={`text-[10px] font-mono-num ${summaryWords < 10 ? 'text-amber-500' : 'text-emerald-500'}`}>{summaryWords} words</span>
+                      </div>
+                      <textarea
+                        className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white resize-none h-16"
+                        defaultValue={cc.summary}
+                        onBlur={e => update('summary', e.target.value)}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <label className="text-[11px] text-slate-500">Key Concerns <span className="text-red-400">*</span></label>
+                          <span className={`text-[10px] font-mono-num ${concernsWords < 5 ? 'text-amber-500' : 'text-emerald-500'}`}>{concernsWords} words</span>
+                        </div>
+                        <textarea
+                          className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white resize-none h-20"
+                          defaultValue={cc.keyConcerns}
+                          onBlur={e => update('keyConcerns', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <label className="text-[11px] text-slate-500">Action Points</label>
+                          <span className={`text-[10px] font-mono-num ${actionsWords < 5 ? 'text-amber-500' : 'text-slate-400'}`}>{actionsWords} words</span>
+                        </div>
+                        <textarea
+                          className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white resize-none h-20"
+                          defaultValue={cc.actionPoints}
+                          onBlur={e => update('actionPoints', e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[11px] text-slate-500">Burn Reduction Actions</label>
+                        <input className="w-full text-[12px] border border-slate-200 rounded-lg px-2 py-1.5 mt-1 bg-white" defaultValue={cc.burnReduction} onBlur={e => update('burnReduction', e.target.value)} />
+                      </div>
+                      <div>
+                        <label className="text-[11px] text-slate-500">Near-term Exit</label>
+                        <input className="w-full text-[12px] border border-slate-200 rounded-lg px-2 py-1.5 mt-1 bg-white" defaultValue={cc.nearTermExit} onBlur={e => update('nearTermExit', e.target.value)} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Navigation */}
+              <div className="flex items-center justify-between pt-1">
+                <button
+                  onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
+                  disabled={currentIndex === 0}
+                  className="text-[13px] text-slate-500 hover:text-slate-700 disabled:opacity-30 transition-colors"
+                >
+                  ← Previous
+                </button>
+                <div className="flex items-center gap-3">
+                  <span className="text-[12px] text-slate-400">{currentIndex + 1} of {sortedCompanies.length}</span>
+                  {currentIndex < sortedCompanies.length - 1 ? (
+                    <button
+                      onClick={() => setCurrentIndex(currentIndex + 1)}
+                      className="px-4 py-2 bg-indigo-500 text-white rounded-lg text-[13px] hover:bg-indigo-600 transition-colors"
+                    >
+                      Next company →
+                    </button>
+                  ) : !isM1 ? (
+                    <button
+                      onClick={() => setQuarterlyStep(2)}
+                      className="px-4 py-2 bg-indigo-500 text-white rounded-lg text-[13px] hover:bg-indigo-600 transition-colors flex items-center gap-1.5"
+                    >
+                      <CheckCircle className="w-4 h-4" /> Finish & Export
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => { setCurrentIndex(0); }}
+                      className="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-[13px] hover:bg-slate-200 transition-colors"
+                    >
+                      Back to first
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Step 2: Export ─────────────────────────────────────── */}
+      {!isM1 && quarterlyStep === 2 && (
+        <div className="space-y-4">
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-6 text-center">
+            <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
+            <h3 className="text-[18px] mb-2 text-slate-700 font-semibold">Ready to Export</h3>
+            <p className="text-[13px] text-slate-500 mb-4">
+              Q1 2026 data is ready. {activeCompanies.length} companies reviewed. Export Asset Metrix XLSX or optionally generate LP Report PDF.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 bg-white rounded-xl border border-slate-200/60 p-3">
+            <label className="text-[12px] text-slate-500">Export for:</label>
+            <select
+              className="text-[13px] border border-slate-200 rounded-lg px-3 py-1.5 bg-white"
+              value={selectedFund.id}
+              onChange={e => setSelectedFund(funds.find(f => f.id === e.target.value) || funds[0])}
+            >
+              {funds.map(f => (
+                <option key={f.id} value={f.id}>{f.name} ({f.currency} · {f.vintage})</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <button
+              onClick={() => { generateAssetMetrixXLSX(selectedFund, companies); }}
+              className="bg-white border-2 border-primary/30 rounded-xl p-5 hover:shadow-lg hover:border-primary/50 transition-all text-left ring-2 ring-primary/10 relative"
+            >
+              <div className="absolute top-3 right-3 text-[10px] px-2 py-0.5 bg-indigo-500 text-white rounded-full font-medium">Primary</div>
+              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mb-3">
+                <Download className="w-5 h-5 text-purple-600" />
+              </div>
+              <h3 className="text-[14px] mb-1 text-slate-700 font-medium">Asset Metrix XLSX</h3>
+              <p className="text-[11px] text-slate-500">Multi-sheet XLSX matching Asset Metrix template: Company Commentary, Static Data, and Periodic KPIs.</p>
+              <p className="text-[11px] text-emerald-600 mt-2 flex items-center gap-1"><Download className="w-3 h-3" /> Download XLSX</p>
             </button>
-            <button onClick={handleSkip} className="px-4 py-2 border border-border rounded-lg text-[13px] hover:bg-muted flex items-center gap-1.5">
-              <SkipForward className="w-4 h-4" /> Skip
+            <button
+              onClick={() => setMode('lp-report-preview')}
+              className="bg-white rounded-xl border border-slate-200/60 p-5 hover:shadow-md transition-shadow text-left relative"
+            >
+              <div className="absolute top-3 right-3 text-[10px] px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full font-medium">Optional</div>
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mb-3">
+                <Printer className="w-5 h-5 text-blue-600" />
+              </div>
+              <h3 className="text-[14px] mb-1 text-slate-700 font-medium">LP Report PDF</h3>
+              <p className="text-[11px] text-slate-500">Full quarterly report matching Crane structure: cover, standing data, commentary, company snapshots.</p>
+              <p className="text-[11px] text-indigo-600 mt-2 flex items-center gap-1">Preview & Print →</p>
             </button>
-            <button onClick={() => navigate(`/company/${current.id}`)} className="ml-auto text-[12px] text-muted-foreground hover:text-foreground flex items-center gap-1">
-              View Full Detail <ChevronRight className="w-3 h-3" />
+            <button
+              onClick={() => { const csv = generateFundSummaryCSV(selectedFund); downloadCSV(csv, `${selectedFund.name.replace(/\s/g, '_')}_Fund_Summary_Q1_2026.csv`); }}
+              className="bg-white rounded-xl border border-slate-200/60 p-5 hover:shadow-md transition-shadow text-left relative"
+            >
+              <div className="absolute top-3 right-3 text-[10px] px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full font-medium">Optional</div>
+              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mb-3">
+                <FileText className="w-5 h-5 text-gray-600" />
+              </div>
+              <h3 className="text-[14px] mb-1 text-slate-700 font-medium">Fund Summary CSV</h3>
+              <p className="text-[11px] text-slate-500">TVPI history, NAV waterfall, uses of funds, geographic distribution. Full fund data export.</p>
+              <p className="text-[11px] text-emerald-600 mt-2 flex items-center gap-1"><Download className="w-3 h-3" /> Download CSV</p>
             </button>
+          </div>
+
+          <div className="flex justify-between">
+            <button onClick={() => { setQuarterlyStep(1); setCurrentIndex(0); }} className="text-[13px] text-slate-500">← Back to Commentary</button>
+            <button onClick={() => setMode('list')} className="px-4 py-2 border border-slate-200 rounded-lg text-[13px]">Done</button>
           </div>
         </div>
       )}
     </div>
   );
+}
+
+// ── Legacy export for backwards compatibility ─────────────────────────
+export function PortfolioReview() {
+  return <MonthlyReview />;
 }

@@ -1,415 +1,694 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import {
-  Building2, AlertTriangle, Calendar, CheckSquare, Clock,
-  ChevronRight, Check, Plus, ArrowUpRight, ArrowDownRight, FileText,
-  Bell, Flame, Zap, Activity, TrendingUp, Globe, Users,
-  RotateCcw, MessageSquare, Target, DollarSign, BarChart3
+  AlertTriangle,
+  ArrowDownRight,
+  ArrowUpRight,
+  Calendar,
+  Check,
+  CheckSquare,
+  ChevronRight,
+  Clock3,
+  DollarSign,
+  FileText,
+  Flame,
+  Globe,
+  ListTodo,
+  MessageSquare,
+  Phone,
+  RotateCcw,
+  StickyNote,
+  Target,
+  TrendingUp,
+  Users,
 } from 'lucide-react';
 import { SparklineChart } from './SparklineChart';
 import {
-  currentUser, companies, formatCurrency, getHealthColor,
+  companies,
+  currentUser,
+  formatCurrency,
+  getHealthColor,
+  getRAGColor,
+  type Flag,
+  type Fund,
 } from './mock-data';
-import { FlagIcon } from './FlagIcon';
 import { useWorkflow } from './WorkflowContext';
 import { FlagActionDropdown } from './FlagActionDropdown';
-import { NewTodoModal, LogNoteModal, ScheduleCheckInModal } from './ActionModals';
+import { LogNoteModal, NewTodoModal, ScheduleCheckInModal } from './ActionModals';
+import { useFundFilter } from './Layout';
 
-// Activity feed icon mapping (same as AlertsFeed.tsx)
 const activityIcons: Record<string, typeof TrendingUp> = {
-  'Status Change': RotateCcw, 'Metric Update': TrendingUp, 'Burn Acceleration': Flame,
-  'Document Ingested': FileText, 'External Signal': Globe, 'Key Hire / Departure': Users,
-  'Fundraising Signal': DollarSign, 'Board Upcoming': Calendar, 'Engagement Gap': MessageSquare,
-  'Runway Alert': AlertTriangle, 'Pivot Signal': RotateCcw, 'Customer Signal': Target,
-  'Note Logged': FileText, 'Action Created': CheckSquare, 'Action Completed': Check,
-  'Flag Resolved': CheckSquare, 'Flag Converted': ListTodoIcon, 'Check-in Scheduled': Calendar,
+  'Status Change': RotateCcw,
+  'Metric Update': TrendingUp,
+  'Burn Acceleration': Flame,
+  'Document Ingested': FileText,
+  'External Signal': Globe,
+  'Key Hire / Departure': Users,
+  'Fundraising Signal': DollarSign,
+  'Board Upcoming': Calendar,
+  'Engagement Gap': MessageSquare,
+  'Runway Alert': AlertTriangle,
+  'Pivot Signal': RotateCcw,
+  'Customer Signal': Target,
+  'Note Logged': FileText,
+  'Action Created': CheckSquare,
+  'Action Completed': CheckSquare,
+  'Flag Resolved': CheckSquare,
+  'Flag Converted': ListTodo,
+  'Check-in Scheduled': Calendar,
 };
-function ListTodoIcon(props: any) { return <CheckSquare {...props} />; }
 
-const severityColors: Record<string, string> = {
-  high: 'text-red-600', medium: 'text-amber-600', low: 'text-blue-600', info: 'text-gray-500',
-};
+type MaterialMoment =
+  | {
+      id: string;
+      kind: 'flag';
+      companyId: string;
+      companyName: string;
+      title: string;
+      detail: string;
+      meta: string;
+      emphasis: 'high' | 'medium';
+      flag: Flag;
+    }
+  | {
+      id: string;
+      kind: 'board';
+      companyId: string;
+      companyName: string;
+      title: string;
+      detail: string;
+      meta: string;
+      emphasis: 'medium';
+    }
+  | {
+      id: string;
+      kind: 'activity';
+      companyId: string;
+      companyName: string;
+      title: string;
+      detail: string;
+      meta: string;
+      emphasis: 'medium' | 'low';
+      activityType: string;
+    };
+
+function formatShortDate(value: string) {
+  return new Date(value).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
+
+function getDaysUntilLabel(targetDate: string, today: Date) {
+  const daysUntil = Math.ceil((new Date(targetDate).getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  if (daysUntil <= 0) return 'Today';
+  if (daysUntil === 1) return 'Tomorrow';
+  return `${daysUntil}d away`;
+}
+
+function getCompanyPriorityScore(companyId: string, flagsByCompany: Record<string, Flag[]>, today: Date, lastUpdate: string, runway: number, nextBoard: string | null) {
+  const companyFlags = flagsByCompany[companyId] || [];
+  const highFlags = companyFlags.filter((flag) => flag.urgency === 'high').length;
+  const mediumFlags = companyFlags.filter((flag) => flag.urgency === 'medium').length;
+  const staleDays = Math.floor((today.getTime() - new Date(lastUpdate).getTime()) / (1000 * 60 * 60 * 24));
+  const boardDays = nextBoard ? Math.ceil((new Date(nextBoard).getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) : null;
+
+  let score = highFlags * 6 + mediumFlags * 3;
+  if (runway <= 6) score += 5;
+  if (runway <= 12) score += 2;
+  if (staleDays >= 30) score += 3;
+  if (boardDays !== null && boardDays <= 14) score += 4;
+  return score;
+}
 
 export function Dashboard() {
   const navigate = useNavigate();
+  const { fundFilter, setFundFilter } = useFundFilter();
   const { todos, flags, activityFeed, toggleTodo } = useWorkflow();
   const [showNewTodo, setShowNewTodo] = useState(false);
+  const [showLogNote, setShowLogNote] = useState(false);
   const [showCheckIn, setShowCheckIn] = useState<{ open: boolean; companyName?: string }>({ open: false });
 
-  const myCompanies = companies.filter(c => c.owner === currentUser.name && c.lifecycle === 'Active — Core');
-  const myFlags = flags.filter(f => myCompanies.some(c => c.id === f.companyId));
-  const myTodos = todos; // From context — shared across pages, persisted
-  const needsAttention = myFlags.length;
-  const upcomingBoards = myCompanies.filter(c => c.nextBoard).length;
-  const overdueTodos = myTodos.filter(t => !t.completed && new Date(t.dueDate) < new Date()).length;
+  const today = new Date();
+  const pageDate = today.toLocaleDateString('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
 
-  const urgentCards = [
-    { label: 'Needs Attention', value: needsAttention, icon: AlertTriangle, color: '#F59E0B', urgent: needsAttention > 0, onClick: () => navigate('/matrix') },
-    { label: 'Overdue Actions', value: overdueTodos, icon: CheckSquare, color: overdueTodos > 0 ? '#EF4444' : '#10B981', urgent: overdueTodos > 0 },
+  const myCompanies = companies.filter((company) => (
+    company.owners.includes(currentUser.name) && company.lifecycle === 'Active — Core'
+  ));
+  const filteredCompanies = fundFilter === 'all'
+    ? myCompanies
+    : myCompanies.filter((company) => company.fund === fundFilter);
+  const companyIds = new Set(filteredCompanies.map((company) => company.id));
+  const companyNames = new Set(filteredCompanies.map((company) => company.name));
+
+  const filteredFlags = flags.filter((flag) => companyIds.has(flag.companyId));
+  const flagsByCompany = filteredFlags.reduce<Record<string, Flag[]>>((acc, flag) => {
+    if (!acc[flag.companyId]) acc[flag.companyId] = [];
+    acc[flag.companyId].push(flag);
+    return acc;
+  }, {});
+
+  const filteredTodos = todos.filter((todo) => companyNames.has(todo.companyName));
+  const filteredActivity = activityFeed.filter((event) => companyNames.has(event.companyName));
+
+  const overdueTodos = filteredTodos.filter((todo) => !todo.completed && new Date(todo.dueDate) < today);
+  const urgentFlags = filteredFlags.filter((flag) => flag.urgency === 'high');
+  const boardsSoon = filteredCompanies.filter((company) => {
+    if (!company.nextBoard) return false;
+    const daysUntil = Math.ceil((new Date(company.nextBoard).getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    return daysUntil <= 14;
+  });
+  const staleCompanies = filteredCompanies.filter((company) => {
+    const daysSinceUpdate = Math.floor((today.getTime() - new Date(company.lastUpdate).getTime()) / (1000 * 60 * 60 * 24));
+    return daysSinceUpdate >= 30;
+  });
+
+  const averageRunway = filteredCompanies.length > 0
+    ? Math.round(filteredCompanies.reduce((sum, company) => sum + company.runway, 0) / filteredCompanies.length)
+    : 0;
+  const onTrackCount = filteredCompanies.filter((company) => company.health === 'On Track').length;
+  const atRiskCount = filteredCompanies.filter((company) => company.health === 'At Risk').length;
+  const underperformingCount = filteredCompanies.filter((company) => company.health === 'Underperforming').length;
+  const materialSignalCount = filteredActivity.filter((event) => (
+    event.severity === 'high' || event.severity === 'medium'
+  )).length;
+
+  const materialMomentCandidates: MaterialMoment[] = [
+    ...urgentFlags.slice(0, 2).map((flag) => ({
+      id: `flag-${flag.id}`,
+      kind: 'flag' as const,
+      companyId: flag.companyId,
+      companyName: flag.companyName,
+      title: `${flag.companyName} needs intervention`,
+      detail: flag.headline,
+      meta: flag.suggestedAction,
+      emphasis: flag.urgency === 'high' ? 'high' : 'medium',
+      flag,
+    })),
+    ...boardsSoon
+      .sort((a, b) => new Date(a.nextBoard!).getTime() - new Date(b.nextBoard!).getTime())
+      .slice(0, 2)
+      .map((company) => ({
+        id: `board-${company.id}`,
+        kind: 'board' as const,
+        companyId: company.id,
+        companyName: company.name,
+        title: `${company.name} board meeting is approaching`,
+        detail: `${getDaysUntilLabel(company.nextBoard!, today)} · board on ${formatShortDate(company.nextBoard!)}`,
+        meta: 'Prep the board brief and talking points',
+        emphasis: 'medium' as const,
+      })),
+    ...filteredActivity
+      .filter((event) => event.severity === 'high' || event.severity === 'medium')
+      .slice(0, 2)
+      .map((event) => ({
+        id: `activity-${event.id}`,
+        kind: 'activity' as const,
+        companyId: companies.find((company) => company.name === event.companyName)?.id || '',
+        companyName: event.companyName,
+        title: `${event.companyName} generated a fresh signal`,
+        detail: event.description,
+        meta: `${event.type} · ${formatShortDate(event.timestamp)}`,
+        emphasis: event.severity === 'high' ? 'medium' : 'low',
+        activityType: event.type,
+      })),
   ];
-  const infoCards = [
-    { label: 'My Companies', value: myCompanies.length, icon: Building2, color: '#3B82F6', onClick: () => navigate('/portfolio') },
-    { label: 'Upcoming Boards', value: upcomingBoards, icon: Calendar, color: '#8B5CF6', onClick: () => navigate('/board-prep') },
-    { label: 'Next Review', value: '3 days', icon: Clock, color: '#6B7280', onClick: () => navigate('/review') },
-  ];
+  const seenMaterialCompanies = new Set<string>();
+  const materialMoments: MaterialMoment[] = [];
+  for (const moment of materialMomentCandidates) {
+    if (seenMaterialCompanies.has(moment.companyId)) continue;
+    seenMaterialCompanies.add(moment.companyId);
+    materialMoments.push(moment);
+    if (materialMoments.length === 5) break;
+  }
 
-  const urgentAlerts = myFlags.filter(f => f.urgency === 'high').slice(0, 3);
-  const otherAlerts = myFlags.filter(f => f.urgency !== 'high');
+  const focusCompanies = [...filteredCompanies]
+    .sort((a, b) => (
+      getCompanyPriorityScore(b.id, flagsByCompany, today, b.lastUpdate, b.runway, b.nextBoard) -
+      getCompanyPriorityScore(a.id, flagsByCompany, today, a.lastUpdate, a.runway, a.nextBoard)
+    ))
+    .slice(0, 6);
 
-  // Activity feed — recent events for my companies
-  const myActivity = activityFeed
-    .filter(e => myCompanies.some(c => c.name === e.companyName) || e.companyName === '')
-    .slice(0, 8);
+  const recentTimeline = [
+    ...filteredFlags
+      .filter((flag) => flag.urgency !== 'high')
+      .map((flag) => ({
+        id: `flag-${flag.id}`,
+        kind: 'flag' as const,
+        companyId: flag.companyId,
+        companyName: flag.companyName,
+        title: flag.type,
+        detail: flag.headline,
+        sortDate: new Date(flag.createdAt).getTime(),
+        tone: flag.urgency === 'medium' ? 'text-amber-600 bg-amber-400' : 'text-slate-600 bg-slate-400',
+      })),
+    ...filteredActivity.map((event) => ({
+      id: `activity-${event.id}`,
+      kind: 'activity' as const,
+      companyId: companies.find((company) => company.name === event.companyName)?.id || '',
+      companyName: event.companyName,
+      title: event.type,
+      detail: event.description,
+      sortDate: new Date(event.timestamp).getTime(),
+      tone: event.severity === 'high'
+        ? 'text-red-600 bg-red-500'
+        : event.severity === 'medium'
+        ? 'text-amber-600 bg-amber-500'
+        : event.severity === 'low'
+        ? 'text-blue-600 bg-blue-500'
+        : 'text-slate-600 bg-slate-400',
+      icon: activityIcons[event.type] || Globe,
+    })),
+  ]
+    .sort((a, b) => b.sortDate - a.sortDate)
+    .slice(0, 6);
+
+  const attentionQueue = [
+    ...overdueTodos.slice(0, 2).map((todo) => ({
+      id: `todo-${todo.id}`,
+      kind: 'todo' as const,
+      companyName: todo.companyName,
+      title: todo.title,
+      meta: `Overdue · ${todo.priority} priority`,
+      companyId: companies.find((company) => company.name === todo.companyName)?.id || '',
+    })),
+    ...urgentFlags.slice(0, 2).map((flag) => ({
+      id: `flag-${flag.id}`,
+      kind: 'flag' as const,
+      companyName: flag.companyName,
+      title: flag.headline,
+      meta: flag.suggestedAction,
+      companyId: flag.companyId,
+      flag,
+    })),
+  ].slice(0, 4);
+
+  const briefLine = filteredCompanies.length === 0
+    ? 'No active companies match the current fund filter.'
+    : `${urgentFlags.length} critical flag${urgentFlags.length === 1 ? '' : 's'}, ${boardsSoon.length} board moment${boardsSoon.length === 1 ? '' : 's'}, and ${materialSignalCount} fresh signal${materialSignalCount === 1 ? '' : 's'} across ${filteredCompanies.length} active companies.`;
 
   return (
-    <div className="p-6 max-w-[1400px] mx-auto space-y-5">
-      {/* Urgent Items Strip */}
-      {(overdueTodos > 0 || needsAttention > 0) && (
-        <div className="grid grid-cols-2 gap-3">
-          {urgentCards.filter(c => c.urgent).map(card => (
-            <button
-              key={card.label}
-              onClick={card.onClick}
-              className="bg-red-50 border-2 border-red-200 rounded-xl p-4 flex items-center gap-4 hover:shadow-md hover:border-red-300 transition-all text-left group"
-            >
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-red-100 group-hover:bg-red-200 transition-colors">
-                <card.icon className="w-6 h-6 text-red-600" />
-              </div>
-              <div>
-                <p className="text-[28px] font-bold text-red-700">{card.value}</p>
-                <p className="text-[13px] text-red-600 font-medium">{card.label}</p>
-              </div>
-              <ChevronRight className="w-5 h-5 text-red-400 ml-auto group-hover:translate-x-1 transition-transform" />
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Summary Strip */}
-      <div className="grid grid-cols-3 gap-3">
-        {infoCards.map(card => (
-          <button key={card.label} onClick={card.onClick}
-            className="bg-card border border-border rounded-xl p-4 flex items-center gap-3 hover:shadow-sm hover:border-primary/20 transition-all text-left">
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: card.color + '12' }}>
-              <card.icon className="w-5 h-5" style={{ color: card.color }} />
+    <div className="max-w-[1400px] mx-auto space-y-5">
+      {/* Portfolio Brief */}
+      <section className="rounded-xl border border-slate-200/60 bg-white px-6 py-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-3">
+              <span className="rounded-full border border-indigo-200/60 bg-indigo-50/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-indigo-600">
+                Portfolio Brief
+              </span>
+              <span className="text-[12px] text-slate-400">{pageDate}</span>
             </div>
             <div>
-              <p className="text-[22px] font-semibold">{card.value}</p>
-              <p className="text-[12px] text-muted-foreground">{card.label}</p>
+              <h1 className="text-[22px] font-semibold tracking-tight text-slate-800">
+                {currentUser.name}, here&apos;s what changed since your last review.
+              </h1>
+              <p className="mt-1.5 max-w-[860px] text-[13px] leading-relaxed text-slate-500">
+                {briefLine}
+              </p>
             </div>
-          </button>
-        ))}
-      </div>
-
-      {/* Critical Alerts — with FlagActionDropdown */}
-      {urgentAlerts.length > 0 && (
-        <div className="bg-red-50 border-2 border-red-200 rounded-xl overflow-hidden">
-          <div className="px-4 py-2 bg-red-100/60 border-b border-red-200 flex items-center gap-2">
-            <Flame className="w-4 h-4 text-red-600" />
-            <span className="text-[12px] font-semibold text-red-700 uppercase tracking-wider">Critical Alerts</span>
-            <span className="text-[11px] text-red-500 ml-1">Requires immediate action</span>
           </div>
-          <div className="divide-y divide-red-100">
-            {urgentAlerts.map(flag => (
-              <div key={flag.id} className="p-4 flex items-center gap-3">
-                <FlagIcon type={flag.type} size={18} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <button onClick={() => navigate(`/company/${flag.companyId}`)}
-                      className="text-[12px] px-2 py-0.5 bg-white rounded-md hover:bg-red-50 transition-colors font-medium border border-red-200">
-                      {flag.companyName}
-                    </button>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-red-200/60 text-red-700 font-medium">{flag.type}</span>
-                  </div>
-                  <p className="text-[13px] text-red-900">{flag.headline}</p>
-                  {flag.suggestedAction && (
-                    <p className="text-[11px] text-red-600/80 mt-0.5">Suggested: {flag.suggestedAction}</p>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <FlagActionDropdown flag={flag} variant="button" />
-                  <button onClick={() => navigate(`/company/${flag.companyId}`)}
-                    className="text-[11px] px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-1.5">
-                    <Zap className="w-3 h-3" /> View Details
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-5 gap-6">
-        {/* My To-Dos */}
-        <div className="col-span-3 space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-[15px] font-semibold flex items-center gap-2">
-              My To-Dos
-              {overdueTodos > 0 && (
-                <span className="text-[11px] px-2 py-0.5 bg-red-100 text-red-600 rounded-full font-medium">
-                  {overdueTodos} overdue
-                </span>
-              )}
-            </h2>
-            <button onClick={() => setShowNewTodo(true)}
-              className="text-[12px] text-muted-foreground hover:text-foreground flex items-center gap-1 px-2.5 py-1.5 border border-border rounded-lg hover:bg-muted transition-colors">
-              <Plus className="w-3 h-3" /> New To-Do
+          <div className="flex items-center gap-3">
+            <select
+              value={fundFilter}
+              onChange={(event) => setFundFilter(event.target.value as Fund | 'all')}
+              className="min-w-[132px] rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] font-medium text-slate-700 transition-colors hover:border-indigo-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/15"
+            >
+              <option value="all">All Funds</option>
+              <option value="Fund I">Fund I</option>
+              <option value="Fund II">Fund II</option>
+              <option value="Fund III">Fund III</option>
+            </select>
+            <button
+              onClick={() => setShowLogNote(true)}
+              className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 transition-colors"
+              title="Log note"
+            >
+              <StickyNote className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setShowNewTodo(true)}
+              className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 transition-colors"
+              title="New to-do"
+            >
+              <ListTodo className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setShowCheckIn({ open: true })}
+              className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 transition-colors"
+              title="Schedule check-in"
+            >
+              <Phone className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => navigate('/portfolio')}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-[13px] font-medium text-slate-700 transition-all hover:border-slate-300 hover:bg-white hover:shadow-sm"
+            >
+              Open Command Center
+              <ChevronRight className="h-3.5 w-3.5" />
             </button>
           </div>
+        </div>
+      </section>
 
-          <div className="bg-card border border-border rounded-xl divide-y divide-border overflow-hidden">
-            {myTodos.filter(t => !t.completed).sort((a, b) => {
-              const aOverdue = new Date(a.dueDate) < new Date() ? 0 : 1;
-              const bOverdue = new Date(b.dueDate) < new Date() ? 0 : 1;
-              if (aOverdue !== bOverdue) return aOverdue - bOverdue;
-              const priorityOrder = { high: 0, medium: 1, low: 2 };
-              return priorityOrder[a.priority] - priorityOrder[b.priority] || new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-            }).map(todo => {
-              const isOverdue = new Date(todo.dueDate) < new Date();
+      {/* Material Changes */}
+      <section className="rounded-xl border border-slate-200/60 bg-white px-6 py-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400">Material Changes</p>
+            <h2 className="mt-1.5 text-[16px] font-semibold tracking-tight text-slate-700">The handful of things worth acting on.</h2>
+          </div>
+          <button
+            onClick={() => navigate('/matrix')}
+            className="rounded-full border border-slate-200 px-3 py-1.5 text-[12px] font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-50"
+          >
+            Open action matrix
+          </button>
+        </div>
+
+        {materialMoments.length > 0 ? (
+          <div className="mt-4 flex gap-3 overflow-x-auto pb-1 stagger-scale">
+            {materialMoments.map((moment) => {
+              const isHigh = moment.emphasis === 'high';
               return (
-                <div key={todo.id} className={`p-3.5 flex items-start gap-3 transition-colors ${isOverdue ? 'bg-red-50/60 hover:bg-red-50' : 'hover:bg-muted/30'}`}>
-                  <button onClick={() => toggleTodo(todo.id)}
-                    className={`w-[18px] h-[18px] mt-0.5 rounded border-2 shrink-0 flex items-center justify-center transition-all hover:scale-110 ${
-                      isOverdue ? 'border-red-400 hover:border-red-500 hover:bg-red-100' : 'border-gray-300 hover:border-primary hover:bg-primary/5'
-                    }`}>
-                    {todo.completed && <Check className="w-3 h-3" />}
-                  </button>
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-[13px] ${isOverdue ? 'font-medium' : ''}`}>{todo.title}</p>
-                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                      <button onClick={(e) => { e.stopPropagation(); navigate(`/company/${companies.find(c => c.name === todo.companyName)?.id || ''}`); }}
-                        className="text-[11px] px-1.5 py-0.5 bg-muted rounded-md hover:bg-muted/80 transition-colors cursor-pointer">
-                        {todo.companyName}
-                      </button>
-                      <span className={`text-[11px] font-medium ${isOverdue ? 'text-red-600' : 'text-muted-foreground'}`}>
-                        {isOverdue ? 'Overdue' : new Date(todo.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                <div
+                  key={moment.id}
+                  className={`flex-none w-[300px] rounded-xl border p-4 transition-all hover:-translate-y-0.5 hover:shadow-md ${
+                    isHigh
+                      ? 'border-red-200/70 bg-red-50/40'
+                      : 'border-slate-200/70 bg-slate-50/50'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className={`h-2 w-2 shrink-0 rounded-full ${isHigh ? 'bg-red-400' : 'bg-indigo-400'}`} />
+                      <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400">
+                        {moment.companyName}
                       </span>
-                      {todo.source === 'flag' && (
-                        <span className="text-[10px] px-1.5 py-0.5 bg-amber-50 text-amber-600 rounded-md border border-amber-200/50 flex items-center gap-1">
-                          <AlertTriangle className="w-2.5 h-2.5" /> from alert
-                        </span>
-                      )}
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium ${
-                        todo.priority === 'high' ? 'bg-red-50 text-red-600 border border-red-200/50' :
-                        todo.priority === 'medium' ? 'bg-amber-50 text-amber-600 border border-amber-200/50' :
-                        'bg-gray-50 text-gray-500 border border-gray-200/50'
-                      }`}>{todo.priority}</span>
                     </div>
+                    {moment.kind === 'flag' ? (
+                      <FlagActionDropdown flag={moment.flag} variant="button" />
+                    ) : (
+                      <button
+                        onClick={() => navigate(moment.kind === 'board' ? '/board-prep' : `/company/${moment.companyId}`)}
+                        className="shrink-0 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50"
+                      >
+                        {moment.kind === 'board' ? 'Prep board' : 'Open company'}
+                      </button>
+                    )}
                   </div>
+                  <h3 className="mt-2 text-[13px] font-semibold text-slate-700 line-clamp-1">{moment.title}</h3>
+                  <p className="mt-1.5 text-[12px] leading-5 text-slate-500 line-clamp-2">{moment.detail}</p>
+                  <p className="mt-2 text-[11px] text-slate-400 line-clamp-1">{moment.meta}</p>
                 </div>
               );
             })}
-            {myTodos.filter(t => !t.completed).length === 0 && (
-              <div className="p-6 text-center text-[13px] text-muted-foreground">All caught up!</div>
-            )}
           </div>
-          <details className="text-[12px]">
-            <summary className="text-muted-foreground cursor-pointer hover:text-foreground">
-              Completed ({myTodos.filter(t => t.completed).length})
-            </summary>
-            <div className="bg-card border border-border rounded-xl mt-2 divide-y divide-border opacity-50">
-              {myTodos.filter(t => t.completed).map(todo => (
-                <div key={todo.id} className="p-3 flex items-center gap-2.5">
-                  <div className="w-4 h-4 rounded bg-emerald-100 flex items-center justify-center">
-                    <Check className="w-3 h-3 text-emerald-600" />
-                  </div>
-                  <span className="text-[13px] line-through text-muted-foreground">{todo.title}</span>
-                </div>
-              ))}
-            </div>
-          </details>
-        </div>
+        ) : (
+          <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-4 text-[13px] text-slate-500">
+            No material changes in the current slice. Use the command center for a deeper inspection pass.
+          </div>
+        )}
+      </section>
 
-        {/* Board Prep + Alerts — Right Column */}
-        <div className="col-span-2 space-y-4">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-[15px] font-semibold flex items-center gap-2">
-                <FileText className="w-4 h-4 text-purple-500" /> Board Prep
-              </h2>
-              <button onClick={() => navigate('/board-prep')} className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1">
-                All boards <ChevronRight className="w-3 h-3" />
+      {/* KPI Strip */}
+      <section className="grid gap-3 lg:grid-cols-5 stagger-children">
+        {[
+          {
+            label: 'Active companies',
+            value: filteredCompanies.length,
+            detail: fundFilter === 'all' ? 'Across your coverage' : `Within ${fundFilter}`,
+          },
+          {
+            label: 'Portfolio health',
+            value: `${onTrackCount}/${atRiskCount}/${underperformingCount}`,
+            detail: 'Green · Amber · Red',
+          },
+          {
+            label: 'Average runway',
+            value: `${averageRunway}mo`,
+            detail: 'Cash planning horizon',
+          },
+          {
+            label: 'Boards inside 14d',
+            value: boardsSoon.length,
+            detail: 'Preparation needed soon',
+          },
+          {
+            label: 'Stale updates',
+            value: staleCompanies.length,
+            detail: '30+ days since last touch',
+          },
+        ].map((stat) => (
+          <div key={stat.label} className="rounded-xl border border-slate-200/60 bg-white px-4 py-3.5">
+            <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400">{stat.label}</p>
+            <p className="mt-1.5 font-mono-num text-[22px] font-bold tracking-tight text-slate-700">{stat.value}</p>
+            <p className="mt-1 text-[11px] text-slate-400">{stat.detail}</p>
+          </div>
+        ))}
+      </section>
+
+      {/* Focus Companies + Sidebar — single page scroll, no inner overflow */}
+      <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div>
+          <div className="space-y-3">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400">Focus Companies</p>
+                <h2 className="mt-1.5 text-[16px] font-semibold tracking-tight text-slate-700">The portfolio names most likely to shape this week.</h2>
+              </div>
+              <button
+                onClick={() => navigate('/portfolio')}
+                className="text-[13px] font-medium text-indigo-600 transition-colors hover:text-indigo-700"
+              >
+                See full portfolio
               </button>
             </div>
-            <div className="bg-card border border-border rounded-xl divide-y divide-border overflow-hidden">
-              {myCompanies.filter(c => c.nextBoard).sort((a, b) => new Date(a.nextBoard!).getTime() - new Date(b.nextBoard!).getTime()).map(company => {
-                const boardDate = new Date(company.nextBoard!);
-                const daysUntil = Math.ceil((boardDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-                const isUrgent = daysUntil <= 7;
+
+            <div className="grid gap-4 md:grid-cols-2 stagger-scale">
+              {focusCompanies.map((company) => {
+                const companyFlags = flagsByCompany[company.id] || [];
+                const primaryFlag = companyFlags.sort((a, b) => (
+                  (b.urgency === 'high' ? 2 : b.urgency === 'medium' ? 1 : 0) -
+                  (a.urgency === 'high' ? 2 : a.urgency === 'medium' ? 1 : 0)
+                ))[0];
+                const daysSinceUpdate = Math.floor((today.getTime() - new Date(company.lastUpdate).getTime()) / (1000 * 60 * 60 * 24));
+                const whyItMatters = primaryFlag?.headline || company.recentProgress || company.summary;
+
                 return (
-                  <div key={company.id} className={`p-3.5 transition-colors ${isUrgent ? 'bg-amber-50/40 hover:bg-amber-50/60' : 'hover:bg-muted/30'}`}>
-                    <div className="flex items-center gap-3 mb-2.5">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-[12px] font-medium shadow-sm" style={{ background: company.logoColor }}>
-                        {company.name[0]}
+                  <button
+                    key={company.id}
+                    onClick={() => navigate(`/company/${company.id}`)}
+                    className="group overflow-hidden rounded-xl border border-slate-200/60 bg-white p-5 text-left transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-2.5">
+                          <div
+                            className="flex h-9 w-9 items-center justify-center rounded-xl text-[13px] font-semibold text-white shadow-sm"
+                            style={{ background: company.logoColor }}
+                          >
+                            {company.name[0]}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h3 className="truncate text-[15px] font-semibold text-slate-800 transition-colors group-hover:text-indigo-600">
+                                {company.name}
+                              </h3>
+                              <span
+                                className="h-2.5 w-2.5 rounded-full"
+                                style={{ background: getRAGColor(company.rag) }}
+                                title={company.rag}
+                              />
+                            </div>
+                            <p className="text-[12px] text-slate-500">
+                              {company.stage} · {company.sector} · {company.fund}
+                            </p>
+                          </div>
+                        </div>
+                        <span
+                          className="rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em]"
+                          style={{ backgroundColor: `${getHealthColor(company.health)}16`, color: getHealthColor(company.health) }}
+                        >
+                          {company.health}
+                        </span>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-medium">{company.name}</p>
-                        <p className="text-[11px] text-muted-foreground">
-                          Board — {boardDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                          <span className={`ml-2 font-medium ${isUrgent ? 'text-amber-600' : ''}`}>
-                            ({daysUntil <= 0 ? 'Today!' : `${daysUntil}d away`})
-                          </span>
-                        </p>
+
+                      <p className="line-clamp-2 text-[12px] leading-5 text-slate-500">{company.summary}</p>
+
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
+                          <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-slate-400">MRR</p>
+                          <div className="mt-1 flex items-center gap-1.5">
+                            <span className="font-mono-num text-[15px] font-bold text-slate-700">
+                              {formatCurrency(company.mrr, company.currency)}
+                            </span>
+                            <span className={`flex items-center text-[11px] font-semibold ${
+                              company.arrGrowth >= 0 ? 'text-emerald-600' : 'text-red-600'
+                            }`}>
+                              {company.arrGrowth >= 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                              {Math.abs(company.arrGrowth)}%
+                            </span>
+                          </div>
+                        </div>
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
+                          <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-slate-400">Runway</p>
+                          <p className="mt-1 font-mono-num text-[15px] font-bold text-slate-700">{company.runway}mo</p>
+                        </div>
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
+                          <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-slate-400">Updated</p>
+                          <p className="mt-1 text-[14px] font-semibold text-slate-950">{daysSinceUpdate}d ago</p>
+                        </div>
+                      </div>
+
+                      <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-2.5">
+                        <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-slate-400">Why it matters</p>
+                        <p className="mt-1 line-clamp-2 text-[12px] leading-5 text-slate-600">{whyItMatters}</p>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          {companyFlags.length > 0 && (
+                            <span className="rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-600">
+                              {companyFlags.length} active flag{companyFlags.length === 1 ? '' : 's'}
+                            </span>
+                          )}
+                          {company.nextBoard && (
+                            <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
+                              Board {getDaysUntilLabel(company.nextBoard, today).toLowerCase()}
+                            </span>
+                          )}
+                        </div>
+                        <div className="w-24 opacity-70 transition-opacity group-hover:opacity-100">
+                          <SparklineChart data={company.mrrTrend} color={getHealthColor(company.health)} height={32} />
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => navigate('/board-prep')}
-                        className="text-[11px] px-3 py-1.5 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity flex items-center gap-1.5 font-medium">
-                        <FileText className="w-3 h-3" /> Start Prep
-                      </button>
-                      <button onClick={() => navigate(`/company/${company.id}`)}
-                        className="text-[11px] px-3 py-1.5 border border-border rounded-lg hover:bg-muted transition-colors">
-                        View Company
-                      </button>
-                    </div>
-                  </div>
+                  </button>
                 );
               })}
-              {myCompanies.filter(c => c.nextBoard).length === 0 && (
-                <div className="p-6 text-center text-[13px] text-muted-foreground">No upcoming boards</div>
-              )}
             </div>
           </div>
+        </div>
 
-          {/* Recent Alerts — with FlagActionDropdown */}
+        {/* Sidebar */}
+        <div className="space-y-5">
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-[15px] font-semibold flex items-center gap-2">
-                <Bell className="w-4 h-4 text-amber-500" /> Recent Alerts
-              </h2>
-              <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{myFlags.length} active</span>
+            <div className="flex items-end justify-between gap-4 mb-3">
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400">Up Next</p>
+                <p className="mt-1 text-[14px] font-semibold tracking-tight text-slate-700">Boards and overdue tasks.</p>
+              </div>
+              <button
+                onClick={() => navigate('/board-prep')}
+                className="text-[12px] font-medium text-indigo-600 hover:text-indigo-700"
+              >
+                Board prep
+              </button>
             </div>
-            <div className="bg-card border border-border rounded-xl divide-y divide-border overflow-hidden">
-              {otherAlerts.slice(0, 4).map(flag => (
-                <div key={flag.id} className="p-3 flex items-start gap-2.5 hover:bg-muted/30 transition-colors">
-                  <FlagIcon type={flag.type} size={14} />
-                  <button onClick={() => navigate(`/company/${flag.companyId}`)} className="flex-1 min-w-0 text-left">
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      <span className="text-[12px] font-medium">{flag.companyName}</span>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-md ${
-                        flag.urgency === 'medium' ? 'bg-amber-50 text-amber-600 border border-amber-200/50' : 'bg-gray-50 text-gray-500 border border-gray-200/50'
-                      }`}>{flag.type}</span>
+            <div className="rounded-xl border border-slate-200/60 bg-white overflow-hidden">
+              {boardsSoon.length > 0 ? boardsSoon
+                .sort((a, b) => new Date(a.nextBoard!).getTime() - new Date(b.nextBoard!).getTime())
+                .slice(0, 4)
+                .map((company, idx, arr) => (
+                  <button
+                    key={company.id}
+                    onClick={() => navigate('/board-prep')}
+                    className={`flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-slate-50 ${idx < arr.length - 1 ? 'border-b border-slate-100' : ''}`}
+                  >
+                    <div>
+                      <p className="text-[13px] font-medium text-slate-700">{company.name}</p>
+                      <p className="mt-0.5 text-[11px] text-slate-400">
+                        {company.nextBoard ? formatShortDate(company.nextBoard) : 'No board scheduled'}
+                      </p>
                     </div>
-                    <p className="text-[12px] text-muted-foreground truncate">{flag.headline}</p>
+                    <span className="shrink-0 rounded-full bg-amber-50/70 px-2.5 py-1 text-[11px] font-medium text-amber-600">
+                      {company.nextBoard ? getDaysUntilLabel(company.nextBoard, today) : 'TBD'}
+                    </span>
                   </button>
-                  <FlagActionDropdown flag={flag} variant="icon" />
+                )) : (
+                  <div className="px-3 py-2 text-[13px] text-slate-500">
+                    No board meetings inside the next two weeks.
+                  </div>
+                )}
+
+              {overdueTodos.length > 0 && (
+                <>
+                  <div className="border-t border-slate-200 my-1" />
+                  {overdueTodos.slice(0, 3).map((todo, idx, arr) => (
+                    <button
+                      key={todo.id}
+                      onClick={() => {
+                        const companyId = companies.find((c) => c.name === todo.companyName)?.id;
+                        if (companyId) navigate(`/company/${companyId}`);
+                      }}
+                      className={`flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-slate-50 ${idx < arr.length - 1 ? 'border-b border-slate-100' : ''}`}
+                    >
+                      <div>
+                        <p className="text-[13px] font-medium text-slate-700">{todo.title}</p>
+                        <p className="mt-0.5 text-[11px] text-slate-400">{todo.companyName}</p>
+                      </div>
+                      <span className="shrink-0 rounded-full bg-red-50/70 px-2.5 py-1 text-[11px] font-medium text-red-500">
+                        Overdue
+                      </span>
+                    </button>
+                  ))}
+                </>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-end justify-between gap-4 mb-3">
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400">Activity Log</p>
+                <p className="mt-1 text-[14px] font-semibold tracking-tight text-slate-700">Recent signals and updates.</p>
+              </div>
+              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500">
+                {recentTimeline.length}
+              </span>
+            </div>
+            <div className="rounded-xl border border-slate-200/60 bg-white overflow-hidden divide-y divide-slate-100 stagger-children">
+              {recentTimeline.length > 0 ? recentTimeline.map((item) => {
+                const ActivityIcon = item.kind === 'activity' ? item.icon : AlertTriangle;
+                const dotClass = item.tone.split(' ')[1];
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => item.companyId && navigate(`/company/${item.companyId}`)}
+                    className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-slate-50"
+                  >
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                      <ActivityIcon className="h-3.5 w-3.5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="truncate text-[13px] font-medium text-slate-700">{item.companyName}</span>
+                        <span className={`h-1.5 w-1.5 rounded-full ${dotClass}`} />
+                      </div>
+                      <p className="text-[12px] text-slate-500 line-clamp-1">{item.title}</p>
+                    </div>
+                  </button>
+                );
+              }) : (
+                <div className="py-2 text-[13px] text-slate-500">
+                  No fresh activity right now.
                 </div>
-              ))}
-              {otherAlerts.length === 0 && (
-                <div className="p-4 text-center text-[12px] text-muted-foreground">No alerts</div>
               )}
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* My Companies Quick Cards */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-[15px] font-semibold">My Companies</h2>
-          <button onClick={() => navigate('/portfolio')} className="text-[12px] text-primary hover:text-primary/80 flex items-center gap-1 font-medium">
-            View all <ChevronRight className="w-3 h-3" />
-          </button>
-        </div>
-        <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1" style={{ scrollbarWidth: 'thin' }}>
-          {myCompanies.sort((a, b) => {
-            const actionOrder: Record<string, number> = { 'Lean In': 0, 'Lean In / Anticipate': 1, 'Watch': 2, 'De-prioritise': 3 };
-            return (actionOrder[a.action] || 0) - (actionOrder[b.action] || 0);
-          }).map(company => {
-            const daysSinceUpdate = Math.floor((new Date().getTime() - new Date(company.lastUpdate).getTime()) / (1000 * 60 * 60 * 24));
-            const isStale = daysSinceUpdate > 30;
-            return (
-              <button key={company.id} onClick={() => navigate(`/company/${company.id}`)}
-                className={`bg-card border rounded-xl p-4 min-w-[220px] hover:shadow-md transition-all text-left group ${
-                  isStale ? 'border-amber-200 bg-amber-50/20' : 'border-border hover:border-primary/20'
-                }`}>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-[13px] font-medium shadow-sm" style={{ background: company.logoColor }}>
-                    {company.name[0]}
-                  </div>
-                  <div>
-                    <p className="text-[13px] font-medium group-hover:text-primary transition-colors">{company.name}</p>
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-2.5 h-2.5 rounded-full border-2" style={{ borderColor: getHealthColor(company.health), background: getHealthColor(company.health) + '30' }} />
-                      <span className="text-[11px] text-muted-foreground">{company.health}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="mb-2">
-                  <p className="text-[11px] text-muted-foreground">MRR</p>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[16px] font-semibold">{formatCurrency(company.mrr)}</span>
-                    <span className={`text-[11px] flex items-center font-medium ${company.arrGrowth >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                      {company.arrGrowth >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                      {Math.abs(company.arrGrowth)}%
-                    </span>
-                  </div>
-                </div>
-                <div className="h-[30px]">
-                  <SparklineChart data={company.mrrTrend} color={getHealthColor(company.health)} />
-                </div>
-                <p className={`text-[11px] mt-2 ${isStale ? 'text-amber-600 font-medium' : 'text-muted-foreground'}`}>
-                  {isStale ? `Stale — ${daysSinceUpdate}d ago` : `Updated: ${new Date(company.lastUpdate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`}
-                </p>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Activity Feed — surfaces the hidden 14+ events */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-[15px] font-semibold flex items-center gap-2">
-            <Activity className="w-4 h-4 text-blue-500" /> Recent Activity
-          </h2>
-          <span className="text-[11px] text-muted-foreground">{myActivity.length} events</span>
-        </div>
-        <div className="bg-card border border-border rounded-xl divide-y divide-border overflow-hidden">
-          {myActivity.map(event => {
-            const Icon = activityIcons[event.type] || Globe;
-            const colorClass = severityColors[event.severity] || 'text-gray-500';
-            return (
-              <button
-                key={event.id}
-                onClick={() => {
-                  const co = companies.find(c => c.name === event.companyName);
-                  if (co) navigate(`/company/${co.id}`);
-                }}
-                className="w-full p-3 flex items-start gap-3 text-left hover:bg-muted/30 transition-colors"
-              >
-                <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
-                  event.severity === 'high' ? 'bg-red-50' :
-                  event.severity === 'medium' ? 'bg-amber-50' :
-                  event.severity === 'low' ? 'bg-blue-50' : 'bg-gray-50'
-                }`}>
-                  <Icon className={`w-3.5 h-3.5 ${colorClass}`} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-[12px] font-medium">{event.companyName}</span>
-                    <span className="text-[10px] text-muted-foreground">
-                      {new Date(event.timestamp).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                    </span>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-md ${
-                      event.severity === 'high' ? 'bg-red-50 text-red-600' :
-                      event.severity === 'medium' ? 'bg-amber-50 text-amber-600' :
-                      'bg-gray-50 text-gray-500'
-                    }`}>{event.type}</span>
-                  </div>
-                  <p className="text-[13px]">{event.title}</p>
-                  <p className="text-[11px] text-muted-foreground truncate">{event.description}</p>
-                </div>
-                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-2" />
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Modals */}
       <NewTodoModal open={showNewTodo} onClose={() => setShowNewTodo(false)} />
-      <ScheduleCheckInModal open={showCheckIn.open} onClose={() => setShowCheckIn({ open: false })} companyName={showCheckIn.companyName} />
+      <LogNoteModal open={showLogNote} onClose={() => setShowLogNote(false)} />
+      <ScheduleCheckInModal
+        open={showCheckIn.open}
+        onClose={() => setShowCheckIn({ open: false })}
+        companyName={showCheckIn.companyName}
+      />
     </div>
   );
 }

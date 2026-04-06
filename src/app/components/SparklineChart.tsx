@@ -11,7 +11,7 @@ export function SparklineChart({ data, color = '#3B82F6', height = 30 }: Sparkli
   return (
     <ResponsiveContainer width="100%" height={height}>
       <LineChart data={chartData}>
-        <Line type="monotone" dataKey="value" stroke={color} strokeWidth={1.5} dot={false} />
+        <Line type="monotone" dataKey="value" stroke={color} strokeWidth={1.5} dot={false} isAnimationActive={true} animationDuration={600} animationEasing="ease-out" />
       </LineChart>
     </ResponsiveContainer>
   );

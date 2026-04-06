@@ -33,6 +33,20 @@ export interface MonthlyFinancials {
   malePctBoard?: number;
   ethnicMinorityPctFTE?: number;
   ethnicMinorityPctBoard?: number;
+  revenueOther?: number;
+  rdCosts?: number;
+  salesMarketingCosts?: number;
+  generalAdminCosts?: number;
+  bookings?: number;
+  customerCount?: number;
+  netRetentionRate?: number;
+  netAssetsLiabilities?: number;
+  headcountMale?: number;
+  headcountFemale?: number;
+  headcountEthnicMinority?: number;
+  boardMale?: number;
+  boardFemale?: number;
+  boardEthnicMinority?: number;
 }
 
 export interface InvestmentAccounting {
@@ -67,8 +81,9 @@ export interface Company {
   ragHistory: RAGStatus[]; // last 4 quarters
   upside: UpsideCategory;
   action: ActionType;
-  owner: string;
-  ownerAvatar: string;
+  owners: string[];
+  observers?: string[];
+  ownerAvatars?: string[];
   currency: Currency;
   region: Region;
   mrr: number;
@@ -183,32 +198,59 @@ function generateMonthlyFinancials(baseMRR: number, currency: Currency, months =
     const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
     const growth = 1 + (i * 0.03);
     const rev = Math.round(baseMRR * growth);
+    const revenueOther = Math.round(rev * 0.05);
     const cogs = Math.round(rev * 0.3);
     const overheads = Math.round(rev * 0.5 + baseMRR * 0.4);
+    const rdCosts = Math.round(overheads * 0.4);
+    const salesMarketingCosts = Math.round(overheads * 0.35);
+    const generalAdminCosts = overheads - rdCosts - salesMarketingCosts;
     const gp = rev - cogs;
     const ebitda = rev - cogs - overheads;
+    const cashBalance = Math.max(500000 - Math.abs(ebitda) * i, 100000);
+    const headcountFTE = 10 + Math.floor(i * 0.5);
+    const boardHeadcount = 4;
+    const femalePctFTE = 35 + Math.floor(Math.random() * 5);
+    const malePctFTE = 65 - Math.floor(Math.random() * 5);
+    const femalePctBoard = 25;
+    const malePctBoard = 75;
+    const ethnicMinorityPctFTE = 18 + Math.floor(Math.random() * 4);
+    const ethnicMinorityPctBoard = 25;
     data.push({
       month,
       arr: rev * 12,
       revenue: rev,
+      revenueOther,
       cogs,
       overheads,
+      rdCosts,
+      salesMarketingCosts,
+      generalAdminCosts,
       totalCosts: cogs + overheads,
       grossProfit: gp,
       grossMargin: Math.round((gp / rev) * 100),
       ebitda,
       ebitdaMargin: Math.round((ebitda / rev) * 100),
       cashBurnLTM: Math.abs(ebitda) * 12,
-      cashBalance: Math.max(500000 - Math.abs(ebitda) * i, 100000),
+      cashBalance,
       monthlyNetBurn: Math.abs(ebitda),
-      headcountFTE: 10 + Math.floor(i * 0.5),
-      boardHeadcount: 4,
-      femalePctFTE: 35 + Math.floor(Math.random() * 5),
-      malePctFTE: 65 - Math.floor(Math.random() * 5),
-      femalePctBoard: 25,
-      malePctBoard: 75,
-      ethnicMinorityPctFTE: 18 + Math.floor(Math.random() * 4),
-      ethnicMinorityPctBoard: 25,
+      bookings: Math.round(rev * (1.1 + Math.random() * 0.2)),
+      customerCount: Math.round(10 + baseMRR / 5000 + i * 1.5),
+      netRetentionRate: Math.round(105 + Math.random() * 10),
+      netAssetsLiabilities: Math.round(cashBalance - baseMRR * 2),
+      headcountFTE,
+      boardHeadcount,
+      femalePctFTE,
+      malePctFTE,
+      femalePctBoard,
+      malePctBoard,
+      ethnicMinorityPctFTE,
+      ethnicMinorityPctBoard,
+      headcountFemale: Math.round(headcountFTE * femalePctFTE / 100),
+      headcountMale: Math.round(headcountFTE * malePctFTE / 100),
+      headcountEthnicMinority: Math.round(headcountFTE * ethnicMinorityPctFTE / 100),
+      boardFemale: Math.round(boardHeadcount * femalePctBoard / 100),
+      boardMale: Math.round(boardHeadcount * malePctBoard / 100),
+      boardEthnicMinority: Math.round(boardHeadcount * ethnicMinorityPctBoard / 100),
     });
   }
   return data;
@@ -220,7 +262,7 @@ export const companies: Company[] = [
     sector: 'DevTools', stage: 'Seed', fund: 'Fund I', lifecycle: 'Active — Core',
     health: 'On Track', rag: 'Green', ragHistory: ['Green', 'Green', 'Amber', 'Green'],
     upside: 'High Potential', action: 'Lean In',
-    owner: 'Anna', ownerAvatar: 'A', currency: 'GBP', region: 'UK',
+    owners: ['Anna', 'Scott'], ownerAvatars: ['A', 'S'], observers: ['James'], currency: 'GBP', region: 'UK',
     mrr: 45000, mrrTrend: [18, 24, 29, 35, 40, 45], arrGrowth: 18,
     burn: 120000, runway: 16, headcount: 14, customers: 32, lastUpdate: '2026-03-12',
     nextBoard: '2026-03-28', flagCount: 1, investmentDate: '2024-09-15', checkSize: '£1.5M',
@@ -240,7 +282,7 @@ export const companies: Company[] = [
     sector: 'Data Infra', stage: 'Series A', fund: 'Fund II', lifecycle: 'Active — Core',
     health: 'On Track', rag: 'Green', ragHistory: ['Green', 'Green', 'Green', 'Green'],
     upside: 'High Potential', action: 'Lean In',
-    owner: 'Anna', ownerAvatar: 'A', currency: 'USD', region: 'US',
+    owners: ['Anna'], ownerAvatars: ['A'], currency: 'USD', region: 'US',
     mrr: 128000, mrrTrend: [72, 85, 95, 108, 118, 128], arrGrowth: 22,
     burn: 280000, runway: 18, headcount: 38, customers: 85, lastUpdate: '2026-03-10',
     nextBoard: '2026-04-15', flagCount: 0, investmentDate: '2023-06-20', checkSize: '£2.5M',
@@ -260,7 +302,7 @@ export const companies: Company[] = [
     sector: 'Security', stage: 'Seed', fund: 'Fund I', lifecycle: 'Active — Core',
     health: 'At Risk', rag: 'Amber', ragHistory: ['Green', 'Amber', 'Amber', 'Amber'],
     upside: 'High Potential', action: 'Lean In / Anticipate',
-    owner: 'Anna', ownerAvatar: 'A', currency: 'GBP', region: 'UK',
+    owners: ['Anna', 'Krishna'], ownerAvatars: ['A', 'K'], observers: ['Elena'], currency: 'GBP', region: 'UK',
     mrr: 22000, mrrTrend: [15, 18, 20, 21, 21, 22], arrGrowth: 3,
     burn: 150000, runway: 9, headcount: 11, customers: 18, lastUpdate: '2026-02-28',
     nextBoard: '2026-03-22', flagCount: 3, investmentDate: '2024-11-01', checkSize: '£1.2M',
@@ -280,7 +322,7 @@ export const companies: Company[] = [
     sector: 'AI/ML', stage: 'Pre-seed', fund: 'Fund I', lifecycle: 'Active — Core',
     health: 'On Track', rag: 'Green', ragHistory: ['Green', 'Green', 'Green', 'Green'],
     upside: 'Emerging', action: 'Lean In',
-    owner: 'Anna', ownerAvatar: 'A', currency: 'GBP', region: 'UK',
+    owners: ['Anna'], ownerAvatars: ['A'], currency: 'GBP', region: 'UK',
     mrr: 8000, mrrTrend: [0, 0, 2, 4, 6, 8], arrGrowth: 45,
     burn: 65000, runway: 14, headcount: 5, customers: 8, lastUpdate: '2026-03-14',
     nextBoard: null, flagCount: 0, investmentDate: '2025-08-10', checkSize: '£500K',
@@ -300,7 +342,7 @@ export const companies: Company[] = [
     sector: 'DevTools', stage: 'Seed', fund: 'Fund I', lifecycle: 'Active — Core',
     health: 'At Risk', rag: 'Amber', ragHistory: ['Green', 'Green', 'Amber', 'Amber'],
     upside: 'Emerging', action: 'Watch',
-    owner: 'Anna', ownerAvatar: 'A', currency: 'GBP', region: 'UK',
+    owners: ['Anna'], ownerAvatars: ['A'], currency: 'GBP', region: 'UK',
     mrr: 15000, mrrTrend: [12, 14, 15, 15, 15, 15], arrGrowth: 0,
     burn: 95000, runway: 7, headcount: 8, customers: 22, lastUpdate: '2026-02-15',
     nextBoard: null, flagCount: 2, investmentDate: '2025-01-20', checkSize: '£800K',
@@ -320,7 +362,7 @@ export const companies: Company[] = [
     sector: 'DevTools', stage: 'Seed', fund: 'Fund I', lifecycle: 'Active — Core',
     health: 'Underperforming', rag: 'Red', ragHistory: ['Amber', 'Amber', 'Red', 'Red'],
     upside: 'Limited Potential', action: 'De-prioritise',
-    owner: 'Anna', ownerAvatar: 'A', currency: 'GBP', region: 'UK',
+    owners: ['Anna'], ownerAvatars: ['A'], currency: 'GBP', region: 'UK',
     mrr: 5000, mrrTrend: [8, 7, 6, 6, 5, 5], arrGrowth: -15,
     burn: 80000, runway: 4, headcount: 6, customers: 10, lastUpdate: '2026-01-20',
     nextBoard: null, flagCount: 4, investmentDate: '2024-04-15', checkSize: '£700K',
@@ -340,7 +382,7 @@ export const companies: Company[] = [
     sector: 'Data Infra', stage: 'Series A', fund: 'Fund II', lifecycle: 'Active — Core',
     health: 'On Track', rag: 'Green', ragHistory: ['Green', 'Green', 'Green', 'Green'],
     upside: 'High Potential', action: 'Lean In',
-    owner: 'Scott', ownerAvatar: 'S', currency: 'GBP', region: 'UK',
+    owners: ['Scott'], ownerAvatars: ['S'], currency: 'GBP', region: 'UK',
     mrr: 210000, mrrTrend: [140, 155, 170, 185, 195, 210], arrGrowth: 12,
     burn: 350000, runway: 22, headcount: 52, customers: 120, lastUpdate: '2026-03-15',
     nextBoard: '2026-04-02', flagCount: 0, investmentDate: '2022-11-10', checkSize: '£3M',
@@ -360,7 +402,7 @@ export const companies: Company[] = [
     sector: 'AI/ML', stage: 'Series A', fund: 'Fund II', lifecycle: 'Active — Core',
     health: 'On Track', rag: 'Green', ragHistory: ['Amber', 'Green', 'Green', 'Green'],
     upside: 'High Potential', action: 'Lean In',
-    owner: 'Scott', ownerAvatar: 'S', currency: 'USD', region: 'US',
+    owners: ['Scott', 'Anna'], ownerAvatars: ['S', 'A'], observers: ['Marcus'], currency: 'USD', region: 'US',
     mrr: 185000, mrrTrend: [90, 110, 130, 150, 168, 185], arrGrowth: 28,
     burn: 420000, runway: 15, headcount: 45, customers: 65, lastUpdate: '2026-03-11',
     nextBoard: '2026-03-30', flagCount: 1, investmentDate: '2023-08-22', checkSize: '£2.8M',
@@ -380,7 +422,7 @@ export const companies: Company[] = [
     sector: 'Security', stage: 'Seed', fund: 'Fund I', lifecycle: 'Active — Core',
     health: 'At Risk', rag: 'Amber', ragHistory: ['Green', 'Green', 'Amber', 'Amber'],
     upside: 'Emerging', action: 'Watch',
-    owner: 'Scott', ownerAvatar: 'S', currency: 'GBP', region: 'UK',
+    owners: ['Scott'], ownerAvatars: ['S'], currency: 'GBP', region: 'UK',
     mrr: 18000, mrrTrend: [10, 13, 15, 16, 17, 18], arrGrowth: 8,
     burn: 110000, runway: 8, headcount: 9, customers: 15, lastUpdate: '2026-03-05',
     nextBoard: null, flagCount: 2, investmentDate: '2025-03-01', checkSize: '£1M',
@@ -400,7 +442,7 @@ export const companies: Company[] = [
     sector: 'DevTools', stage: 'Pre-seed', fund: 'Fund I', lifecycle: 'Active — Core',
     health: 'On Track', rag: 'Green', ragHistory: ['Green', 'Green', 'Green', 'Green'],
     upside: 'Emerging', action: 'Lean In',
-    owner: 'Krishna', ownerAvatar: 'K', currency: 'EUR', region: 'DACH',
+    owners: ['Krishna'], ownerAvatars: ['K'], currency: 'EUR', region: 'DACH',
     mrr: 3000, mrrTrend: [0, 0, 0, 1, 2, 3], arrGrowth: 60,
     burn: 45000, runway: 20, headcount: 4, customers: 5, lastUpdate: '2026-03-13',
     nextBoard: null, flagCount: 0, investmentDate: '2025-11-15', checkSize: '£400K',
@@ -420,7 +462,7 @@ export const companies: Company[] = [
     sector: 'Fintech', stage: 'Seed', fund: 'Fund I', lifecycle: 'Active — Core',
     health: 'On Track', rag: 'Green', ragHistory: ['Green', 'Green', 'Green', 'Green'],
     upside: 'Emerging', action: 'Lean In',
-    owner: 'Krishna', ownerAvatar: 'K', currency: 'EUR', region: 'IBERIA',
+    owners: ['Krishna'], ownerAvatars: ['K'], currency: 'EUR', region: 'IBERIA',
     mrr: 35000, mrrTrend: [20, 24, 27, 30, 32, 35], arrGrowth: 14,
     burn: 88000, runway: 13, headcount: 10, customers: 45, lastUpdate: '2026-03-09',
     nextBoard: '2026-04-10', flagCount: 0, investmentDate: '2024-07-08', checkSize: '£1.1M',
@@ -440,7 +482,7 @@ export const companies: Company[] = [
     sector: 'DevTools', stage: 'Seed', fund: 'Fund I', lifecycle: 'Active — Core',
     health: 'Underperforming', rag: 'Red', ragHistory: ['Green', 'Amber', 'Red', 'Red'],
     upside: 'Emerging', action: 'Watch',
-    owner: 'James', ownerAvatar: 'J', currency: 'GBP', region: 'UK',
+    owners: ['James'], ownerAvatars: ['J'], currency: 'GBP', region: 'UK',
     mrr: 7000, mrrTrend: [9, 9, 8, 8, 7, 7], arrGrowth: -10,
     burn: 75000, runway: 5, headcount: 6, customers: 12, lastUpdate: '2026-02-20',
     nextBoard: null, flagCount: 3, investmentDate: '2024-12-01', checkSize: '£600K',
@@ -461,7 +503,7 @@ export const companies: Company[] = [
     sector: 'AI/ML', stage: 'Seed', fund: 'Fund I', lifecycle: 'Active — Non-core',
     health: 'On Track', rag: 'Grey', ragHistory: ['Grey', 'Grey', 'Grey', 'Grey'],
     upside: 'Limited Potential', action: 'De-prioritise',
-    owner: 'Krishna', ownerAvatar: 'K', currency: 'GBP', region: 'UK',
+    owners: ['Krishna'], ownerAvatars: ['K'], currency: 'GBP', region: 'UK',
     mrr: 12000, mrrTrend: [10, 10, 11, 11, 12, 12], arrGrowth: 5,
     burn: 40000, runway: 24, headcount: 6, customers: 8, lastUpdate: '2026-01-15',
     nextBoard: null, flagCount: 0, investmentDate: '2020-06-01', checkSize: '£300K',
@@ -479,7 +521,7 @@ export const companies: Company[] = [
     sector: 'AI/ML', stage: 'Series A', fund: 'Fund I', lifecycle: 'Active — Non-core',
     health: 'At Risk', rag: 'Grey', ragHistory: ['Grey', 'Grey', 'Grey', 'Grey'],
     upside: 'Limited Potential', action: 'De-prioritise',
-    owner: 'Scott', ownerAvatar: 'S', currency: 'EUR', region: 'DACH',
+    owners: ['Scott'], ownerAvatars: ['S'], currency: 'EUR', region: 'DACH',
     mrr: 25000, mrrTrend: [28, 27, 26, 25, 25, 25], arrGrowth: -3,
     burn: 60000, runway: 12, headcount: 15, customers: 20, lastUpdate: '2025-12-10',
     nextBoard: null, flagCount: 0, investmentDate: '2019-09-15', checkSize: '£500K',
@@ -498,7 +540,7 @@ export const companies: Company[] = [
     sector: 'AI/ML', stage: 'Series A', fund: 'Fund I', lifecycle: 'Exited',
     health: 'On Track', rag: 'Green', ragHistory: ['Green', 'Green', 'Green', 'Green'],
     upside: 'High Potential', action: 'Lean In',
-    owner: 'Scott', ownerAvatar: 'S', currency: 'GBP', region: 'UK',
+    owners: ['Scott'], ownerAvatars: ['S'], currency: 'GBP', region: 'UK',
     mrr: 0, mrrTrend: [180, 200, 220, 240, 260, 0], arrGrowth: 0,
     burn: 0, runway: 0, headcount: 0, customers: 0, lastUpdate: '2024-08-15',
     nextBoard: null, flagCount: 0, investmentDate: '2019-03-10', checkSize: '£1.8M',
@@ -518,7 +560,7 @@ export const companies: Company[] = [
     sector: 'AI/ML', stage: 'Series A', fund: 'Fund I', lifecycle: 'Exited',
     health: 'On Track', rag: 'Green', ragHistory: ['Green', 'Green', 'Green', 'Green'],
     upside: 'High Potential', action: 'Lean In',
-    owner: 'Krishna', ownerAvatar: 'K', currency: 'GBP', region: 'UK',
+    owners: ['Krishna'], ownerAvatars: ['K'], currency: 'GBP', region: 'UK',
     mrr: 0, mrrTrend: [120, 140, 160, 180, 200, 0], arrGrowth: 0,
     burn: 0, runway: 0, headcount: 0, customers: 0, lastUpdate: '2025-01-20',
     nextBoard: null, flagCount: 0, investmentDate: '2019-07-22', checkSize: '£1.2M',
@@ -539,7 +581,7 @@ export const companies: Company[] = [
     sector: 'DevTools', stage: 'Seed', fund: 'Fund I', lifecycle: 'Wound Down',
     health: 'Underperforming', rag: 'Red', ragHistory: ['Amber', 'Red', 'Red', 'Red'],
     upside: 'Limited Potential', action: 'De-prioritise',
-    owner: 'James', ownerAvatar: 'J', currency: 'GBP', region: 'UK',
+    owners: ['James'], ownerAvatars: ['J'], currency: 'GBP', region: 'UK',
     mrr: 0, mrrTrend: [5, 4, 3, 2, 1, 0], arrGrowth: 0,
     burn: 0, runway: 0, headcount: 0, customers: 0, lastUpdate: '2025-09-01',
     nextBoard: null, flagCount: 0, investmentDate: '2021-05-10', checkSize: '£600K',
@@ -761,6 +803,7 @@ export function getActiveCompanies() {
   return companies.filter(c => c.lifecycle === 'Active — Core');
 }
 
+// NOTE: Action placement is a manual team judgment, not auto-calculated. This function provides defaults that the team overrides during monthly reviews.
 export function getActionType(health: HealthStatus, upside: UpsideCategory): ActionType {
   if (upside === 'High Potential') {
     if (health === 'On Track') return 'Lean In';

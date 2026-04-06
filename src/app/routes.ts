@@ -5,12 +5,18 @@ import { PortfolioCommandCenter } from './components/PortfolioCommandCenter';
 import { ActionMatrix } from './components/ActionMatrix';
 import { CompanyDetail } from './components/CompanyDetail';
 import { BoardPrep } from './components/BoardPrep';
-import { PortfolioReview } from './components/PortfolioReview';
+import { MonthlyReview, QuarterlyReview } from './components/PortfolioReview';
 import { SearchDiscovery } from './components/SearchDiscovery';
 import { IntelligenceHub } from './components/IntelligenceHub';
 import { Settings } from './components/Settings';
+import { FounderForm } from './components/FounderForm';
+import { FounderData } from './components/FounderData';
 
 export const router = createBrowserRouter([
+  {
+    path: 'form/:token',
+    Component: FounderForm,
+  },
   {
     path: '/',
     Component: Layout,
@@ -20,7 +26,9 @@ export const router = createBrowserRouter([
       { path: 'matrix', Component: ActionMatrix },
       { path: 'company/:id', Component: CompanyDetail },
       { path: 'board-prep', Component: BoardPrep },
-      { path: 'review', Component: PortfolioReview },
+      { path: 'review/monthly', Component: MonthlyReview },
+      { path: 'review/quarterly', Component: QuarterlyReview },
+      { path: 'founder-data', Component: FounderData },
       { path: 'search', Component: SearchDiscovery },
       { path: 'intelligence', Component: IntelligenceHub },
       { path: 'settings', Component: Settings },
