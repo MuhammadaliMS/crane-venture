@@ -410,12 +410,12 @@ function ReviewDetailExpanded({ review, navigate }: { review: ReviewRecord; navi
 // ══════════════════════════════════════════════════════════════════════
 export function MonthlyReview() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<'list' | 'active'>('list');
+  const [mode, setMode] = useState<'list' | 'active' | 'detail'>('list');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [reviewed, setReviewed] = useState<Set<string>>(new Set());
   const [skipped, setSkipped] = useState<Set<string>>(new Set());
   const [commentaries, setCommentaries] = useState<Record<string, string>>({});
-  const [expandedReview, setExpandedReview] = useState<string | null>(null);
+  const [detailReview, setDetailReview] = useState<MonthlyReviewRecord | null>(null);
 
   const { fundFilter, setFundFilter } = useFundFilter();
   const { milestone } = useMilestone();
@@ -435,12 +435,163 @@ export function MonthlyReview() {
     if (currentIndex < sortedCompanies.length - 1) setCurrentIndex(currentIndex + 1);
   };
 
+  // ── Determine current month label and whether an in-progress review exists ──
+  const currentMonthLabel = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+  const currentMonthShort = new Date().toLocaleString('default', { month: 'long' });
+  const inProgressReview = monthlyReviewsHistory.find(r => r.status === 'In Progress');
+  const hasCurrentMonth = monthlyReviewsHistory.some(r => r.month === currentMonthLabel);
+
+  // ── Detail view (read-only past review) ───────────────────────────
+  if (mode === 'detail' && detailReview) {
+    return (
+      <div className="max-w-[1100px] mx-auto space-y-5">
+        <div className="flex items-center justify-between">
+          <button onClick={() => { setMode('list'); setDetailReview(null); }} className="text-[13px] text-slate-500 hover:text-slate-700 transition-colors">← Back to Reviews</button>
+          <h2 className="text-[18px] font-semibold tracking-tight text-slate-800">{detailReview.month} Review</h2>
+          <span className={`text-[11px] px-2.5 py-1 rounded-lg font-medium ${
+            detailReview.status === 'Complete' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+          }`}>{detailReview.status}</span>
+        </div>
+
+        {/* Summary bar */}
+        <div className="flex items-center gap-4 text-[12px] text-slate-500 bg-white rounded-xl border border-slate-200/60 px-4 py-3">
+          <span>By <span className="text-slate-700 font-medium">{detailReview.completedBy}</span></span>
+          <span>·</span>
+          <span>{detailReview.date}</span>
+          <span>·</span>
+          <span>{detailReview.companyComments.length} companies reviewed</span>
+        </div>
+
+        {/* Company-by-company read-only cards */}
+        <div className="flex gap-4">
+          {/* Left sidebar */}
+          <div className="w-[220px] flex-shrink-0">
+            <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400 mb-2">Companies</p>
+            <div className="bg-white rounded-xl border border-slate-200/60 divide-y divide-slate-100 max-h-[680px] overflow-y-auto">
+              {detailReview.companyComments.map((cc, i) => {
+                const comp = sortedCompanies.find(c => c.name === cc.company);
+                const isCurrent = i === currentIndex;
+                return (
+                  <button
+                    key={i}
+                    onClick={() => setCurrentIndex(i)}
+                    className={`w-full p-2.5 flex items-center gap-2 text-left transition-colors ${
+                      isCurrent ? 'bg-indigo-50 border-l-2 border-l-indigo-500' : 'hover:bg-slate-50'
+                    }`}
+                  >
+                    {comp && <div className="w-6 h-6 rounded flex items-center justify-center text-white text-[10px] flex-shrink-0" style={{ background: comp.logoColor }}>{comp.name[0]}</div>}
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-[12px] truncate ${isCurrent ? 'text-indigo-700 font-medium' : 'text-slate-700'}`}>{cc.company}</p>
+                      {comp && (
+                        <div className="flex items-center gap-1 mt-0.5">
+                          {comp.ragHistory.slice(-3).map((r, ri) => (
+                            <div key={ri} className="w-2 h-2 rounded-full" style={{ background: getRAGColor(r) }} />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Right — read-only detail panel */}
+          <div className="flex-1">
+            {(() => {
+              const cc = detailReview.companyComments[currentIndex];
+              if (!cc) return null;
+              const comp = sortedCompanies.find(c => c.name === cc.company);
+              return (
+                <div className="bg-white rounded-xl border border-slate-200/60 p-6 space-y-4">
+                  {/* Company header */}
+                  <div className="flex items-center gap-4">
+                    {comp && (
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-[18px]" style={{ background: comp.logoColor }}>
+                        {comp.name[0]}
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-[18px] font-semibold text-slate-800">{cc.company}</h2>
+                        {comp && (
+                          <>
+                            <span className="text-[11px] px-2 py-0.5 bg-slate-100 rounded-md">{comp.stage}</span>
+                            <span className="text-[11px] px-2 py-0.5 bg-slate-100 rounded-md">{comp.fund}</span>
+                            <span className="text-[11px] px-2 py-0.5 rounded-md" style={{ background: getActionColor(comp.action) + '15', color: getActionColor(comp.action) }}>
+                              {comp.action}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                      {comp && <p className="text-[13px] text-slate-500">{comp.description}</p>}
+                    </div>
+                  </div>
+
+                  {/* Key metrics (read-only) */}
+                  {comp && (
+                    <div className="grid grid-cols-5 gap-3">
+                      <div className="bg-slate-50 rounded-lg p-3">
+                        <p className="text-[11px] text-slate-500">Health</p>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <div className="w-2.5 h-2.5 rounded-full" style={{ background: getHealthColor(comp.health) }} />
+                          <span className="text-[13px] text-slate-700">{comp.health}</span>
+                        </div>
+                      </div>
+                      <div className="bg-slate-50 rounded-lg p-3">
+                        <p className="text-[11px] text-slate-500">MRR</p>
+                        <p className="text-[13px] mt-1 font-mono-num text-slate-700">{formatCurrency(comp.mrr, comp.currency)}</p>
+                      </div>
+                      <div className="bg-slate-50 rounded-lg p-3">
+                        <p className="text-[11px] text-slate-500">Burn</p>
+                        <p className="text-[13px] mt-1 font-mono-num text-slate-700">{formatCurrency(comp.burn, comp.currency)}/mo</p>
+                      </div>
+                      <div className="bg-slate-50 rounded-lg p-3">
+                        <p className="text-[11px] text-slate-500">Runway</p>
+                        <p className={`text-[13px] mt-1 font-mono-num ${comp.runway < 6 ? 'text-red-600' : 'text-slate-700'}`}>{comp.runway}mo</p>
+                      </div>
+                      <div className="bg-slate-50 rounded-lg p-3">
+                        <p className="text-[11px] text-slate-500">MoIC</p>
+                        <p className="text-[13px] mt-1 font-mono-num text-slate-700">{comp.accounting.moic.toFixed(1)}x</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Commentary (read-only) */}
+                  <div className="bg-slate-50 rounded-lg p-4">
+                    <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-1.5">Team Commentary</p>
+                    <p className="text-[13px] leading-relaxed text-slate-700">{cc.comment}</p>
+                  </div>
+
+                  {/* Navigation */}
+                  <div className="flex items-center justify-between pt-1">
+                    <button
+                      onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
+                      disabled={currentIndex === 0}
+                      className="text-[13px] text-slate-500 hover:text-slate-700 disabled:opacity-30 transition-colors"
+                    >
+                      ← Previous
+                    </button>
+                    <span className="text-[12px] text-slate-400">{currentIndex + 1} of {detailReview.companyComments.length}</span>
+                    <button
+                      onClick={() => setCurrentIndex(Math.min(detailReview.companyComments.length - 1, currentIndex + 1))}
+                      disabled={currentIndex === detailReview.companyComments.length - 1}
+                      className="text-[13px] text-slate-500 hover:text-slate-700 disabled:opacity-30 transition-colors"
+                    >
+                      Next →
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // ── List view ─────────────────────────────────────────────────────
   if (mode === 'list') {
-    // Determine current month for the "new review" card
-    const currentMonth = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
-    const hasCurrentMonth = monthlyReviewsHistory.some(r => r.month === currentMonth);
-
     return (
       <div className="max-w-[900px] mx-auto space-y-6">
         <div className="flex items-center justify-between">
@@ -463,7 +614,11 @@ export function MonthlyReview() {
               onClick={() => { setMode('active'); setCurrentIndex(0); setReviewed(new Set()); setSkipped(new Set()); }}
               className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg text-[13px] hover:bg-indigo-600 transition-colors"
             >
-              <Plus className="w-3.5 h-3.5" /> Start New Review
+              {inProgressReview ? (
+                <><FileText className="w-3.5 h-3.5" /> Edit {inProgressReview.month.split(' ')[0]} Review</>
+              ) : (
+                <><Plus className="w-3.5 h-3.5" /> Start {currentMonthShort} Review</>
+              )}
             </button>
           </div>
         </div>
@@ -473,46 +628,26 @@ export function MonthlyReview() {
           <h3 className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400 mb-3">Review History</h3>
           <div className="bg-white rounded-xl border border-slate-200/60 divide-y divide-slate-100">
             {monthlyReviewsHistory.map((review) => (
-              <div key={review.id}>
-                <button
-                  onClick={() => setExpandedReview(expandedReview === review.id ? null : review.id)}
-                  className="w-full p-3.5 flex items-center gap-3 text-[13px] hover:bg-slate-50 transition-colors text-left"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                    <Calendar className="w-4.5 h-4.5 text-indigo-500" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[14px] font-medium text-slate-800">{review.month}</p>
-                    <p className="text-[12px] text-slate-500 mt-0.5">{review.date} · {review.completedBy}</p>
-                  </div>
-                  <div className="flex items-center gap-4 flex-shrink-0">
-                    <p className="text-[12px] text-slate-500">{review.companyComments.length} companies</p>
-                    <span className={`text-[11px] px-2.5 py-1 rounded-lg font-medium ${
-                      review.status === 'Complete' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
-                    }`}>{review.status}</span>
-                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${expandedReview === review.id ? 'rotate-180' : ''}`} />
-                  </div>
-                </button>
-                {expandedReview === review.id && (
-                  <div className="px-4 pb-4 pt-2 border-t border-slate-100 space-y-2">
-                    {review.companyComments.map((cc, j) => {
-                      const comp = sortedCompanies.find(c => c.name === cc.company);
-                      return (
-                        <div key={j} className="flex items-start gap-3 py-2 border-b border-slate-50 last:border-0">
-                          <button
-                            onClick={() => comp && navigate(`/company/${comp.id}`)}
-                            className="flex items-center gap-2 min-w-[140px] flex-shrink-0 hover:text-indigo-600 transition-colors"
-                          >
-                            {comp && <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: getRAGColor(comp.rag) }} />}
-                            <span className="text-[12px] font-medium text-slate-700">{cc.company}</span>
-                          </button>
-                          <p className="text-[12px] text-slate-500 leading-relaxed">{cc.comment}</p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+              <button
+                key={review.id}
+                onClick={() => { setDetailReview(review); setCurrentIndex(0); setMode('detail'); }}
+                className="w-full p-3.5 flex items-center gap-3 text-[13px] hover:bg-slate-50 transition-colors text-left"
+              >
+                <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                  <Calendar className="w-4.5 h-4.5 text-indigo-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[14px] font-medium text-slate-800">{review.month}</p>
+                  <p className="text-[12px] text-slate-500 mt-0.5">{review.date} · {review.completedBy}</p>
+                </div>
+                <div className="flex items-center gap-4 flex-shrink-0">
+                  <p className="text-[12px] text-slate-500">{review.companyComments.length} companies</p>
+                  <span className={`text-[11px] px-2.5 py-1 rounded-lg font-medium ${
+                    review.status === 'Complete' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+                  }`}>{review.status}</span>
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                </div>
+              </button>
             ))}
           </div>
         </div>
@@ -693,7 +828,7 @@ export function MonthlyReview() {
 // ══════════════════════════════════════════════════════════════════════
 export function QuarterlyReview() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<'list' | 'active' | 'lp-report-preview'>('list');
+  const [mode, setMode] = useState<'list' | 'active' | 'lp-report-preview' | 'detail'>('list');
   const [selectedFund, setSelectedFund] = useState(funds[0]);
   const [quarterlyStep, setQuarterlyStep] = useState(1);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -703,7 +838,7 @@ export function QuarterlyReview() {
     recentProgress: string; rag: RAGStatus; summary: string; keyConcerns: string; actionPoints: string;
     equityFundraising: string; debtFundraising: string; burnReduction: string; nearTermExit: string; inductionAction: string;
   }>>({});
-  const [expandedReview, setExpandedReview] = useState<string | null>(null);
+  const [detailReview, setDetailReview] = useState<ReviewRecord | null>(null);
 
   const { fundFilter, setFundFilter } = useFundFilter();
   const { milestone } = useMilestone();
@@ -731,6 +866,224 @@ export function QuarterlyReview() {
   const qCurrent = sortedCompanies[currentIndex];
   const qCurrentFlags = flags.filter(f => f.companyId === qCurrent?.id);
 
+  // ── Determine current quarter and in-progress state ──
+  const currentQuarterNum = Math.ceil((new Date().getMonth() + 1) / 3);
+  const currentYear = new Date().getFullYear();
+  const currentQuarterLabel = `Q${currentQuarterNum} ${currentYear}`;
+  const inProgressQuarterly = quarterlyReviewsHistory.find(r => r.status === 'In Progress');
+
+  // ── Detail view (read-only past quarterly review) ──────────────────
+  if (mode === 'detail' && detailReview) {
+    const reviewCompanies = detailReview.companyReviews ?? [];
+    const detailItems = reviewCompanies.length > 0
+      ? reviewCompanies.map(cr => ({ company: cr.company, ...cr }))
+      : detailReview.companiesReviewed.map(name => ({ company: name, comment: '', sendStatus: 'Sent' as const, recentProgress: '', summary: '', keyConcerns: '', actionPoints: '', inductionAction: '' }));
+
+    return (
+      <div className="max-w-[1100px] mx-auto space-y-5">
+        <div className="flex items-center justify-between">
+          <button onClick={() => { setMode('list'); setDetailReview(null); }} className="text-[13px] text-slate-500 hover:text-slate-700 transition-colors">← Back to Reviews</button>
+          <h2 className="text-[18px] font-semibold tracking-tight text-slate-800">{detailReview.quarter} Review</h2>
+          <span className={`text-[11px] px-2.5 py-1 rounded-lg font-medium ${
+            detailReview.status === 'Complete' ? 'bg-emerald-50 text-emerald-700' :
+            detailReview.status === 'In Progress' ? 'bg-amber-50 text-amber-700' :
+            'bg-slate-50 text-slate-500'
+          }`}>{detailReview.status}</span>
+        </div>
+
+        {/* Summary bar */}
+        <div className="flex items-center gap-4 text-[12px] text-slate-500 bg-white rounded-xl border border-slate-200/60 px-4 py-3">
+          <span>By <span className="text-slate-700 font-medium">{detailReview.completedBy}</span></span>
+          <span>·</span>
+          <span>{detailReview.date}</span>
+          <span>·</span>
+          <span>{detailReview.duration}</span>
+          <span>·</span>
+          <span>{detailReview.companies} companies · {detailReview.changes} RAG changes</span>
+          {detailReview.exported && (
+            <>
+              <span>·</span>
+              <span className="text-purple-600 flex items-center gap-1"><Download className="w-3 h-3" /> Exported</span>
+            </>
+          )}
+        </div>
+
+        {/* Commentary */}
+        {detailReview.commentary && (
+          <div className="bg-white rounded-xl border border-slate-200/60 p-4">
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-1">Review Summary</p>
+            <p className="text-[13px] leading-relaxed text-slate-600">{detailReview.commentary}</p>
+          </div>
+        )}
+
+        {/* Company-by-company read-only */}
+        <div className="flex gap-4">
+          {/* Left sidebar */}
+          <div className="w-[220px] flex-shrink-0">
+            <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400 mb-2">Companies</p>
+            <div className="bg-white rounded-xl border border-slate-200/60 divide-y divide-slate-100 max-h-[680px] overflow-y-auto">
+              {detailItems.map((item, i) => {
+                const comp = sortedCompanies.find(c => c.name === item.company);
+                const isCurrent = i === currentIndex;
+                return (
+                  <button
+                    key={i}
+                    onClick={() => setCurrentIndex(i)}
+                    className={`w-full p-2.5 flex items-center gap-2 text-left transition-colors ${
+                      isCurrent ? 'bg-indigo-50 border-l-2 border-l-indigo-500' : 'hover:bg-slate-50'
+                    }`}
+                  >
+                    {comp && <div className="w-6 h-6 rounded flex items-center justify-center text-white text-[10px] flex-shrink-0" style={{ background: comp.logoColor }}>{comp.name[0]}</div>}
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-[12px] truncate ${isCurrent ? 'text-indigo-700 font-medium' : 'text-slate-700'}`}>{item.company}</p>
+                      {comp && (
+                        <div className="flex items-center gap-1 mt-0.5">
+                          {comp.ragHistory.slice(-3).map((r, ri) => (
+                            <div key={ri} className="w-2 h-2 rounded-full" style={{ background: getRAGColor(r) }} />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Right — read-only detail panel */}
+          <div className="flex-1">
+            {(() => {
+              const item = detailItems[currentIndex];
+              if (!item) return null;
+              const comp = sortedCompanies.find(c => c.name === item.company);
+              return (
+                <div className="bg-white rounded-xl border border-slate-200/60 p-6 space-y-4">
+                  {/* Company header */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      {comp && (
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-[18px]" style={{ background: comp.logoColor }}>
+                          {comp.name[0]}
+                        </div>
+                      )}
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-[18px] font-semibold text-slate-800">{item.company}</h2>
+                          {comp && (
+                            <>
+                              <span className="text-[11px] px-2 py-0.5 bg-slate-100 rounded-md">{comp.stage}</span>
+                              <span className="text-[11px] px-2 py-0.5 bg-slate-100 rounded-md">{comp.fund}</span>
+                            </>
+                          )}
+                        </div>
+                        {comp && <p className="text-[13px] text-slate-500">{comp.description}</p>}
+                      </div>
+                    </div>
+                    {item.sendStatus && (
+                      <span className={`text-[11px] px-2.5 py-1 rounded-lg font-medium ${
+                        item.sendStatus === 'Sent' ? 'bg-emerald-50 text-emerald-700' :
+                        item.sendStatus === 'Draft' ? 'bg-amber-50 text-amber-700' :
+                        'bg-slate-50 text-slate-500'
+                      }`}>{item.sendStatus}</span>
+                    )}
+                  </div>
+
+                  {/* Key metrics (read-only) */}
+                  {comp && (
+                    <div className="grid grid-cols-5 gap-3">
+                      <div className="bg-slate-50 rounded-lg p-3">
+                        <p className="text-[11px] text-slate-500">MRR</p>
+                        <p className="text-[13px] mt-1 font-mono-num text-slate-700">{formatCurrency(comp.mrr, comp.currency)}</p>
+                      </div>
+                      <div className="bg-slate-50 rounded-lg p-3">
+                        <p className="text-[11px] text-slate-500">ARR Growth</p>
+                        <p className={`text-[13px] mt-1 font-mono-num ${comp.arrGrowth >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{comp.arrGrowth >= 0 ? '+' : ''}{comp.arrGrowth}%</p>
+                      </div>
+                      <div className="bg-slate-50 rounded-lg p-3">
+                        <p className="text-[11px] text-slate-500">Burn</p>
+                        <p className="text-[13px] mt-1 font-mono-num text-slate-700">{formatCurrency(comp.burn, comp.currency)}/mo</p>
+                      </div>
+                      <div className="bg-slate-50 rounded-lg p-3">
+                        <p className="text-[11px] text-slate-500">Runway</p>
+                        <p className={`text-[13px] mt-1 font-mono-num ${comp.runway < 6 ? 'text-red-600' : 'text-slate-700'}`}>{comp.runway}mo</p>
+                      </div>
+                      <div className="bg-slate-50 rounded-lg p-3">
+                        <p className="text-[11px] text-slate-500">Headcount</p>
+                        <p className="text-[13px] mt-1 font-mono-num text-slate-700">{comp.headcount}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Read-only commentary fields */}
+                  {item.comment && (
+                    <div className="bg-slate-50 rounded-lg p-4">
+                      <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-1.5">Comment</p>
+                      <p className="text-[13px] leading-relaxed text-slate-700">{item.comment}</p>
+                    </div>
+                  )}
+
+                  {item.recentProgress && (
+                    <div className="bg-slate-50 rounded-lg p-4">
+                      <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-1.5">Recent Progress</p>
+                      <p className="text-[13px] leading-relaxed text-slate-700">{item.recentProgress}</p>
+                    </div>
+                  )}
+
+                  {item.summary && (
+                    <div className="bg-slate-50 rounded-lg p-4">
+                      <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-1.5">Summary</p>
+                      <p className="text-[13px] leading-relaxed text-slate-700">{item.summary}</p>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-3 gap-3">
+                    {item.keyConcerns && (
+                      <div className="bg-slate-50 rounded-lg p-4">
+                        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-1.5">Key Concerns</p>
+                        <p className="text-[12px] leading-relaxed text-slate-700">{item.keyConcerns}</p>
+                      </div>
+                    )}
+                    {item.actionPoints && (
+                      <div className="bg-slate-50 rounded-lg p-4">
+                        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-1.5">Action Points</p>
+                        <p className="text-[12px] leading-relaxed text-slate-700">{item.actionPoints}</p>
+                      </div>
+                    )}
+                    {item.inductionAction && (
+                      <div className="bg-slate-50 rounded-lg p-4">
+                        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-1.5">Induction Action</p>
+                        <p className="text-[12px] leading-relaxed text-slate-700">{item.inductionAction}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Navigation */}
+                  <div className="flex items-center justify-between pt-1">
+                    <button
+                      onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
+                      disabled={currentIndex === 0}
+                      className="text-[13px] text-slate-500 hover:text-slate-700 disabled:opacity-30 transition-colors"
+                    >
+                      ← Previous
+                    </button>
+                    <span className="text-[12px] text-slate-400">{currentIndex + 1} of {detailItems.length}</span>
+                    <button
+                      onClick={() => setCurrentIndex(Math.min(detailItems.length - 1, currentIndex + 1))}
+                      disabled={currentIndex === detailItems.length - 1}
+                      className="text-[13px] text-slate-500 hover:text-slate-700 disabled:opacity-30 transition-colors"
+                    >
+                      Next →
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // ── List view ─────────────────────────────────────────────────────
   if (mode === 'list') {
     return (
@@ -755,7 +1108,11 @@ export function QuarterlyReview() {
               onClick={() => { setMode('active'); setCurrentIndex(0); setQuarterlyStep(1); }}
               className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg text-[13px] hover:bg-indigo-600 transition-colors"
             >
-              <Plus className="w-3.5 h-3.5" /> Start Q1 2026 Review
+              {inProgressQuarterly ? (
+                <><FileText className="w-3.5 h-3.5" /> Edit {inProgressQuarterly.quarter} Review</>
+              ) : (
+                <><Plus className="w-3.5 h-3.5" /> Start {currentQuarterLabel} Review</>
+              )}
             </button>
           </div>
         </div>
@@ -767,7 +1124,7 @@ export function QuarterlyReview() {
               <Calendar className="w-5 h-5 text-indigo-600" />
             </div>
             <div>
-              <p className="text-[14px] font-medium text-indigo-900">Q1 2026 — Ready for Review</p>
+              <p className="text-[14px] font-medium text-indigo-900">{currentQuarterLabel} — Ready for Review</p>
               <p className="text-[12px] text-indigo-600 mt-0.5">
                 {sortedCompanies.length} companies · Founder data collection {Math.round(sortedCompanies.length * 0.6)} of {sortedCompanies.length} submitted
               </p>
@@ -786,40 +1143,36 @@ export function QuarterlyReview() {
           <h3 className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400 mb-3">Past Quarterly Reviews</h3>
           <div className="bg-white rounded-xl border border-slate-200/60 divide-y divide-slate-100">
             {quarterlyReviewsHistory.map((review) => (
-              <div key={review.id}>
-                <button
-                  onClick={() => setExpandedReview(expandedReview === review.id ? null : review.id)}
-                  className="w-full p-3.5 flex items-center gap-3 text-[13px] hover:bg-slate-50 transition-colors text-left"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
-                    <FileText className="w-4.5 h-4.5 text-purple-500" />
+              <button
+                key={review.id}
+                onClick={() => { setDetailReview(review); setCurrentIndex(0); setMode('detail'); }}
+                className="w-full p-3.5 flex items-center gap-3 text-[13px] hover:bg-slate-50 transition-colors text-left"
+              >
+                <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-4.5 h-4.5 text-purple-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[14px] font-medium text-slate-800">{review.quarter}</p>
+                  <p className="text-[12px] text-slate-500 mt-0.5">{review.date} · {review.completedBy} · {review.duration}</p>
+                </div>
+                <div className="flex items-center gap-4 flex-shrink-0">
+                  <div className="text-right">
+                    <p className="text-[12px] text-slate-700">{review.companies} companies</p>
+                    <p className="text-[11px] text-slate-400">{review.changes} RAG changes</p>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[14px] font-medium text-slate-800">{review.quarter}</p>
-                    <p className="text-[12px] text-slate-500 mt-0.5">{review.date} · {review.completedBy} · {review.duration}</p>
-                  </div>
-                  <div className="flex items-center gap-4 flex-shrink-0">
-                    <div className="text-right">
-                      <p className="text-[12px] text-slate-700">{review.companies} companies</p>
-                      <p className="text-[11px] text-slate-400">{review.changes} RAG changes</p>
-                    </div>
-                    {review.exported && (
-                      <span className="text-[11px] px-2.5 py-1 rounded-lg font-medium bg-purple-50 text-purple-700 flex items-center gap-1">
-                        <Download className="w-3 h-3" /> Exported
-                      </span>
-                    )}
-                    <span className={`text-[11px] px-2.5 py-1 rounded-lg font-medium ${
-                      review.status === 'Complete' ? 'bg-emerald-50 text-emerald-700' :
-                      review.status === 'In Progress' ? 'bg-amber-50 text-amber-700' :
-                      'bg-slate-50 text-slate-500'
-                    }`}>{review.status}</span>
-                    <ChevronRight className={`w-4 h-4 text-slate-400 transition-transform ${expandedReview === review.id ? 'rotate-90' : ''}`} />
-                  </div>
-                </button>
-                {expandedReview === review.id && (
-                  <ReviewDetailExpanded review={review} navigate={navigate} />
-                )}
-              </div>
+                  {review.exported && (
+                    <span className="text-[11px] px-2.5 py-1 rounded-lg font-medium bg-purple-50 text-purple-700 flex items-center gap-1">
+                      <Download className="w-3 h-3" /> Exported
+                    </span>
+                  )}
+                  <span className={`text-[11px] px-2.5 py-1 rounded-lg font-medium ${
+                    review.status === 'Complete' ? 'bg-emerald-50 text-emerald-700' :
+                    review.status === 'In Progress' ? 'bg-amber-50 text-amber-700' :
+                    'bg-slate-50 text-slate-500'
+                  }`}>{review.status}</span>
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                </div>
+              </button>
             ))}
           </div>
         </div>
