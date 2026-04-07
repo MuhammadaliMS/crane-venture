@@ -843,8 +843,6 @@ export function QuarterlyReview() {
     setMode('active');
   };
 
-  const quarterlyReviewTitle = editingReview ? `${editingReview.quarter} Review` : `${currentQuarterLabel} Review`;
-
   // Commentary completeness
   const isCommentaryDone = (id: string) => {
     const cc = companyCommentary[id];
@@ -860,6 +858,7 @@ export function QuarterlyReview() {
   const currentYear = new Date().getFullYear();
   const currentQuarterLabel = `Q${currentQuarterNum} ${currentYear}`;
   const inProgressQuarterly = quarterlyReviewsHistory.find(r => r.status === 'In Progress');
+  const quarterlyReviewTitle = editingReview ? `${editingReview.quarter} Review` : `${currentQuarterLabel} Review`;
 
   // ── List view ─────────────────────────────────────────────────────
   if (mode === 'list') {
