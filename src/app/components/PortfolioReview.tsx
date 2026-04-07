@@ -598,7 +598,7 @@ export function MonthlyReview() {
           <div>
             <h1 className="text-[24px] font-semibold tracking-tight text-slate-800">Monthly Reviews</h1>
             <p className="text-[13px] text-slate-500 mt-1">
-              Internal team review — step through companies, update RAG status, add notes
+              Internal team review — step through companies, add commentary per company
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -656,20 +656,42 @@ export function MonthlyReview() {
   }
 
   // ── Active monthly review flow ────────────────────────────────────
+  const allHandled = reviewed.size + skipped.size >= sortedCompanies.length;
+
   return (
     <div className="max-w-[1100px] mx-auto space-y-4">
       <div className="flex items-center justify-between">
         <button onClick={() => setMode('list')} className="text-[13px] text-slate-500 hover:text-slate-700 transition-colors">← Back to Reviews</button>
-        <h2 className="text-[18px] font-semibold tracking-tight text-slate-800">Monthly Internal Review</h2>
-        <span className="text-[12px] text-slate-500">
-          {reviewed.size + skipped.size} of {sortedCompanies.length} complete
-        </span>
+        <h2 className="text-[18px] font-semibold tracking-tight text-slate-800">{currentMonthShort} Review</h2>
+        <div className="flex items-center gap-3">
+          <span className="text-[12px] text-slate-500">
+            {reviewed.size + skipped.size} of {sortedCompanies.length}
+          </span>
+          {allHandled && (
+            <button
+              onClick={() => setMode('list')}
+              className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 text-white rounded-lg text-[13px] hover:bg-emerald-600 transition-colors"
+            >
+              <CheckCircle className="w-4 h-4" /> Complete Review
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Progress bar */}
       <div className="bg-slate-200 rounded-full h-2 overflow-hidden">
-        <div className="bg-indigo-500 h-full transition-all duration-300 rounded-full" style={{ width: `${progress}%` }} />
+        <div className={`h-full transition-all duration-300 rounded-full ${allHandled ? 'bg-emerald-500' : 'bg-indigo-500'}`} style={{ width: `${progress}%` }} />
       </div>
+
+      {/* Skipped warning */}
+      {allHandled && skipped.size > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+          <p className="text-[12px] text-amber-700">
+            {skipped.size} {skipped.size === 1 ? 'company was' : 'companies were'} skipped. You can click them in the sidebar to review before completing.
+          </p>
+        </div>
+      )}
 
       <div className="flex gap-4">
         {/* Left sidebar — company list for jumping */}
@@ -749,32 +771,40 @@ export function MonthlyReview() {
               </div>
 
               {/* Key metrics inline */}
-              <div className="grid grid-cols-5 gap-3">
-                <div className="bg-slate-50 rounded-lg p-3">
-                  <p className="text-[11px] text-slate-500">Health</p>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ background: getHealthColor(current.health) }} />
-                    <span className="text-[13px] text-slate-700">{current.health}</span>
-                  </div>
-                </div>
-                <div className="bg-slate-50 rounded-lg p-3">
-                  <p className="text-[11px] text-slate-500">MRR</p>
-                  <p className="text-[13px] mt-1 font-mono-num text-slate-700">{formatCurrency(current.mrr, current.currency)}</p>
-                  <span className={`text-[11px] font-mono-num ${current.arrGrowth >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                    {current.arrGrowth >= 0 ? '+' : ''}{current.arrGrowth}%
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400">Key Metrics</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-400">
+                    {isM1 ? 'Source: Founder Form' : 'Source: All connected'}
                   </span>
                 </div>
-                <div className="bg-slate-50 rounded-lg p-3">
-                  <p className="text-[11px] text-slate-500">Burn</p>
-                  <p className="text-[13px] mt-1 font-mono-num text-slate-700">{formatCurrency(current.burn, current.currency)}/mo</p>
-                </div>
-                <div className="bg-slate-50 rounded-lg p-3">
-                  <p className="text-[11px] text-slate-500">Runway</p>
-                  <p className={`text-[13px] mt-1 font-mono-num ${current.runway < 6 ? 'text-red-600' : 'text-slate-700'}`}>{current.runway}mo</p>
-                </div>
-                <div className="bg-slate-50 rounded-lg p-3">
-                  <p className="text-[11px] text-slate-500">MoIC</p>
-                  <p className="text-[13px] mt-1 font-mono-num text-slate-700">{current.accounting.moic.toFixed(1)}x</p>
+                <div className="grid grid-cols-5 gap-3">
+                  <div className="bg-slate-50 rounded-lg p-3">
+                    <p className="text-[11px] text-slate-500">Health</p>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <div className="w-2.5 h-2.5 rounded-full" style={{ background: getHealthColor(current.health) }} />
+                      <span className="text-[13px] text-slate-700">{current.health}</span>
+                    </div>
+                  </div>
+                  <div className="bg-slate-50 rounded-lg p-3">
+                    <p className="text-[11px] text-slate-500">MRR</p>
+                    <p className="text-[13px] mt-1 font-mono-num text-slate-700">{formatCurrency(current.mrr, current.currency)}</p>
+                    <span className={`text-[11px] font-mono-num ${current.arrGrowth >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                      {current.arrGrowth >= 0 ? '+' : ''}{current.arrGrowth}%
+                    </span>
+                  </div>
+                  <div className="bg-slate-50 rounded-lg p-3">
+                    <p className="text-[11px] text-slate-500">Burn</p>
+                    <p className="text-[13px] mt-1 font-mono-num text-slate-700">{formatCurrency(current.burn, current.currency)}/mo</p>
+                  </div>
+                  <div className="bg-slate-50 rounded-lg p-3">
+                    <p className="text-[11px] text-slate-500">Runway</p>
+                    <p className={`text-[13px] mt-1 font-mono-num ${current.runway < 6 ? 'text-red-600' : 'text-slate-700'}`}>{current.runway}mo</p>
+                  </div>
+                  <div className="bg-slate-50 rounded-lg p-3">
+                    <p className="text-[11px] text-slate-500">MoIC</p>
+                    <p className="text-[13px] mt-1 font-mono-num text-slate-700">{current.accounting.moic.toFixed(1)}x</p>
+                  </div>
                 </div>
               </div>
 
@@ -1450,6 +1480,31 @@ export function QuarterlyReview() {
                   ))}
                 </div>
               )}
+
+              {/* Monthly comments context — surface the 3 monthly comments from this quarter */}
+              {(() => {
+                const monthlyComments = monthlyReviewsHistory
+                  .filter(r => r.status === 'Complete')
+                  .flatMap(r => r.companyComments
+                    .filter(cc => cc.company === qCurrent.name)
+                    .map(cc => ({ month: r.month, comment: cc.comment }))
+                  )
+                  .slice(0, 3);
+                if (monthlyComments.length === 0) return null;
+                return (
+                  <div className="bg-slate-50 rounded-xl border border-slate-200/60 p-3.5">
+                    <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-2">Monthly Review Comments</p>
+                    <div className="space-y-2">
+                      {monthlyComments.map((mc, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-600 flex-shrink-0 mt-0.5">{mc.month.split(' ')[0]}</span>
+                          <p className="text-[12px] text-slate-600 leading-relaxed">{mc.comment}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Team Commentary fields */}
               {(() => {
