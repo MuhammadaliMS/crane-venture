@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import {
   Play, SkipForward, Check, ChevronRight, Download, Clock, Send, FileText,
   Upload, Users, Sparkles, CheckCircle, AlertCircle, Printer, Plus, Calendar,
-  ChevronDown, ArrowRight,
+  ChevronDown, ArrowRight, Save, Pencil,
 } from 'lucide-react';
 import { SparklineChart } from './SparklineChart';
 import { companies, funds, flags, formatCurrency, getHealthColor, getRAGColor, getActionColor, teamMembers, type RAGStatus } from './mock-data';
@@ -38,6 +38,8 @@ type ReviewRecord = {
   flagsResolved: { company: string; flag: string }[];
   actionsCreated: { company: string; action: string; assignee: string }[];
   commentary: string;
+  lastEditedBy?: string;
+  lastEditedAt?: string;
   exported?: boolean;
   companyReviews?: {
     company: string;
@@ -57,12 +59,14 @@ type MonthlyReviewRecord = {
   month: string;
   status: 'Complete' | 'In Progress';
   completedBy: string;
+  lastEditedBy: string;
+  lastEditedAt: string;
   companyComments: { company: string; comment: string }[];
 };
 
 const monthlyReviewsHistory: MonthlyReviewRecord[] = [
   {
-    id: 'mr-2026-03', date: 'Mar 10, 2026', month: 'March 2026', status: 'Complete', completedBy: 'Anna, Marcus',
+    id: 'mr-2026-03', date: 'Mar 10, 2026', month: 'March 2026', status: 'Complete', completedBy: 'Anna, Marcus', lastEditedBy: 'Marcus', lastEditedAt: 'Mar 10, 2026 4:32 PM',
     companyComments: [
       { company: sortedCompanies[0]?.name || 'Co', comment: 'Strong enterprise pipeline building. Two new logos signed this month. Sales cycle shortening.' },
       { company: sortedCompanies[1]?.name || 'Co', comment: 'ARR growth continues. Expansion revenue from existing customers driving numbers. Need to watch churn in SMB segment.' },
@@ -73,7 +77,7 @@ const monthlyReviewsHistory: MonthlyReviewRecord[] = [
     ],
   },
   {
-    id: 'mr-2026-02', date: 'Feb 10, 2026', month: 'February 2026', status: 'Complete', completedBy: 'Anna, Sarah',
+    id: 'mr-2026-02', date: 'Feb 10, 2026', month: 'February 2026', status: 'Complete', completedBy: 'Anna, Sarah', lastEditedBy: 'Sarah', lastEditedAt: 'Feb 10, 2026 3:15 PM',
     companyComments: [
       { company: sortedCompanies[0]?.name || 'Co', comment: 'Good month. Closed a key healthcare customer. Pipeline healthy.' },
       { company: sortedCompanies[1]?.name || 'Co', comment: 'Q4 numbers came in strong. Board meeting went well. Planning international expansion.' },
@@ -86,7 +90,7 @@ const monthlyReviewsHistory: MonthlyReviewRecord[] = [
     ],
   },
   {
-    id: 'mr-2026-01', date: 'Jan 10, 2026', month: 'January 2026', status: 'Complete', completedBy: 'Anna',
+    id: 'mr-2026-01', date: 'Jan 10, 2026', month: 'January 2026', status: 'Complete', completedBy: 'Anna', lastEditedBy: 'Anna', lastEditedAt: 'Jan 10, 2026 5:00 PM',
     companyComments: [
       { company: sortedCompanies[0]?.name || 'Co', comment: 'Post-holiday ramp. Team back and focused. Q1 targets set.' },
       { company: sortedCompanies[2]?.name || 'Co', comment: 'Burn crept up in December. Watching this month.' },
@@ -96,7 +100,7 @@ const monthlyReviewsHistory: MonthlyReviewRecord[] = [
     ],
   },
   {
-    id: 'mr-2025-12', date: 'Dec 8, 2025', month: 'December 2025', status: 'Complete', completedBy: 'Full team',
+    id: 'mr-2025-12', date: 'Dec 8, 2025', month: 'December 2025', status: 'Complete', completedBy: 'Full team', lastEditedBy: 'Anna', lastEditedAt: 'Dec 8, 2025 6:10 PM',
     companyComments: [
       { company: sortedCompanies[0]?.name || 'Co', comment: 'Year-end close looking strong. ARR ahead of plan.' },
       { company: sortedCompanies[1]?.name || 'Co', comment: 'Solid Q4. Enterprise deals landing. Board happy.' },
@@ -106,7 +110,7 @@ const monthlyReviewsHistory: MonthlyReviewRecord[] = [
     ],
   },
   {
-    id: 'mr-2025-11', date: 'Nov 10, 2025', month: 'November 2025', status: 'Complete', completedBy: 'Anna, Marcus',
+    id: 'mr-2025-11', date: 'Nov 10, 2025', month: 'November 2025', status: 'Complete', completedBy: 'Anna, Marcus', lastEditedBy: 'Marcus', lastEditedAt: 'Nov 10, 2025 4:45 PM',
     companyComments: [
       { company: sortedCompanies[0]?.name || 'Co', comment: 'Series A positioning underway. Warm intros to 3 funds.' },
       { company: sortedCompanies[1]?.name || 'Co', comment: 'Expansion into DACH market progressing. First LOI signed.' },
@@ -123,7 +127,7 @@ const quarterlyReviewsHistory: ReviewRecord[] = [
   {
     id: 'qr-2025-q4',
     date: 'Jan 15, 2026', quarter: 'Q4 2025', type: 'Quarterly LP', companies: 12, changes: 8, status: 'Complete',
-    completedBy: 'Full team', duration: '2h 15min', exported: true,
+    completedBy: 'Full team', duration: '2h 15min', lastEditedBy: 'Anna', lastEditedAt: 'Jan 15, 2026 5:20 PM', exported: true,
     companiesReviewed: sortedCompanies.map(c => c.name),
     ragChanges: [
       { company: sortedCompanies[0]?.name || 'Co', from: 'Green', to: 'Amber' },
@@ -155,7 +159,7 @@ const quarterlyReviewsHistory: ReviewRecord[] = [
   {
     id: 'qr-2025-q3',
     date: 'Oct 12, 2025', quarter: 'Q3 2025', type: 'Quarterly LP', companies: 11, changes: 5, status: 'Complete',
-    completedBy: 'Full team', duration: '1h 50min', exported: true,
+    completedBy: 'Full team', duration: '1h 50min', lastEditedBy: 'Marcus', lastEditedAt: 'Oct 12, 2025 3:45 PM', exported: true,
     companiesReviewed: sortedCompanies.slice(0, 11).map(c => c.name),
     ragChanges: [
       { company: sortedCompanies[3]?.name || 'Co', from: 'Green', to: 'Amber' },
@@ -180,7 +184,7 @@ const quarterlyReviewsHistory: ReviewRecord[] = [
   {
     id: 'qr-2025-q2',
     date: 'Jul 8, 2025', quarter: 'Q2 2025', type: 'Quarterly LP', companies: 10, changes: 3, status: 'Complete',
-    completedBy: 'Full team', duration: '1h 40min', exported: true,
+    completedBy: 'Full team', duration: '1h 40min', lastEditedBy: 'Sarah', lastEditedAt: 'Jul 8, 2025 4:00 PM', exported: true,
     companiesReviewed: sortedCompanies.slice(0, 10).map(c => c.name),
     ragChanges: [
       { company: sortedCompanies[0]?.name || 'Co', from: 'Amber', to: 'Green' },
@@ -198,7 +202,7 @@ const quarterlyReviewsHistory: ReviewRecord[] = [
   {
     id: 'qr-2025-q1',
     date: 'Apr 10, 2025', quarter: 'Q1 2025', type: 'Quarterly LP', companies: 10, changes: 6, status: 'Complete',
-    completedBy: 'Full team', duration: '2h 05min', exported: true,
+    completedBy: 'Full team', duration: '2h 05min', lastEditedBy: 'Anna', lastEditedAt: 'Apr 10, 2025 6:30 PM', exported: true,
     companiesReviewed: sortedCompanies.slice(0, 10).map(c => c.name),
     ragChanges: [
       { company: sortedCompanies[2]?.name || 'Co', from: 'Green', to: 'Amber' },
@@ -410,12 +414,14 @@ function ReviewDetailExpanded({ review, navigate }: { review: ReviewRecord; navi
 // ══════════════════════════════════════════════════════════════════════
 export function MonthlyReview() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<'list' | 'active' | 'detail'>('list');
+  const [mode, setMode] = useState<'list' | 'active'>('list');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [reviewed, setReviewed] = useState<Set<string>>(new Set());
   const [skipped, setSkipped] = useState<Set<string>>(new Set());
   const [commentaries, setCommentaries] = useState<Record<string, string>>({});
-  const [detailReview, setDetailReview] = useState<MonthlyReviewRecord | null>(null);
+  const [editingReview, setEditingReview] = useState<MonthlyReviewRecord | null>(null);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { fundFilter, setFundFilter } = useFundFilter();
   const { milestone } = useMilestone();
@@ -435,160 +441,53 @@ export function MonthlyReview() {
     if (currentIndex < sortedCompanies.length - 1) setCurrentIndex(currentIndex + 1);
   };
 
+  // ── Autosave logic ──
+  const triggerAutoSave = useCallback(() => {
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    setAutoSaveStatus('saving');
+    autoSaveTimer.current = setTimeout(() => {
+      setAutoSaveStatus('saved');
+      setTimeout(() => setAutoSaveStatus('idle'), 2000);
+    }, 800);
+  }, []);
+
+  // Trigger autosave when commentaries change
+  useEffect(() => {
+    if (mode === 'active' && Object.keys(commentaries).length > 0) {
+      triggerAutoSave();
+    }
+  }, [commentaries, mode, triggerAutoSave]);
+
   // ── Determine current month label and whether an in-progress review exists ──
   const currentMonthLabel = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
   const currentMonthShort = new Date().toLocaleString('default', { month: 'long' });
   const inProgressReview = monthlyReviewsHistory.find(r => r.status === 'In Progress');
   const hasCurrentMonth = monthlyReviewsHistory.some(r => r.month === currentMonthLabel);
 
-  // ── Detail view (read-only past review) ───────────────────────────
-  if (mode === 'detail' && detailReview) {
-    return (
-      <div className="max-w-[1100px] mx-auto space-y-5">
-        <div className="flex items-center justify-between">
-          <button onClick={() => { setMode('list'); setDetailReview(null); }} className="text-[13px] text-slate-500 hover:text-slate-700 transition-colors">← Back to Reviews</button>
-          <h2 className="text-[18px] font-semibold tracking-tight text-slate-800">{detailReview.month} Review</h2>
-          <span className={`text-[11px] px-2.5 py-1 rounded-lg font-medium ${
-            detailReview.status === 'Complete' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
-          }`}>{detailReview.status}</span>
-        </div>
+  // ── Open a review for editing (past or current) ──
+  const openReviewForEditing = (review: MonthlyReviewRecord) => {
+    setEditingReview(review);
+    // Pre-populate commentaries from the review's saved comments
+    const prePopulated: Record<string, string> = {};
+    review.companyComments.forEach(cc => {
+      const comp = sortedCompanies.find(c => c.name === cc.company);
+      if (comp) prePopulated[comp.id] = cc.comment;
+    });
+    setCommentaries(prePopulated);
+    // Mark companies with comments as reviewed
+    const reviewedSet = new Set<string>();
+    review.companyComments.forEach(cc => {
+      const comp = sortedCompanies.find(c => c.name === cc.company);
+      if (comp) reviewedSet.add(comp.id);
+    });
+    setReviewed(reviewedSet);
+    setSkipped(new Set());
+    setCurrentIndex(0);
+    setMode('active');
+  };
 
-        {/* Summary bar */}
-        <div className="flex items-center gap-4 text-[12px] text-slate-500 bg-white rounded-xl border border-slate-200/60 px-4 py-3">
-          <span>By <span className="text-slate-700 font-medium">{detailReview.completedBy}</span></span>
-          <span>·</span>
-          <span>{detailReview.date}</span>
-          <span>·</span>
-          <span>{detailReview.companyComments.length} companies reviewed</span>
-        </div>
-
-        {/* Company-by-company read-only cards */}
-        <div className="flex gap-4">
-          {/* Left sidebar */}
-          <div className="w-[220px] flex-shrink-0">
-            <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400 mb-2">Companies</p>
-            <div className="bg-white rounded-xl border border-slate-200/60 divide-y divide-slate-100 max-h-[680px] overflow-y-auto">
-              {detailReview.companyComments.map((cc, i) => {
-                const comp = sortedCompanies.find(c => c.name === cc.company);
-                const isCurrent = i === currentIndex;
-                return (
-                  <button
-                    key={i}
-                    onClick={() => setCurrentIndex(i)}
-                    className={`w-full p-2.5 flex items-center gap-2 text-left transition-colors ${
-                      isCurrent ? 'bg-indigo-50 border-l-2 border-l-indigo-500' : 'hover:bg-slate-50'
-                    }`}
-                  >
-                    {comp && <div className="w-6 h-6 rounded flex items-center justify-center text-white text-[10px] flex-shrink-0" style={{ background: comp.logoColor }}>{comp.name[0]}</div>}
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-[12px] truncate ${isCurrent ? 'text-indigo-700 font-medium' : 'text-slate-700'}`}>{cc.company}</p>
-                      {comp && (
-                        <div className="flex items-center gap-1 mt-0.5">
-                          {comp.ragHistory.slice(-3).map((r, ri) => (
-                            <div key={ri} className="w-2 h-2 rounded-full" style={{ background: getRAGColor(r) }} />
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Right — read-only detail panel */}
-          <div className="flex-1">
-            {(() => {
-              const cc = detailReview.companyComments[currentIndex];
-              if (!cc) return null;
-              const comp = sortedCompanies.find(c => c.name === cc.company);
-              return (
-                <div className="bg-white rounded-xl border border-slate-200/60 p-6 space-y-4">
-                  {/* Company header */}
-                  <div className="flex items-center gap-4">
-                    {comp && (
-                      <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-[18px]" style={{ background: comp.logoColor }}>
-                        {comp.name[0]}
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-[18px] font-semibold text-slate-800">{cc.company}</h2>
-                        {comp && (
-                          <>
-                            <span className="text-[11px] px-2 py-0.5 bg-slate-100 rounded-md">{comp.stage}</span>
-                            <span className="text-[11px] px-2 py-0.5 bg-slate-100 rounded-md">{comp.fund}</span>
-                            <span className="text-[11px] px-2 py-0.5 rounded-md" style={{ background: getActionColor(comp.action) + '15', color: getActionColor(comp.action) }}>
-                              {comp.action}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                      {comp && <p className="text-[13px] text-slate-500">{comp.description}</p>}
-                    </div>
-                  </div>
-
-                  {/* Key metrics (read-only) */}
-                  {comp && (
-                    <div className="grid grid-cols-5 gap-3">
-                      <div className="bg-slate-50 rounded-lg p-3">
-                        <p className="text-[11px] text-slate-500">Health</p>
-                        <div className="flex items-center gap-1.5 mt-1">
-                          <div className="w-2.5 h-2.5 rounded-full" style={{ background: getHealthColor(comp.health) }} />
-                          <span className="text-[13px] text-slate-700">{comp.health}</span>
-                        </div>
-                      </div>
-                      <div className="bg-slate-50 rounded-lg p-3">
-                        <p className="text-[11px] text-slate-500">MRR</p>
-                        <p className="text-[13px] mt-1 font-mono-num text-slate-700">{formatCurrency(comp.mrr, comp.currency)}</p>
-                      </div>
-                      <div className="bg-slate-50 rounded-lg p-3">
-                        <p className="text-[11px] text-slate-500">Burn</p>
-                        <p className="text-[13px] mt-1 font-mono-num text-slate-700">{formatCurrency(comp.burn, comp.currency)}/mo</p>
-                      </div>
-                      <div className="bg-slate-50 rounded-lg p-3">
-                        <p className="text-[11px] text-slate-500">Runway</p>
-                        <p className={`text-[13px] mt-1 font-mono-num ${comp.runway < 6 ? 'text-red-600' : 'text-slate-700'}`}>{comp.runway}mo</p>
-                      </div>
-                      <div className="bg-slate-50 rounded-lg p-3">
-                        <p className="text-[11px] text-slate-500">MoIC</p>
-                        <p className="text-[13px] mt-1 font-mono-num text-slate-700">{comp.accounting.moic.toFixed(1)}x</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Commentary (read-only) */}
-                  <div className="bg-slate-50 rounded-lg p-4">
-                    <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-1.5">Team Commentary</p>
-                    <p className="text-[13px] leading-relaxed text-slate-700">{cc.comment}</p>
-                  </div>
-
-                  {/* Navigation */}
-                  <div className="flex items-center justify-between pt-1">
-                    <button
-                      onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
-                      disabled={currentIndex === 0}
-                      className="text-[13px] text-slate-500 hover:text-slate-700 disabled:opacity-30 transition-colors"
-                    >
-                      ← Previous
-                    </button>
-                    <span className="text-[12px] text-slate-400">{currentIndex + 1} of {detailReview.companyComments.length}</span>
-                    <button
-                      onClick={() => setCurrentIndex(Math.min(detailReview.companyComments.length - 1, currentIndex + 1))}
-                      disabled={currentIndex === detailReview.companyComments.length - 1}
-                      className="text-[13px] text-slate-500 hover:text-slate-700 disabled:opacity-30 transition-colors"
-                    >
-                      Next →
-                    </button>
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Review title — editing a past review or new
+  const reviewTitle = editingReview ? `${editingReview.month} Review` : `${currentMonthShort} Review`;
 
   // ── List view ─────────────────────────────────────────────────────
   if (mode === 'list') {
@@ -630,7 +529,7 @@ export function MonthlyReview() {
             {monthlyReviewsHistory.map((review) => (
               <button
                 key={review.id}
-                onClick={() => { setDetailReview(review); setCurrentIndex(0); setMode('detail'); }}
+                onClick={() => openReviewForEditing(review)}
                 className="w-full p-3.5 flex items-center gap-3 text-[13px] hover:bg-slate-50 transition-colors text-left"
               >
                 <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
@@ -638,14 +537,17 @@ export function MonthlyReview() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[14px] font-medium text-slate-800">{review.month}</p>
-                  <p className="text-[12px] text-slate-500 mt-0.5">{review.date} · {review.completedBy}</p>
+                  <p className="text-[12px] text-slate-500 mt-0.5">
+                    {review.date} · {review.completedBy}
+                    <span className="text-slate-400 ml-1">· Last edited by {review.lastEditedBy}, {review.lastEditedAt}</span>
+                  </p>
                 </div>
                 <div className="flex items-center gap-4 flex-shrink-0">
                   <p className="text-[12px] text-slate-500">{review.companyComments.length} companies</p>
                   <span className={`text-[11px] px-2.5 py-1 rounded-lg font-medium ${
                     review.status === 'Complete' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
                   }`}>{review.status}</span>
-                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                  <Pencil className="w-3.5 h-3.5 text-slate-400" />
                 </div>
               </button>
             ))}
@@ -661,20 +563,29 @@ export function MonthlyReview() {
   return (
     <div className="max-w-[1100px] mx-auto space-y-4">
       <div className="flex items-center justify-between">
-        <button onClick={() => setMode('list')} className="text-[13px] text-slate-500 hover:text-slate-700 transition-colors">← Back to Reviews</button>
-        <h2 className="text-[18px] font-semibold tracking-tight text-slate-800">{currentMonthShort} Review</h2>
+        <button onClick={() => { setMode('list'); setEditingReview(null); }} className="text-[13px] text-slate-500 hover:text-slate-700 transition-colors">← Back to Reviews</button>
+        <div className="flex items-center gap-3">
+          <h2 className="text-[18px] font-semibold tracking-tight text-slate-800">{reviewTitle}</h2>
+          {autoSaveStatus === 'saving' && (
+            <span className="text-[11px] text-slate-400 flex items-center gap-1"><Save className="w-3 h-3 animate-pulse" /> Saving...</span>
+          )}
+          {autoSaveStatus === 'saved' && (
+            <span className="text-[11px] text-emerald-500 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Saved</span>
+          )}
+          {editingReview && autoSaveStatus === 'idle' && (
+            <span className="text-[11px] text-slate-400">Last edited by {editingReview.lastEditedBy}, {editingReview.lastEditedAt}</span>
+          )}
+        </div>
         <div className="flex items-center gap-3">
           <span className="text-[12px] text-slate-500">
             {reviewed.size + skipped.size} of {sortedCompanies.length}
           </span>
-          {allHandled && (
-            <button
-              onClick={() => setMode('list')}
-              className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 text-white rounded-lg text-[13px] hover:bg-emerald-600 transition-colors"
-            >
-              <CheckCircle className="w-4 h-4" /> Complete Review
-            </button>
-          )}
+          <button
+            onClick={() => { setMode('list'); setEditingReview(null); }}
+            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 text-white rounded-lg text-[13px] hover:bg-emerald-600 transition-colors"
+          >
+            <CheckCircle className="w-4 h-4" /> Complete Review
+          </button>
         </div>
       </div>
 
@@ -858,7 +769,7 @@ export function MonthlyReview() {
 // ══════════════════════════════════════════════════════════════════════
 export function QuarterlyReview() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<'list' | 'active' | 'lp-report-preview' | 'detail'>('list');
+  const [mode, setMode] = useState<'list' | 'active' | 'lp-report-preview'>('list');
   const [selectedFund, setSelectedFund] = useState(funds[0]);
   const [quarterlyStep, setQuarterlyStep] = useState(1);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -868,7 +779,9 @@ export function QuarterlyReview() {
     recentProgress: string; rag: RAGStatus; summary: string; keyConcerns: string; actionPoints: string;
     equityFundraising: string; debtFundraising: string; burnReduction: string; nearTermExit: string; inductionAction: string;
   }>>({});
-  const [detailReview, setDetailReview] = useState<ReviewRecord | null>(null);
+  const [editingReview, setEditingReview] = useState<ReviewRecord | null>(null);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { fundFilter, setFundFilter } = useFundFilter();
   const { milestone } = useMilestone();
@@ -886,6 +799,52 @@ export function QuarterlyReview() {
     not_sent:  { label: 'Not sent',  dot: '#94a3b8', bg: 'bg-slate-50',   text: 'text-slate-400',   border: 'border-slate-200' },
   };
 
+  // ── Autosave logic ──
+  const triggerQAutoSave = useCallback(() => {
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    setAutoSaveStatus('saving');
+    autoSaveTimer.current = setTimeout(() => {
+      setAutoSaveStatus('saved');
+      setTimeout(() => setAutoSaveStatus('idle'), 2000);
+    }, 800);
+  }, []);
+
+  useEffect(() => {
+    if (mode === 'active' && Object.keys(companyCommentary).length > 0) {
+      triggerQAutoSave();
+    }
+  }, [companyCommentary, mode, triggerQAutoSave]);
+
+  // ── Open a past quarterly review for editing ──
+  const openQuarterlyForEditing = (review: ReviewRecord) => {
+    setEditingReview(review);
+    // Pre-populate commentary from saved review
+    const prePopulated: Record<string, any> = {};
+    (review.companyReviews || []).forEach(cr => {
+      const comp = sortedCompanies.find(c => c.name === cr.company);
+      if (comp) {
+        prePopulated[comp.id] = {
+          recentProgress: cr.recentProgress || '',
+          rag: comp.rag,
+          summary: cr.summary || cr.comment || '',
+          keyConcerns: cr.keyConcerns || '',
+          actionPoints: cr.actionPoints || '',
+          equityFundraising: '',
+          debtFundraising: '',
+          burnReduction: '',
+          nearTermExit: '',
+          inductionAction: cr.inductionAction || '',
+        };
+      }
+    });
+    setCompanyCommentary(prePopulated);
+    setCurrentIndex(0);
+    setQuarterlyStep(1);
+    setMode('active');
+  };
+
+  const quarterlyReviewTitle = editingReview ? `${editingReview.quarter} Review` : `${currentQuarterLabel} Review`;
+
   // Commentary completeness
   const isCommentaryDone = (id: string) => {
     const cc = companyCommentary[id];
@@ -901,218 +860,6 @@ export function QuarterlyReview() {
   const currentYear = new Date().getFullYear();
   const currentQuarterLabel = `Q${currentQuarterNum} ${currentYear}`;
   const inProgressQuarterly = quarterlyReviewsHistory.find(r => r.status === 'In Progress');
-
-  // ── Detail view (read-only past quarterly review) ──────────────────
-  if (mode === 'detail' && detailReview) {
-    const reviewCompanies = detailReview.companyReviews ?? [];
-    const detailItems = reviewCompanies.length > 0
-      ? reviewCompanies.map(cr => ({ company: cr.company, ...cr }))
-      : detailReview.companiesReviewed.map(name => ({ company: name, comment: '', sendStatus: 'Sent' as const, recentProgress: '', summary: '', keyConcerns: '', actionPoints: '', inductionAction: '' }));
-
-    return (
-      <div className="max-w-[1100px] mx-auto space-y-5">
-        <div className="flex items-center justify-between">
-          <button onClick={() => { setMode('list'); setDetailReview(null); }} className="text-[13px] text-slate-500 hover:text-slate-700 transition-colors">← Back to Reviews</button>
-          <h2 className="text-[18px] font-semibold tracking-tight text-slate-800">{detailReview.quarter} Review</h2>
-          <span className={`text-[11px] px-2.5 py-1 rounded-lg font-medium ${
-            detailReview.status === 'Complete' ? 'bg-emerald-50 text-emerald-700' :
-            detailReview.status === 'In Progress' ? 'bg-amber-50 text-amber-700' :
-            'bg-slate-50 text-slate-500'
-          }`}>{detailReview.status}</span>
-        </div>
-
-        {/* Summary bar */}
-        <div className="flex items-center gap-4 text-[12px] text-slate-500 bg-white rounded-xl border border-slate-200/60 px-4 py-3">
-          <span>By <span className="text-slate-700 font-medium">{detailReview.completedBy}</span></span>
-          <span>·</span>
-          <span>{detailReview.date}</span>
-          <span>·</span>
-          <span>{detailReview.duration}</span>
-          <span>·</span>
-          <span>{detailReview.companies} companies · {detailReview.changes} RAG changes</span>
-          {detailReview.exported && (
-            <>
-              <span>·</span>
-              <span className="text-purple-600 flex items-center gap-1"><Download className="w-3 h-3" /> Exported</span>
-            </>
-          )}
-        </div>
-
-        {/* Commentary */}
-        {detailReview.commentary && (
-          <div className="bg-white rounded-xl border border-slate-200/60 p-4">
-            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-1">Review Summary</p>
-            <p className="text-[13px] leading-relaxed text-slate-600">{detailReview.commentary}</p>
-          </div>
-        )}
-
-        {/* Company-by-company read-only */}
-        <div className="flex gap-4">
-          {/* Left sidebar */}
-          <div className="w-[220px] flex-shrink-0">
-            <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400 mb-2">Companies</p>
-            <div className="bg-white rounded-xl border border-slate-200/60 divide-y divide-slate-100 max-h-[680px] overflow-y-auto">
-              {detailItems.map((item, i) => {
-                const comp = sortedCompanies.find(c => c.name === item.company);
-                const isCurrent = i === currentIndex;
-                return (
-                  <button
-                    key={i}
-                    onClick={() => setCurrentIndex(i)}
-                    className={`w-full p-2.5 flex items-center gap-2 text-left transition-colors ${
-                      isCurrent ? 'bg-indigo-50 border-l-2 border-l-indigo-500' : 'hover:bg-slate-50'
-                    }`}
-                  >
-                    {comp && <div className="w-6 h-6 rounded flex items-center justify-center text-white text-[10px] flex-shrink-0" style={{ background: comp.logoColor }}>{comp.name[0]}</div>}
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-[12px] truncate ${isCurrent ? 'text-indigo-700 font-medium' : 'text-slate-700'}`}>{item.company}</p>
-                      {comp && (
-                        <div className="flex items-center gap-1 mt-0.5">
-                          {comp.ragHistory.slice(-3).map((r, ri) => (
-                            <div key={ri} className="w-2 h-2 rounded-full" style={{ background: getRAGColor(r) }} />
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Right — read-only detail panel */}
-          <div className="flex-1">
-            {(() => {
-              const item = detailItems[currentIndex];
-              if (!item) return null;
-              const comp = sortedCompanies.find(c => c.name === item.company);
-              return (
-                <div className="bg-white rounded-xl border border-slate-200/60 p-6 space-y-4">
-                  {/* Company header */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      {comp && (
-                        <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-[18px]" style={{ background: comp.logoColor }}>
-                          {comp.name[0]}
-                        </div>
-                      )}
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h2 className="text-[18px] font-semibold text-slate-800">{item.company}</h2>
-                          {comp && (
-                            <>
-                              <span className="text-[11px] px-2 py-0.5 bg-slate-100 rounded-md">{comp.stage}</span>
-                              <span className="text-[11px] px-2 py-0.5 bg-slate-100 rounded-md">{comp.fund}</span>
-                            </>
-                          )}
-                        </div>
-                        {comp && <p className="text-[13px] text-slate-500">{comp.description}</p>}
-                      </div>
-                    </div>
-                    {item.sendStatus && (
-                      <span className={`text-[11px] px-2.5 py-1 rounded-lg font-medium ${
-                        item.sendStatus === 'Sent' ? 'bg-emerald-50 text-emerald-700' :
-                        item.sendStatus === 'Draft' ? 'bg-amber-50 text-amber-700' :
-                        'bg-slate-50 text-slate-500'
-                      }`}>{item.sendStatus}</span>
-                    )}
-                  </div>
-
-                  {/* Key metrics (read-only) */}
-                  {comp && (
-                    <div className="grid grid-cols-5 gap-3">
-                      <div className="bg-slate-50 rounded-lg p-3">
-                        <p className="text-[11px] text-slate-500">MRR</p>
-                        <p className="text-[13px] mt-1 font-mono-num text-slate-700">{formatCurrency(comp.mrr, comp.currency)}</p>
-                      </div>
-                      <div className="bg-slate-50 rounded-lg p-3">
-                        <p className="text-[11px] text-slate-500">ARR Growth</p>
-                        <p className={`text-[13px] mt-1 font-mono-num ${comp.arrGrowth >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{comp.arrGrowth >= 0 ? '+' : ''}{comp.arrGrowth}%</p>
-                      </div>
-                      <div className="bg-slate-50 rounded-lg p-3">
-                        <p className="text-[11px] text-slate-500">Burn</p>
-                        <p className="text-[13px] mt-1 font-mono-num text-slate-700">{formatCurrency(comp.burn, comp.currency)}/mo</p>
-                      </div>
-                      <div className="bg-slate-50 rounded-lg p-3">
-                        <p className="text-[11px] text-slate-500">Runway</p>
-                        <p className={`text-[13px] mt-1 font-mono-num ${comp.runway < 6 ? 'text-red-600' : 'text-slate-700'}`}>{comp.runway}mo</p>
-                      </div>
-                      <div className="bg-slate-50 rounded-lg p-3">
-                        <p className="text-[11px] text-slate-500">Headcount</p>
-                        <p className="text-[13px] mt-1 font-mono-num text-slate-700">{comp.headcount}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Read-only commentary fields */}
-                  {item.comment && (
-                    <div className="bg-slate-50 rounded-lg p-4">
-                      <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-1.5">Comment</p>
-                      <p className="text-[13px] leading-relaxed text-slate-700">{item.comment}</p>
-                    </div>
-                  )}
-
-                  {item.recentProgress && (
-                    <div className="bg-slate-50 rounded-lg p-4">
-                      <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-1.5">Recent Progress</p>
-                      <p className="text-[13px] leading-relaxed text-slate-700">{item.recentProgress}</p>
-                    </div>
-                  )}
-
-                  {item.summary && (
-                    <div className="bg-slate-50 rounded-lg p-4">
-                      <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-1.5">Summary</p>
-                      <p className="text-[13px] leading-relaxed text-slate-700">{item.summary}</p>
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-3 gap-3">
-                    {item.keyConcerns && (
-                      <div className="bg-slate-50 rounded-lg p-4">
-                        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-1.5">Key Concerns</p>
-                        <p className="text-[12px] leading-relaxed text-slate-700">{item.keyConcerns}</p>
-                      </div>
-                    )}
-                    {item.actionPoints && (
-                      <div className="bg-slate-50 rounded-lg p-4">
-                        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-1.5">Action Points</p>
-                        <p className="text-[12px] leading-relaxed text-slate-700">{item.actionPoints}</p>
-                      </div>
-                    )}
-                    {item.inductionAction && (
-                      <div className="bg-slate-50 rounded-lg p-4">
-                        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-1.5">Induction Action</p>
-                        <p className="text-[12px] leading-relaxed text-slate-700">{item.inductionAction}</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Navigation */}
-                  <div className="flex items-center justify-between pt-1">
-                    <button
-                      onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
-                      disabled={currentIndex === 0}
-                      className="text-[13px] text-slate-500 hover:text-slate-700 disabled:opacity-30 transition-colors"
-                    >
-                      ← Previous
-                    </button>
-                    <span className="text-[12px] text-slate-400">{currentIndex + 1} of {detailItems.length}</span>
-                    <button
-                      onClick={() => setCurrentIndex(Math.min(detailItems.length - 1, currentIndex + 1))}
-                      disabled={currentIndex === detailItems.length - 1}
-                      className="text-[13px] text-slate-500 hover:text-slate-700 disabled:opacity-30 transition-colors"
-                    >
-                      Next →
-                    </button>
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // ── List view ─────────────────────────────────────────────────────
   if (mode === 'list') {
@@ -1175,7 +922,7 @@ export function QuarterlyReview() {
             {quarterlyReviewsHistory.map((review) => (
               <button
                 key={review.id}
-                onClick={() => { setDetailReview(review); setCurrentIndex(0); setMode('detail'); }}
+                onClick={() => openQuarterlyForEditing(review)}
                 className="w-full p-3.5 flex items-center gap-3 text-[13px] hover:bg-slate-50 transition-colors text-left"
               >
                 <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
@@ -1183,7 +930,10 @@ export function QuarterlyReview() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[14px] font-medium text-slate-800">{review.quarter}</p>
-                  <p className="text-[12px] text-slate-500 mt-0.5">{review.date} · {review.completedBy} · {review.duration}</p>
+                  <p className="text-[12px] text-slate-500 mt-0.5">
+                    {review.date} · {review.completedBy} · {review.duration}
+                    {review.lastEditedBy && <span className="text-slate-400 ml-1">· Last edited by {review.lastEditedBy}, {review.lastEditedAt}</span>}
+                  </p>
                 </div>
                 <div className="flex items-center gap-4 flex-shrink-0">
                   <div className="text-right">
@@ -1200,7 +950,7 @@ export function QuarterlyReview() {
                     review.status === 'In Progress' ? 'bg-amber-50 text-amber-700' :
                     'bg-slate-50 text-slate-500'
                   }`}>{review.status}</span>
-                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                  <Pencil className="w-3.5 h-3.5 text-slate-400" />
                 </div>
               </button>
             ))}
@@ -1233,19 +983,32 @@ export function QuarterlyReview() {
   return (
     <div className="max-w-[1100px] mx-auto space-y-5">
       <div className="flex items-center justify-between">
-        <button onClick={() => setMode('list')} className="text-[13px] text-slate-500 hover:text-slate-700 transition-colors">← Back to Reviews</button>
-        <h2 className="text-[18px] font-semibold tracking-tight text-slate-800">
-          {isM1 ? 'Q1 2026 Quarterly Review' : 'Q1 2026 LP Report'}
-        </h2>
-        {!isM1 && <span className="text-[12px] text-slate-500">Step {quarterlyStep} of 2</span>}
-        {isM1 && (
-          <button
-            onClick={() => { generateAssetMetrixXLSX(selectedFund, companies); }}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg text-[13px] hover:bg-indigo-600 transition-colors"
-          >
-            <Download className="w-3.5 h-3.5" /> Export Asset Metrix
-          </button>
-        )}
+        <button onClick={() => { setMode('list'); setEditingReview(null); }} className="text-[13px] text-slate-500 hover:text-slate-700 transition-colors">← Back to Reviews</button>
+        <div className="flex items-center gap-3">
+          <h2 className="text-[18px] font-semibold tracking-tight text-slate-800">
+            {isM1 ? quarterlyReviewTitle : `${editingReview ? editingReview.quarter : currentQuarterLabel} LP Report`}
+          </h2>
+          {autoSaveStatus === 'saving' && (
+            <span className="text-[11px] text-slate-400 flex items-center gap-1"><Save className="w-3 h-3 animate-pulse" /> Saving...</span>
+          )}
+          {autoSaveStatus === 'saved' && (
+            <span className="text-[11px] text-emerald-500 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Saved</span>
+          )}
+          {editingReview && autoSaveStatus === 'idle' && editingReview.lastEditedBy && (
+            <span className="text-[11px] text-slate-400">Last edited by {editingReview.lastEditedBy}, {editingReview.lastEditedAt}</span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {!isM1 && <span className="text-[12px] text-slate-500">Step {quarterlyStep} of 2</span>}
+          {isM1 && (
+            <button
+              onClick={() => { generateAssetMetrixXLSX(selectedFund, companies); }}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg text-[13px] hover:bg-indigo-600 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" /> Export Asset Metrix
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 2-step stepper (hidden in M1) */}
