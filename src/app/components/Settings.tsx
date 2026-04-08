@@ -109,7 +109,7 @@ export function Settings() {
               <p className="text-[14px] text-slate-500">Manage connections to your data sources. Configure sync frequency and authentication.</p>
               <div className="grid grid-cols-2 gap-3 stagger-children">
                 {(isM1 ? connectors.filter(c => c.name === 'Attio') : connectors).map(c => (
-                  <div key={c.name} className={`bg-white rounded-xl p-5 hover:shadow-sm transition-all ${
+                  <div key={c.name} className={`bg-white rounded-xl p-4 hover:shadow-sm transition-all ${
                     c.status === 'Error'
                       ? 'border-2 border-red-200 bg-red-50/30 shadow-red-100/50'
                       : c.status === 'Disconnected'
@@ -139,7 +139,7 @@ export function Settings() {
                       <span>Last sync: {c.lastSync}</span>
                       <span className="font-mono-num">{c.records} records</span>
                     </div>
-                    <button className={`w-full mt-3 text-[13px] text-center py-1.5 rounded-lg transition-colors font-medium ${
+                    <button className={`w-full mt-3 text-[13px] text-center py-2 rounded-lg transition-colors font-medium ${
                       c.status === 'Error'
                         ? 'bg-red-100 text-red-700 hover:bg-red-200 border border-red-200'
                         : c.status === 'Disconnected'
@@ -192,7 +192,7 @@ export function Settings() {
                   <h2 className="text-[16px] font-semibold text-slate-900">Team Management</h2>
                   <p className="text-[13px] text-slate-500">{teamMembers.length} team members</p>
                 </div>
-                <button className="text-[12px] px-3 py-1.5 bg-indigo-500 text-white hover:bg-indigo-600 transition-colors rounded-lg flex items-center gap-1">
+                <button className="text-[12px] px-3 py-2 bg-indigo-500 text-white hover:bg-indigo-600 transition-colors rounded-lg flex items-center gap-1">
                   <Plus className="w-3 h-3" /> Invite Member
                 </button>
               </div>
@@ -221,7 +221,7 @@ export function Settings() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-[16px] font-semibold text-slate-900">Fund Management</h2>
-                <button className="text-[12px] px-3 py-1.5 bg-indigo-500 text-white hover:bg-indigo-600 transition-colors rounded-lg flex items-center gap-1">
+                <button className="text-[12px] px-3 py-2 bg-indigo-500 text-white hover:bg-indigo-600 transition-colors rounded-lg flex items-center gap-1">
                   <Plus className="w-3 h-3" /> Add Fund
                 </button>
               </div>
@@ -233,7 +233,7 @@ export function Settings() {
                       <h3 className="text-[15px]">{fund.name}</h3>
                       <p className="text-[12px] text-slate-500">Vintage {fund.vintage} · {fund.currency} · {fund.accountingBasis}</p>
                     </div>
-                    <button className="text-[12px] px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50">Edit</button>
+                    <button className="text-[12px] px-3 py-2 border border-slate-200 rounded-lg hover:bg-slate-50">Edit</button>
                   </div>
                   <div className="grid grid-cols-4 gap-3 text-[12px]">
                     <div><span className="text-slate-500">Committed:</span> <span className="ml-1">£{(fund.totalCommitted / 1000000).toFixed(1)}M</span></div>
@@ -427,8 +427,8 @@ export function Settings() {
                   <p className="text-[13px] text-slate-500">{companies.length} portfolio companies ({companies.filter(c => c.lifecycle === 'Active — Core').length} active core)</p>
                 </div>
                 <div className="flex gap-2">
-                  <button className="text-[12px] px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-50">Import from Attio</button>
-                  <button className="text-[12px] px-3 py-1.5 bg-indigo-500 text-white hover:bg-indigo-600 transition-colors rounded-lg flex items-center gap-1">
+                  <button className="text-[12px] px-3 py-2 border border-slate-200 rounded-lg hover:bg-slate-50">Import from Attio</button>
+                  <button className="text-[12px] px-3 py-2 bg-indigo-500 text-white hover:bg-indigo-600 transition-colors rounded-lg flex items-center gap-1">
                     <Plus className="w-3 h-3" /> Add Company
                   </button>
                 </div>
