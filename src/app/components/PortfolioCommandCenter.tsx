@@ -169,7 +169,7 @@ export function PortfolioCommandCenter() {
               key={i}
               value={filter.value}
               onChange={e => filter.setter(e.target.value as never)}
-              className="text-[11px] border border-slate-200 rounded-md px-2 py-1 bg-white text-slate-500 focus:ring-1 focus:ring-indigo-500/20"
+              className="text-[11px] border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-500 focus:ring-1 focus:ring-indigo-500/20"
             >
               {filter.options.map((opt, j) => (
                 <option key={opt} value={opt}>{filter.labels[j]}</option>

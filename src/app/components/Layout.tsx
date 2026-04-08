@@ -156,12 +156,12 @@ export function Layout() {
             )}
 
             {/* Navigation */}
-            <nav className="flex-1 py-1 overflow-y-auto scrollbar-none">
+            <nav className="flex-1 py-2 overflow-y-auto scrollbar-none">
               {filteredNavSections.map((section, sIdx) => (
                 <div key={sIdx}>
                   {/* Section label */}
                   {!collapsed && section.label && (
-                    <p className="text-[10px] uppercase tracking-widest font-medium text-slate-500 px-4 pt-5 pb-1.5">
+                    <p className="text-[10px] uppercase tracking-widest font-medium text-slate-500 px-4 pt-4 pb-2">
                       {section.label}
                       {section.label === 'Research' && (
                         <span className="ml-1.5 text-[9px] normal-case tracking-normal text-slate-600">
@@ -263,7 +263,7 @@ export function Layout() {
             </nav>
 
             {/* ─── User + Collapse toggle ─── */}
-            <div className="border-t border-white/[0.06] p-3">
+            <div className="border-t border-white/[0.06] px-4 py-3">
               {/* User info */}
               <div className="flex items-center gap-2.5 mb-2">
                 <div className="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center text-[13px] shrink-0 font-medium">

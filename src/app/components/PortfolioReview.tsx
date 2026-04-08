@@ -530,7 +530,7 @@ export function MonthlyReview() {
               <button
                 key={review.id}
                 onClick={() => openReviewForEditing(review)}
-                className="w-full p-3.5 flex items-center gap-3 text-[13px] hover:bg-slate-50 transition-colors text-left"
+                className="w-full p-4 flex items-center gap-3 text-[13px] hover:bg-slate-50 transition-colors text-left"
               >
                 <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
                   <Calendar className="w-4.5 h-4.5 text-indigo-500" />
@@ -865,7 +865,7 @@ export function QuarterlyReview() {
               <button
                 key={review.id}
                 onClick={() => openQuarterlyForEditing(review)}
-                className="w-full p-3.5 flex items-center gap-3 text-[13px] hover:bg-slate-50 transition-colors text-left"
+                className="w-full p-4 flex items-center gap-3 text-[13px] hover:bg-slate-50 transition-colors text-left"
               >
                 <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
                   <FileText className="w-4.5 h-4.5 text-purple-500" />
@@ -1054,7 +1054,7 @@ export function QuarterlyReview() {
                     { label: 'Headcount', value: qCurrent.headcount.toString() },
                     { label: 'Customers', value: qCurrent.customers.toString() },
                   ].map(m => (
-                    <div key={m.label} className="bg-slate-50 rounded-lg p-2.5">
+                    <div key={m.label} className="bg-slate-50 rounded-lg p-3">
                       <p className="text-[10px] text-slate-400">{m.label}</p>
                       <p className={`text-[13px] font-semibold font-mono-num mt-0.5 ${m.red ? 'text-red-600' : 'text-slate-700'}`}>{m.value}</p>
                     </div>
@@ -1067,7 +1067,7 @@ export function QuarterlyReview() {
                 const fStatus = getFounderStatus(qCurrent.id);
                 const fCfg = founderStatusConfig[fStatus];
                 return (
-                  <div className={`rounded-xl border p-3.5 ${fCfg.bg} ${fCfg.border}`}>
+                  <div className={`rounded-xl border p-4 ${fCfg.bg} ${fCfg.border}`}>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <p className="text-[12px] font-medium text-slate-700">Founder Submission — Q1 2026</p>
@@ -1175,7 +1175,7 @@ export function QuarterlyReview() {
 
               {/* Alerts */}
               {qCurrentFlags.length > 0 && (
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 space-y-2">
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
                   <p className="text-[11px] font-medium text-amber-700 uppercase tracking-[0.06em]">Active Alerts</p>
                   {qCurrentFlags.map(flag => (
                     <div key={flag.id} className="flex items-start gap-2">
@@ -1197,7 +1197,7 @@ export function QuarterlyReview() {
                   .slice(0, 3);
                 if (monthlyComments.length === 0) return null;
                 return (
-                  <div className="bg-slate-50 rounded-xl border border-slate-200/60 p-3.5">
+                  <div className="bg-slate-50 rounded-xl border border-slate-200/60 p-4">
                     <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-2">Monthly Review Comments</p>
                     <div className="space-y-2">
                       {monthlyComments.map((mc, i) => (

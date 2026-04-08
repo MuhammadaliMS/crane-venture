@@ -442,9 +442,9 @@ export function Dashboard() {
             detail: '30+ days since last touch',
           },
         ].map((stat) => (
-          <div key={stat.label} className="rounded-xl border border-slate-200/60 bg-white px-4 py-3.5">
+          <div key={stat.label} className="rounded-xl border border-slate-200/60 bg-white px-4 py-3">
             <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400">{stat.label}</p>
-            <p className="mt-1.5 font-mono-num text-[22px] font-bold tracking-tight text-slate-700">{stat.value}</p>
+            <p className="mt-1 font-mono-num text-[22px] font-bold tracking-tight text-slate-700">{stat.value}</p>
             <p className="mt-1 text-[11px] text-slate-400">{stat.detail}</p>
           </div>
         ))}
@@ -481,7 +481,7 @@ export function Dashboard() {
                   <button
                     key={company.id}
                     onClick={() => navigate(`/company/${company.id}`)}
-                    className="group overflow-hidden rounded-xl border border-slate-200/60 bg-white p-5 text-left transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+                    className="group overflow-hidden rounded-xl border border-slate-200/60 bg-white p-4 text-left transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
                   >
                     <div className="space-y-3">
                       <div className="flex items-start justify-between gap-3">
@@ -518,8 +518,8 @@ export function Dashboard() {
 
                       <p className="line-clamp-2 text-[12px] leading-5 text-slate-500">{company.summary}</p>
 
-                      <div className="grid grid-cols-3 gap-2">
-                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
                           <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-slate-400">MRR</p>
                           <div className="mt-1 flex items-center gap-1.5">
                             <span className="font-mono-num text-[15px] font-bold text-slate-700">
@@ -533,17 +533,17 @@ export function Dashboard() {
                             </span>
                           </div>
                         </div>
-                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
                           <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-slate-400">Runway</p>
                           <p className="mt-1 font-mono-num text-[15px] font-bold text-slate-700">{company.runway}mo</p>
                         </div>
-                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
                           <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-slate-400">Updated</p>
                           <p className="mt-1 text-[14px] font-semibold text-slate-950">{daysSinceUpdate}d ago</p>
                         </div>
                       </div>
 
-                      <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-2.5">
+                      <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-3">
                         <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-slate-400">Why it matters</p>
                         <p className="mt-1 line-clamp-2 text-[12px] leading-5 text-slate-600">{whyItMatters}</p>
                       </div>

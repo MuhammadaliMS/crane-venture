@@ -259,14 +259,14 @@ export function Settings() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-[11px] text-slate-500">Monthly Review Day</label>
-                      <select className="w-full text-[12px] border border-slate-200 rounded-lg px-2 py-1.5 mt-1 bg-white">
+                      <select className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white">
                         <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
                         <option>Thursday</option><option>Friday</option>
                       </select>
                     </div>
                     <div>
                       <label className="text-[11px] text-slate-500">Quarterly Report Month</label>
-                      <select className="w-full text-[12px] border border-slate-200 rounded-lg px-2 py-1.5 mt-1 bg-white">
+                      <select className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white">
                         <option>January (Q4)</option><option>April (Q1)</option>
                         <option>July (Q2)</option><option>October (Q3)</option>
                       </select>
@@ -286,13 +286,13 @@ export function Settings() {
                     </div>
                     <div>
                       <label className="text-[11px] text-slate-500">Escrow Tracking</label>
-                      <select className="w-full text-[12px] border border-slate-200 rounded-lg px-2 py-1.5 mt-1 bg-white">
+                      <select className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white">
                         <option>Enabled</option><option>Disabled</option>
                       </select>
                     </div>
                     <div>
                       <label className="text-[11px] text-slate-500">Multi-Currency</label>
-                      <select className="w-full text-[12px] border border-slate-200 rounded-lg px-2 py-1.5 mt-1 bg-white">
+                      <select className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white">
                         <option>GBP + USD + EUR</option><option>GBP only</option>
                       </select>
                     </div>
@@ -310,17 +310,17 @@ export function Settings() {
                 <div className="grid grid-cols-3 gap-3">
                   <div>
                     <label className="text-[11px] text-slate-500">Fund Name</label>
-                    <input className="w-full text-[12px] border border-slate-200 rounded-lg px-2 py-1.5 mt-1 bg-white" defaultValue="Crane VC" />
+                    <input className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white" defaultValue="Crane VC" />
                   </div>
                   <div>
                     <label className="text-[11px] text-slate-500">Report Format</label>
-                    <select className="w-full text-[12px] border border-slate-200 rounded-lg px-2 py-1.5 mt-1 bg-white">
+                    <select className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white">
                       <option>PDF</option><option>PPTX</option><option>Both</option>
                     </select>
                   </div>
                   <div>
                     <label className="text-[11px] text-slate-500">Chart Style</label>
-                    <select className="w-full text-[12px] border border-slate-200 rounded-lg px-2 py-1.5 mt-1 bg-white">
+                    <select className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white">
                       <option>Bar with PY overlay</option><option>Line charts</option><option>Area charts</option>
                     </select>
                   </div>

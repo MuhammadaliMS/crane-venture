@@ -260,15 +260,15 @@ export function FounderData() {
         {/* Table header */}
         <div className="grid gap-0 border-b border-slate-100"
           style={{ gridTemplateColumns: '2fr repeat(4, 1fr) 120px' }}>
-          <div className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">Company</div>
+          <div className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">Company</div>
           {QUARTERS.map(q => (
-            <div key={q} className={`px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-center ${
+            <div key={q} className={`px-3 py-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-center ${
               q === activeQuarter ? 'text-indigo-500' : 'text-slate-400'
             }`}>
               {q}
             </div>
           ))}
-          <div className="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400 text-right">Actions</div>
+          <div className="px-3 py-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400 text-right">Actions</div>
         </div>
 
         {/* Rows */}

@@ -227,7 +227,7 @@ export function FounderForm() {
   function renderSectionHeader(section: (typeof SECTIONS)[number]) {
     return (
       <tr key={`section-${section.id}`}>
-        <td colSpan={6} className={`px-3 py-2 text-xs font-bold uppercase tracking-wider border-b ${section.color}`}>
+        <td colSpan={5} className={`px-3 py-2.5 text-[12px] font-bold uppercase tracking-wider border-b ${section.color}`}>
           {section.label}
         </td>
       </tr>
@@ -241,7 +241,7 @@ export function FounderForm() {
     return (
       <tr key={row.key} className={isEven ? 'bg-white' : 'bg-slate-50/60'}>
         {/* Metric name (sticky) */}
-        <td className="sticky left-0 z-10 px-3 py-1.5 text-[13px] font-medium text-slate-700 border-b border-slate-100 bg-inherit whitespace-nowrap min-w-[180px]">
+        <td className="sticky left-0 z-10 px-3 py-2 text-[13px] font-medium text-slate-700 border-b border-slate-100 bg-inherit whitespace-nowrap min-w-[180px]">
           <span className={isCalc ? 'italic text-slate-500' : ''}>{row.label}</span>
           {isCalc && <span className="ml-1.5 text-[10px] text-slate-400 font-normal">(auto)</span>}
         </td>
@@ -263,7 +263,7 @@ export function FounderForm() {
           const isAutoPopulated = !isEmpty && !editedCells.has(key);
 
           return (
-            <td key={month.key} className="px-0.5 py-0.5 border-b border-slate-100 min-w-[120px] relative">
+            <td key={month.key} className="px-1 py-1 border-b border-slate-100 min-w-[120px] relative">
               <input
                 type="text"
                 inputMode="decimal"

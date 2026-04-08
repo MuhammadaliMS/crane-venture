@@ -178,7 +178,7 @@ export function ActionMatrix() {
                 return (
                   <div
                     key={key}
-                    className={`bg-white p-2 transition-opacity border-l-2 ${columnBorder[h]} ${isDimmed ? 'opacity-20' : ''}`}
+                    className={`bg-white p-3 transition-opacity border-l-2 ${columnBorder[h]} ${isDimmed ? 'opacity-20' : ''}`}
                   >
                     {/* Action label */}
                     <span className={`inline-block text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded ${colors.bg} ${colors.text}`}>
@@ -186,7 +186,7 @@ export function ActionMatrix() {
                     </span>
 
                     {/* Company cards */}
-                    <div className="mt-1.5 space-y-1 overflow-y-auto max-h-[calc(100%-24px)] stagger-children">
+                    <div className="mt-2 space-y-1.5 overflow-y-auto max-h-[calc(100%-28px)] stagger-children">
                       {cellCompanies.length > 0 ? cellCompanies.map(company => {
                         const runwayPct = Math.min(company.runway / 24, 1) * 100;
                         const runwayColor = company.runway <= 6 ? '#ef4444' : company.runway <= 9 ? '#f59e0b' : '#10b981';

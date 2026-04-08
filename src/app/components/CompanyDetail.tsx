@@ -961,7 +961,7 @@ export function CompanyDetail() {
           <div className="bg-white rounded-xl border border-slate-200/60 p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-[13px] font-semibold uppercase tracking-wider text-slate-400">Notes</h3>
-              <button onClick={() => setShowLogNote(true)} className="text-[12px] px-3 py-1.5 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors flex items-center gap-1">
+              <button onClick={() => setShowLogNote(true)} className="text-[12px] px-3 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors flex items-center gap-1">
                 <Plus className="w-3 h-3" /> New Note
               </button>
             </div>
