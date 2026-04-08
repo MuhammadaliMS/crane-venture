@@ -563,8 +563,8 @@ export function MonthlyReview() {
   return (
     <div className="max-w-[1100px] mx-auto space-y-4">
       <div className="flex items-center justify-between">
-        <button onClick={() => { setMode('list'); setEditingReview(null); }} className="text-[13px] text-slate-500 hover:text-slate-700 transition-colors">← Back to Reviews</button>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
+          <button onClick={() => { setMode('list'); setEditingReview(null); }} className="text-[13px] text-slate-500 hover:text-slate-700 transition-colors">← Back to Reviews</button>
           <h2 className="text-[18px] font-semibold tracking-tight text-slate-800">{reviewTitle}</h2>
           {autoSaveStatus === 'saving' && (
             <span className="text-[11px] text-slate-400 flex items-center gap-1"><Save className="w-3 h-3 animate-pulse" /> Saving...</span>
@@ -629,14 +629,14 @@ export function MonthlyReview() {
         {/* Right — main review area */}
         <div className="flex-1">
           {current && (
-            <div className="bg-white rounded-xl border border-slate-200/60 p-6 space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-[18px]" style={{ background: current.logoColor }}>
+            <div className="bg-white rounded-xl border border-slate-200/60 p-5 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-[15px]" style={{ background: current.logoColor }}>
                   {current.name[0]}
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <h2 className="text-[18px] font-semibold text-slate-800">{current.name}</h2>
+                    <h2 className="text-[16px] font-semibold text-slate-800">{current.name}</h2>
                     <span className="text-[11px] px-2 py-0.5 bg-slate-100 rounded-md">{current.stage}</span>
                     <span className="text-[11px] px-2 py-0.5 bg-slate-100 rounded-md">{current.fund}</span>
                     <span className="text-[11px] px-2 py-0.5 rounded-md" style={{ background: getActionColor(current.action) + '15', color: getActionColor(current.action) }}>
@@ -663,11 +663,11 @@ export function MonthlyReview() {
               {/* Key metrics — kept as empty shell, data not available initially */}
               <div>
                 <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400">Key Metrics</span>
-                <div className="grid grid-cols-5 gap-3 mt-1.5">
+                <div className="grid grid-cols-5 gap-2 mt-1">
                   {['Health', 'MRR', 'Burn', 'Runway', 'MoIC'].map(label => (
-                    <div key={label} className="bg-slate-50 rounded-lg p-3">
-                      <p className="text-[11px] text-slate-500">{label}</p>
-                      <p className="text-[13px] mt-1 text-slate-300">—</p>
+                    <div key={label} className="bg-slate-50 rounded-lg px-3 py-2">
+                      <p className="text-[10px] text-slate-400">{label}</p>
+                      <p className="text-[13px] mt-0.5 text-slate-300">—</p>
                     </div>
                   ))}
                 </div>
@@ -678,14 +678,14 @@ export function MonthlyReview() {
                   <Users className="w-3 h-3" /> Team Commentary
                 </label>
                 <textarea
-                  className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white resize-none h-20"
+                  className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white resize-none h-[72px]"
                   placeholder={`Add commentary for ${current.name}...`}
                   value={commentaries[current.id] || ''}
                   onChange={e => setCommentaries(prev => ({ ...prev, [current.id]: e.target.value }))}
                 />
               </div>
 
-              <div className="flex items-center gap-3 pt-2">
+              <div className="flex items-center gap-3 pt-1">
                 {currentIndex < sortedCompanies.length - 1 ? (
                   <button onClick={() => setCurrentIndex(currentIndex + 1)} className="px-4 py-2 bg-indigo-500 text-white rounded-lg text-[13px] hover:bg-indigo-600 transition-colors flex items-center gap-1.5">
                     Next <ChevronRight className="w-4 h-4" />
@@ -973,7 +973,7 @@ export function QuarterlyReview() {
       {quarterlyStep === 1 && (
         <div className="flex gap-4">
           {/* Left sidebar */}
-          <div className="w-[220px] flex-shrink-0">
+          <div className="w-[240px] flex-shrink-0">
             <div className="flex items-center justify-between mb-2">
               <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400">Companies</p>
               <span className="text-[11px] text-slate-500">{doneCount}/{sortedCompanies.length} done</span>
@@ -1020,13 +1020,13 @@ export function QuarterlyReview() {
             <div className="flex-1 min-w-0 space-y-3">
               {/* Company header */}
               <div className="bg-white rounded-xl border border-slate-200/60 p-4">
-                <div className="flex items-start gap-4">
-                  <div className="w-11 h-11 rounded-xl flex items-center justify-center text-white text-[16px] flex-shrink-0" style={{ background: qCurrent.logoColor }}>
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-[15px] flex-shrink-0" style={{ background: qCurrent.logoColor }}>
                     {qCurrent.name[0]}
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h2 className="text-[17px] font-semibold text-slate-800">{qCurrent.name}</h2>
+                      <h2 className="text-[16px] font-semibold text-slate-800">{qCurrent.name}</h2>
                       <div className="w-2.5 h-2.5 rounded-full" style={{ background: getRAGColor(qCurrent.rag) }} title={qCurrent.rag} />
                       <span className="text-[11px] px-2 py-0.5 bg-slate-100 rounded-md text-slate-600">{qCurrent.stage}</span>
                       <span className="text-[11px] px-2 py-0.5 bg-slate-100 rounded-md text-slate-600">{qCurrent.fund}</span>
@@ -1045,7 +1045,7 @@ export function QuarterlyReview() {
                 </div>
 
                 {/* KPIs strip */}
-                <div className="grid grid-cols-6 gap-2 mt-3">
+                <div className="grid grid-cols-6 gap-2 mt-2.5">
                   {[
                     { label: 'MRR', value: formatCurrency(qCurrent.mrr, qCurrent.currency) },
                     { label: 'ARR', value: formatCurrency(qCurrent.mrr * 12, qCurrent.currency) },
@@ -1054,7 +1054,7 @@ export function QuarterlyReview() {
                     { label: 'Headcount', value: qCurrent.headcount.toString() },
                     { label: 'Customers', value: qCurrent.customers.toString() },
                   ].map(m => (
-                    <div key={m.label} className="bg-slate-50 rounded-lg p-3">
+                    <div key={m.label} className="bg-slate-50 rounded-lg px-2.5 py-2">
                       <p className="text-[10px] text-slate-400">{m.label}</p>
                       <p className={`text-[13px] font-semibold font-mono-num mt-0.5 ${m.red ? 'text-red-600' : 'text-slate-700'}`}>{m.value}</p>
                     </div>
