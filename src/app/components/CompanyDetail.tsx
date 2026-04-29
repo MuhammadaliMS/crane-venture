@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router';
 import {
   ArrowLeft, StickyNote, Plus, CalendarDays, RefreshCw, ExternalLink,
   FileText, Activity, Users, MoreHorizontal, TrendingUp, TrendingDown,
-  AlertTriangle, ChevronDown, Clock, CheckSquare, Square, Minus
+  AlertTriangle, ChevronDown, Clock, CheckSquare, Square, Minus,
+  Search, Sparkles
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 import {
@@ -25,6 +26,8 @@ export function CompanyDetail() {
   const [showCheckIn, setShowCheckIn] = useState(false);
   const [showAllFlags, setShowAllFlags] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<string[]>([]);
   const { flags, activityFeed, getNotesForCompany, todos, toggleTodo } = useWorkflow();
   const { milestone } = useMilestone();
   const isM1 = milestone === 'm1';
@@ -387,6 +390,45 @@ export function CompanyDetail() {
       )}
 
       {/* ===== ZONE 4: Tabs + Content ===== */}
+      {/* Natural language search — replaces Board Prep */}
+      <div className="mb-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder={`Ask anything about ${company.name} — board prep, metrics, recent updates, concerns...`}
+            className="w-full pl-10 pr-20 py-2.5 text-[13px] border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 transition-shadow"
+            onKeyDown={e => {
+              if (e.key === 'Enter' && searchQuery.trim()) {
+                setSearchResults([
+                  `Based on the latest quarterly data, ${company.name}'s ARR is ${formatCurrency(company.mrr * 12, company.currency)} with a runway of ${company.runway} months.`,
+                  `Recent activity shows ${companyActivity.length} events. ${companyFlags.length > 0 ? `There are ${companyFlags.length} active flags requiring attention.` : 'No active flags.'}`,
+                  `The company is currently rated ${company.rag} RAG status with ${company.health} health classification.`,
+                ]);
+              }
+            }}
+          />
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+            <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">AI</span>
+            <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+          </div>
+        </div>
+        {searchResults.length > 0 && (
+          <div className="mt-2 bg-indigo-50/50 border border-indigo-100 rounded-xl p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-medium text-indigo-600 uppercase tracking-wider">Search Results</p>
+              <button onClick={() => { setSearchResults([]); setSearchQuery(''); }} className="text-[11px] text-slate-400 hover:text-slate-600">Clear</button>
+            </div>
+            {searchResults.map((r, i) => (
+              <p key={i} className="text-[12px] text-slate-700 leading-relaxed">{r}</p>
+            ))}
+            <p className="text-[10px] text-slate-400 mt-1">Post-M1: results powered by AI from all ingested data (emails, board decks, founder forms)</p>
+          </div>
+        )}
+      </div>
+
       <div className="border-b border-slate-200 mb-6 flex gap-0">
         {tabs.map(tab => (
           <button

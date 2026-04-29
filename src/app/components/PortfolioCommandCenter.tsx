@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router';
-import { Download, ChevronDown, ChevronUp, Flag as FlagIcon } from 'lucide-react';
+import { Download, ChevronDown, ChevronUp, Flag as FlagIcon, Pencil } from 'lucide-react';
 import { useFundFilter } from './Layout';
 import {
   companies, funds, flags, formatCurrency, getRAGColor,
@@ -28,6 +28,9 @@ function RunwayBar({ months, isExited }: { months: number; isExited: boolean }) 
   );
 }
 
+// Staging edits type — tracks per-company field overrides before confirmation
+type StagedEdit = { companyId: string; field: string; value: string };
+
 export function PortfolioCommandCenter() {
   const navigate = useNavigate();
   const { fundFilter: globalFund } = useFundFilter();
@@ -39,6 +42,37 @@ export function PortfolioCommandCenter() {
   const [tableView, setTableView] = useState<'active' | 'exited' | 'all'>('active');
   const [sortField, setSortField] = useState<string>('action');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
+  // Staging: editable fields pushed to staging before confirm
+  const [editingCell, setEditingCell] = useState<{ companyId: string; field: string } | null>(null);
+  const [editValue, setEditValue] = useState('');
+  const [stagedEdits, setStagedEdits] = useState<StagedEdit[]>([]);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const hasStagedEdits = stagedEdits.length > 0;
+
+  const stageEdit = (companyId: string, field: string, value: string) => {
+    setStagedEdits(prev => {
+      const filtered = prev.filter(e => !(e.companyId === companyId && e.field === field));
+      return [...filtered, { companyId, field, value }];
+    });
+    setEditingCell(null);
+  };
+
+  const getStagedValue = (companyId: string, field: string): string | undefined => {
+    return stagedEdits.find(e => e.companyId === companyId && e.field === field)?.value;
+  };
+
+  const confirmAllEdits = () => {
+    // In production: push staged edits to database
+    setStagedEdits([]);
+    setShowConfirm(false);
+  };
+
+  const discardAllEdits = () => {
+    setStagedEdits([]);
+    setShowConfirm(false);
+  };
 
   const effectiveFund = globalFund !== 'all' ? globalFund : localFundFilter;
   const selectedFund = effectiveFund !== 'all' ? funds.find(f => f.name === effectiveFund) : null;
@@ -145,6 +179,25 @@ export function PortfolioCommandCenter() {
           </button>
         </div>
       </div>
+
+      {/* Staging banner — shown when there are unsaved edits */}
+      {hasStagedEdits && (
+        <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            <span className="text-[13px] text-amber-800 font-medium">{stagedEdits.length} pending {stagedEdits.length === 1 ? 'change' : 'changes'} in staging</span>
+            <span className="text-[11px] text-amber-600">— changes are not yet saved to the database</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={discardAllEdits} className="text-[12px] px-3 py-1.5 text-amber-700 hover:bg-amber-100 rounded-lg transition-colors">
+              Discard
+            </button>
+            <button onClick={confirmAllEdits} className="text-[12px] px-4 py-1.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-medium">
+              Confirm Changes
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* RAG distribution bar + filter row */}
       <div className="flex items-center gap-4">
@@ -266,53 +319,74 @@ export function PortfolioCommandCenter() {
                         title={company.rag}
                       />
                     </td>
-                    {/* ARR */}
-                    <td className="px-3 py-1.5 text-right font-mono-num text-[12px] text-slate-600 tabular-nums">
-                      {!isExited ? formatCurrency(company.mrr * 12, company.currency) : '—'}
-                    </td>
-                    {/* Revenue */}
-                    <td className="px-3 py-1.5 text-right font-mono-num text-[12px] text-slate-500 tabular-nums">
-                      {!isExited && company.monthlyFinancials.length > 0
-                        ? formatCurrency(company.monthlyFinancials[company.monthlyFinancials.length - 1].revenue ?? 0, company.currency)
-                        : '—'}
-                    </td>
-                    {/* EBITDA */}
-                    <td className="px-3 py-1.5 text-right font-mono-num text-[12px] tabular-nums">
-                      {(() => {
-                        if (isExited) return '—';
-                        const latest = company.monthlyFinancials[company.monthlyFinancials.length - 1];
-                        if (!latest) return '—';
-                        const rev = (latest.revenue ?? 0) + (latest.revenueOther ?? 0);
-                        const costs = (latest.cogs ?? 0) + (latest.rdCosts ?? 0) + (latest.salesMarketingCosts ?? 0) + (latest.generalAdminCosts ?? 0);
-                        const ebitda = rev - costs;
-                        return <span className={ebitda < 0 ? 'text-red-500' : 'text-slate-600'}>{formatCurrency(ebitda, company.currency)}</span>;
-                      })()}
-                    </td>
-                    {/* Gross Margin % */}
-                    <td className="px-3 py-1.5 text-right font-mono-num text-[12px] text-slate-500 tabular-nums">
-                      {(() => {
-                        if (isExited) return '—';
-                        const latest = company.monthlyFinancials[company.monthlyFinancials.length - 1];
-                        if (!latest || !latest.revenue) return '—';
-                        const gm = ((latest.revenue - (latest.cogs ?? 0)) / latest.revenue * 100).toFixed(0);
-                        return `${gm}%`;
-                      })()}
-                    </td>
-                    {/* Cash Balance */}
-                    <td className="px-3 py-1.5 text-right font-mono-num text-[12px] text-slate-600 tabular-nums">
-                      {!isExited ? formatCurrency(latestCash, company.currency) : '—'}
-                    </td>
-                    {/* Cash Burn */}
-                    <td className="px-3 py-1.5 text-right font-mono-num text-[12px] text-slate-500 tabular-nums">
-                      {!isExited ? <span className="text-red-500">-{formatCurrency(company.burn, company.currency)}</span> : '—'}
-                    </td>
+                    {/* Editable cells — double-click to edit, staged before confirm */}
+                    {(() => {
+                      const latest = company.monthlyFinancials[company.monthlyFinancials.length - 1];
+                      const ebitdaVal = latest ? ((latest.revenue ?? 0) + (latest.revenueOther ?? 0)) - ((latest.cogs ?? 0) + (latest.rdCosts ?? 0) + (latest.salesMarketingCosts ?? 0) + (latest.generalAdminCosts ?? 0)) : 0;
+                      const gmVal = latest && latest.revenue ? ((latest.revenue - (latest.cogs ?? 0)) / latest.revenue * 100).toFixed(0) + '%' : '—';
+
+                      const editableFields: { field: string; display: string; className?: string }[] = [
+                        { field: 'arr', display: !isExited ? formatCurrency(company.mrr * 12, company.currency) : '—' },
+                        { field: 'revenue', display: !isExited && latest ? formatCurrency(latest.revenue ?? 0, company.currency) : '—' },
+                        { field: 'ebitda', display: !isExited ? formatCurrency(ebitdaVal, company.currency) : '—', className: ebitdaVal < 0 ? 'text-red-500' : '' },
+                        { field: 'grossMargin', display: !isExited ? gmVal : '—' },
+                        { field: 'cashBalance', display: !isExited ? formatCurrency(latestCash, company.currency) : '—' },
+                        { field: 'cashBurn', display: !isExited ? '-' + formatCurrency(company.burn, company.currency) : '—', className: 'text-red-500' },
+                      ];
+
+                      return editableFields.map(({ field, display, className }) => {
+                        const staged = getStagedValue(company.id, field);
+                        const isEditing = editingCell?.companyId === company.id && editingCell?.field === field;
+
+                        return (
+                          <td key={field} className="px-3 py-1.5 text-right font-mono-num text-[12px] tabular-nums relative group/cell" onClick={e => e.stopPropagation()}>
+                            {isEditing ? (
+                              <input
+                                autoFocus
+                                className="w-full text-right text-[12px] font-mono-num border border-indigo-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                                defaultValue={staged || display.replace(/[£$€,]/g, '')}
+                                onBlur={e => stageEdit(company.id, field, e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter') stageEdit(company.id, field, (e.target as HTMLInputElement).value); if (e.key === 'Escape') setEditingCell(null); }}
+                              />
+                            ) : (
+                              <span
+                                className={`cursor-pointer hover:bg-indigo-50 hover:text-indigo-600 rounded px-1 py-0.5 transition-colors ${staged ? 'bg-amber-50 text-amber-700 font-medium' : className || 'text-slate-600'}`}
+                                onDoubleClick={() => { setEditingCell({ companyId: company.id, field }); setEditValue(''); }}
+                                title="Double-click to edit"
+                              >
+                                {staged || display}
+                                {staged && <span className="text-[9px] ml-0.5 text-amber-500">*</span>}
+                              </span>
+                            )}
+                          </td>
+                        );
+                      });
+                    })()}
                     {/* Runway */}
                     <td className="px-3 py-1.5">
                       <RunwayBar months={company.runway} isExited={isExited} />
                     </td>
                     {/* Headcount */}
-                    <td className="px-3 py-1.5 text-right font-mono-num text-[12px] text-slate-500 tabular-nums">
-                      {!isExited ? company.headcount : '—'}
+                    <td className="px-3 py-1.5 text-right font-mono-num text-[12px] text-slate-500 tabular-nums" onClick={e => e.stopPropagation()}>
+                      {(() => {
+                        const staged = getStagedValue(company.id, 'headcount');
+                        const isEditing = editingCell?.companyId === company.id && editingCell?.field === 'headcount';
+                        if (isEditing) return (
+                          <input autoFocus className="w-full text-right text-[12px] font-mono-num border border-indigo-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                            defaultValue={staged || String(company.headcount)}
+                            onBlur={e => stageEdit(company.id, 'headcount', e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter') stageEdit(company.id, 'headcount', (e.target as HTMLInputElement).value); if (e.key === 'Escape') setEditingCell(null); }}
+                          />
+                        );
+                        return (
+                          <span className={`cursor-pointer hover:bg-indigo-50 rounded px-1 py-0.5 ${staged ? 'bg-amber-50 text-amber-700 font-medium' : ''}`}
+                            onDoubleClick={() => setEditingCell({ companyId: company.id, field: 'headcount' })}
+                            title="Double-click to edit">
+                            {staged || (!isExited ? company.headcount : '—')}
+                            {staged && <span className="text-[9px] ml-0.5 text-amber-500">*</span>}
+                          </span>
+                        );
+                      })()}
                     </td>
                     {/* Lead Partner */}
                     <td className="px-3 py-1.5 text-[11px] text-slate-500">

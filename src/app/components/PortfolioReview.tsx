@@ -714,8 +714,7 @@ export function QuarterlyReview() {
   const [managersCommentary, setManagersCommentary] = useState('');
   const [otherDevelopments, setOtherDevelopments] = useState('');
   const [companyCommentary, setCompanyCommentary] = useState<Record<string, {
-    recentProgress: string; rag: RAGStatus; summary: string; keyConcerns: string; actionPoints: string;
-    equityFundraising: string; debtFundraising: string; burnReduction: string; nearTermExit: string; inductionAction: string;
+    rag: RAGStatus; cashRunway: string; summary: string; recentProgress: string; keyConcerns: string; actionPoints: string;
   }>>({});
   const [editingReview, setEditingReview] = useState<ReviewRecord | null>(null);
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
@@ -762,16 +761,12 @@ export function QuarterlyReview() {
       const comp = sortedCompanies.find(c => c.name === cr.company);
       if (comp) {
         prePopulated[comp.id] = {
-          recentProgress: cr.recentProgress || '',
           rag: comp.rag,
+          cashRunway: comp.runway + ' months',
           summary: cr.summary || cr.comment || '',
+          recentProgress: cr.recentProgress || '',
           keyConcerns: cr.keyConcerns || '',
           actionPoints: cr.actionPoints || '',
-          equityFundraising: '',
-          debtFundraising: '',
-          burnReduction: '',
-          nearTermExit: '',
-          inductionAction: cr.inductionAction || '',
         };
       }
     });
@@ -1206,30 +1201,32 @@ export function QuarterlyReview() {
                 );
               })()}
 
-              {/* Team Commentary fields */}
+              {/* Commentary fields — matches AI prompt + Asset Metrix Company Commentary sheet */}
               {(() => {
                 const cc = companyCommentary[qCurrent.id] || {
-                  recentProgress: qCurrent.recentProgress, rag: qCurrent.rag, summary: qCurrent.summary,
-                  keyConcerns: qCurrent.keyConcerns.join('\n'), actionPoints: qCurrent.actionPoints.join('\n'),
-                  equityFundraising: qCurrent.equityFundraisingStatus, debtFundraising: qCurrent.debtFundraisingStatus,
-                  burnReduction: qCurrent.burnReductionActions, nearTermExit: qCurrent.nearTermExit,
+                  rag: qCurrent.rag, cashRunway: qCurrent.runway + ' months',
+                  summary: qCurrent.summary,
+                  recentProgress: qCurrent.recentProgress,
+                  keyConcerns: qCurrent.keyConcerns.join('\n'),
+                  actionPoints: qCurrent.actionPoints.join('\n'),
                 };
                 const update = (field: string, value: string) => setCompanyCommentary(prev => ({
                   ...prev,
                   [qCurrent.id]: { ...(prev[qCurrent.id] || cc), [field]: value },
                 }));
-                const summaryWords = (cc.summary || '').split(/\s+/).filter(Boolean).length;
-                const concernsWords = (cc.keyConcerns || '').split(/\s+/).filter(Boolean).length;
-                const actionsWords = (cc.actionPoints || '').split(/\s+/).filter(Boolean).length;
 
                 return (
                   <div className="bg-white rounded-xl border border-slate-200/60 p-4 space-y-3">
-                    <p className="text-[12px] font-medium text-slate-700">Team Commentary</p>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[12px] font-medium text-slate-700">Quarterly Commentary</p>
+                      <span className="text-[10px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded">M1: manual input · Post-M1: AI-generated</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="text-[11px] text-slate-500">RAG Status</label>
                         <select
-                          className="w-full text-[12px] border border-slate-200 rounded-lg px-2 py-1.5 mt-1 bg-white"
+                          className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white"
                           defaultValue={cc.rag}
                           onChange={e => update('rag', e.target.value)}
                         >
@@ -1237,86 +1234,56 @@ export function QuarterlyReview() {
                         </select>
                       </div>
                       <div>
-                        <label className="text-[11px] text-slate-500">Equity Fundraising</label>
+                        <label className="text-[11px] text-slate-500">Cash Runway</label>
                         <input
-                          className="w-full text-[12px] border border-slate-200 rounded-lg px-2 py-1.5 mt-1 bg-white"
-                          defaultValue={cc.equityFundraising}
-                          onBlur={e => update('equityFundraising', e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[11px] text-slate-500">Debt Fundraising</label>
-                        <input
-                          className="w-full text-[12px] border border-slate-200 rounded-lg px-2 py-1.5 mt-1 bg-white"
-                          defaultValue={cc.debtFundraising}
-                          onBlur={e => update('debtFundraising', e.target.value)}
+                          className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white"
+                          defaultValue={cc.cashRunway}
+                          placeholder="e.g. 18 months"
+                          onBlur={e => update('cashRunway', e.target.value)}
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="text-[11px] text-slate-500">Recent Progress</label>
+                      <label className="text-[11px] text-slate-500">Summary <span className="text-red-400">*</span></label>
+                      <p className="text-[10px] text-slate-400 mt-0.5">2-3 sentences: overall performance, current ARR, growth, key metrics</p>
                       <textarea
-                        className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white resize-none h-12"
+                        className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white resize-none h-[72px]"
+                        defaultValue={cc.summary}
+                        placeholder="Performance summary including ARR, quarterly growth, and key relevant metrics..."
+                        onBlur={e => update('summary', e.target.value)}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] text-slate-500">Recent Progress <span className="text-red-400">*</span></label>
+                      <p className="text-[10px] text-slate-400 mt-0.5">2-3 sentences: team, customers, revenue, partnerships, product</p>
+                      <textarea
+                        className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white resize-none h-[72px]"
                         defaultValue={cc.recentProgress}
+                        placeholder="Recent progress on team, customer growth, revenue, partnerships, key product announcements..."
                         onBlur={e => update('recentProgress', e.target.value)}
                       />
                     </div>
 
                     <div>
-                      <div className="flex items-center justify-between">
-                        <label className="text-[11px] text-slate-500">Summary <span className="text-red-400">*</span></label>
-                        <span className={`text-[10px] font-mono-num ${summaryWords < 10 ? 'text-amber-500' : 'text-emerald-500'}`}>{summaryWords} words</span>
-                      </div>
+                      <label className="text-[11px] text-slate-500">Key Concerns</label>
                       <textarea
-                        className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white resize-none h-16"
-                        defaultValue={cc.summary}
-                        onBlur={e => update('summary', e.target.value)}
+                        className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white resize-none h-[60px]"
+                        defaultValue={cc.keyConcerns}
+                        placeholder="Any concerns mentioned — runway, churn, growth slowdown, team gaps..."
+                        onBlur={e => update('keyConcerns', e.target.value)}
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <div className="flex items-center justify-between">
-                          <label className="text-[11px] text-slate-500">Key Concerns <span className="text-red-400">*</span></label>
-                          <span className={`text-[10px] font-mono-num ${concernsWords < 5 ? 'text-amber-500' : 'text-emerald-500'}`}>{concernsWords} words</span>
-                        </div>
-                        <textarea
-                          className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white resize-none h-20"
-                          defaultValue={cc.keyConcerns}
-                          onBlur={e => update('keyConcerns', e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <div className="flex items-center justify-between">
-                          <label className="text-[11px] text-slate-500">Action Points</label>
-                          <span className={`text-[10px] font-mono-num ${actionsWords < 5 ? 'text-amber-500' : 'text-slate-400'}`}>{actionsWords} words</span>
-                        </div>
-                        <textarea
-                          className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white resize-none h-20"
-                          defaultValue={cc.actionPoints}
-                          onBlur={e => update('actionPoints', e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[11px] text-slate-500">Induction Action</label>
-                        <textarea
-                          className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white resize-none h-20"
-                          defaultValue={cc.inductionAction}
-                          onBlur={e => update('inductionAction', e.target.value)}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[11px] text-slate-500">Burn Reduction Actions</label>
-                        <input className="w-full text-[12px] border border-slate-200 rounded-lg px-2 py-1.5 mt-1 bg-white" defaultValue={cc.burnReduction} onBlur={e => update('burnReduction', e.target.value)} />
-                      </div>
-                      <div>
-                        <label className="text-[11px] text-slate-500">Near-term Exit</label>
-                        <input className="w-full text-[12px] border border-slate-200 rounded-lg px-2 py-1.5 mt-1 bg-white" defaultValue={cc.nearTermExit} onBlur={e => update('nearTermExit', e.target.value)} />
-                      </div>
+                    <div>
+                      <label className="text-[11px] text-slate-500">Action Points</label>
+                      <textarea
+                        className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white resize-none h-[60px]"
+                        defaultValue={cc.actionPoints}
+                        placeholder="Actions for founders or the board to take..."
+                        onBlur={e => update('actionPoints', e.target.value)}
+                      />
                     </div>
                   </div>
                 );

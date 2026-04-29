@@ -275,13 +275,25 @@ export function FounderForm() {
           </div>
         </div>
 
-        {/* Welcome */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-6 shadow-sm">
+        {/* Welcome + Financial Year End */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-6 shadow-sm space-y-4">
           <p className="text-slate-700 leading-relaxed">
             Hi <span className="font-semibold">{ceoName}</span>, please provide your quarterly data for{' '}
             <span className="font-semibold">{company.name}</span> for the latest completed quarter.
             Fields are pre-populated with last known values — update as needed.
           </p>
+          <div className="flex items-center gap-3 pt-2 border-t border-slate-100">
+            <label className="text-sm font-medium text-slate-600 whitespace-nowrap">Company Financial Year End</label>
+            <select
+              className="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              defaultValue="March"
+            >
+              {['January','February','March','April','May','June','July','August','September','October','November','December'].map(m => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </select>
+            <span className="text-xs text-slate-400">Quarters (Q1-Q4) are based on your financial year</span>
+          </div>
         </div>
 
         {/* Progress + autosave indicator */}
