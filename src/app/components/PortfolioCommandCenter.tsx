@@ -156,7 +156,7 @@ export function PortfolioCommandCenter() {
         <div>
           <h1 className="text-[22px] font-semibold tracking-tight text-slate-800">Command Center</h1>
           <p className="mt-0.5 text-[13px] text-slate-400">
-            {activeCompanies.length} active companies &middot; {formatCurrency(totalPortfolioValue)} portfolio value &middot; {avgRunway}mo avg runway
+            {activeCompanies.length} active companies &middot; {formatCurrency(totalPortfolioValue)} portfolio value
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -273,7 +273,6 @@ export function PortfolioCommandCenter() {
                   { key: 'grossMargin', label: 'Gross Margin', align: 'right' as const, w: '' },
                   { key: 'cashBalance', label: 'Cash Balance', align: 'right' as const, w: '' },
                   { key: 'cashBurn', label: 'Cash Burn', align: 'right' as const, w: '' },
-                  { key: 'runway', label: 'Runway', align: 'right' as const, w: '' },
                   { key: 'headcount', label: 'Headcount', align: 'right' as const, w: '' },
                   { key: 'leadPartner', label: 'Lead Partner', align: 'left' as const, w: '' },
                 ].map(col => (
@@ -398,14 +397,14 @@ export function PortfolioCommandCenter() {
                         );
                       });
                     })()}
-                    {/* Runway */}
-                    <td className="px-3 py-1.5">
-                      <RunwayBar months={company.runway} isExited={isExited} />
-                    </td>
-                    {/* Headcount */}
+                    {/* Headcount — sum of M+F+Ethnic Minority FTE matching founder form */}
                     {(() => {
                       const staged = getStagedValue(company.id, 'headcount');
                       const isEditing = editingCell?.companyId === company.id && editingCell?.field === 'headcount';
+                      const latestFin = company.monthlyFinancials[company.monthlyFinancials.length - 1];
+                      const headcountSum = latestFin
+                        ? (latestFin.headcountMale ?? 0) + (latestFin.headcountFemale ?? 0) + (latestFin.headcountEthnicMinority ?? 0)
+                        : company.headcount;
                       return (
                         <td
                           className={`px-3 py-1.5 text-right font-mono-num text-[12px] tabular-nums relative group/cell cursor-pointer transition-colors ${
@@ -420,7 +419,7 @@ export function PortfolioCommandCenter() {
                                 autoFocus
                                 value={draftValue}
                                 onChange={e => { setDraftValue(e.target.value); setEditError(null); }}
-                                onFocus={() => { if (!draftValue) setDraftValue(staged || String(company.headcount)); }}
+                                onFocus={() => { if (!draftValue) setDraftValue(staged || String(headcountSum)); }}
                                 className={`w-full text-right text-[12px] font-mono-num border rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 ${
                                   editError ? 'border-red-400 focus:ring-red-200' : 'border-indigo-300 focus:ring-indigo-200'
                                 }`}
@@ -441,7 +440,7 @@ export function PortfolioCommandCenter() {
                           ) : (
                             <span className={`inline-flex items-center gap-1 ${staged ? 'text-amber-700 font-medium' : 'text-slate-500'}`}>
                               <Pencil className="w-3 h-3 text-indigo-400 opacity-0 group-hover/cell:opacity-100 transition-opacity" />
-                              {staged || (!isExited ? company.headcount : '—')}
+                              {staged || (!isExited ? headcountSum : '—')}
                               {staged && <span className="text-[9px] text-amber-500">*</span>}
                             </span>
                           )}
