@@ -53,16 +53,17 @@ export function PortfolioCommandCenter() {
     if (effectiveFund !== 'all') result = result.filter(c => c.fund === effectiveFund);
     if (ownerFilter !== 'all') result = result.filter(c => c.owners.includes(ownerFilter));
 
-    const actionOrder: Record<string, number> = { 'Lean In': 0, 'Lean In / Anticipate': 1, 'Watch': 2, 'De-prioritise': 3 };
     result.sort((a, b) => {
       let cmp = 0;
+      const getLatest = (c: typeof a) => c.monthlyFinancials[c.monthlyFinancials.length - 1];
       switch (sortField) {
         case 'name': cmp = a.name.localeCompare(b.name); break;
-        case 'moic': cmp = a.accounting.moic - b.accounting.moic; break;
-        case 'mrr': cmp = a.mrr - b.mrr; break;
+        case 'arr': cmp = (a.mrr * 12) - (b.mrr * 12); break;
+        case 'revenue': cmp = (getLatest(a)?.revenue ?? 0) - (getLatest(b)?.revenue ?? 0); break;
+        case 'cashBalance': cmp = (getLatest(a)?.cashBalance ?? 0) - (getLatest(b)?.cashBalance ?? 0); break;
+        case 'cashBurn': cmp = a.burn - b.burn; break;
         case 'runway': cmp = a.runway - b.runway; break;
-        case 'action': cmp = (actionOrder[a.action] || 0) - (actionOrder[b.action] || 0); break;
-        case 'lastUpdate': cmp = new Date(a.lastUpdate).getTime() - new Date(b.lastUpdate).getTime(); break;
+        case 'headcount': cmp = a.headcount - b.headcount; break;
         default: cmp = 0;
       }
       return sortDir === 'asc' ? cmp : -cmp;
@@ -196,15 +197,16 @@ export function PortfolioCommandCenter() {
                 {[
                   { key: 'name', label: 'Company', align: 'left' as const, w: 'min-w-[180px]' },
                   { key: 'fund', label: 'Fund', align: 'left' as const, w: '' },
-                  { key: 'cost', label: 'Cost', align: 'right' as const, w: '' },
-                  { key: 'cv', label: 'Carrying', align: 'right' as const, w: '' },
-                  { key: 'moic', label: 'MoIC', align: 'right' as const, w: '' },
                   { key: 'rag', label: 'RAG', align: 'center' as const, w: 'w-[52px]' },
-                  { key: 'action', label: 'Action', align: 'center' as const, w: '' },
-                  { key: 'mrr', label: 'ARR', align: 'right' as const, w: '' },
-                  { key: 'burn', label: 'Burn', align: 'right' as const, w: '' },
+                  { key: 'arr', label: 'ARR', align: 'right' as const, w: '' },
+                  { key: 'revenue', label: 'Revenue', align: 'right' as const, w: '' },
+                  { key: 'ebitda', label: 'EBITDA', align: 'right' as const, w: '' },
+                  { key: 'grossMargin', label: 'Gross Margin', align: 'right' as const, w: '' },
+                  { key: 'cashBalance', label: 'Cash Balance', align: 'right' as const, w: '' },
+                  { key: 'cashBurn', label: 'Cash Burn', align: 'right' as const, w: '' },
                   { key: 'runway', label: 'Runway', align: 'right' as const, w: '' },
-                  { key: 'flags', label: '', align: 'center' as const, w: 'w-[40px]' },
+                  { key: 'headcount', label: 'Headcount', align: 'right' as const, w: '' },
+                  { key: 'leadPartner', label: 'Lead Partner', align: 'left' as const, w: '' },
                 ].map(col => (
                   <th
                     key={col.key}
@@ -256,25 +258,7 @@ export function PortfolioCommandCenter() {
                     </td>
                     {/* Fund */}
                     <td className="px-3 py-1.5 text-[11px] text-slate-500">{company.fund}</td>
-                    {/* Cost */}
-                    <td className="px-3 py-1.5 text-right font-mono-num text-[12px] text-slate-500 tabular-nums">
-                      {formatCurrency(company.accounting.costAtPeriodEnd)}
-                    </td>
-                    {/* Carrying */}
-                    <td className="px-3 py-1.5 text-right font-mono-num text-[12px] text-slate-600 tabular-nums font-medium">
-                      {formatCurrency(company.accounting.carryingValue)}
-                    </td>
-                    {/* MoIC */}
-                    <td className="px-3 py-1.5 text-right">
-                      <span className={`font-mono-num text-[12px] font-bold tabular-nums ${
-                        company.accounting.moic >= 2 ? 'text-emerald-600' :
-                        company.accounting.moic >= 1 ? 'text-slate-700' :
-                        'text-red-500'
-                      }`}>
-                        {company.accounting.moic.toFixed(1)}x
-                      </span>
-                    </td>
-                    {/* RAG — just a dot */}
+                    {/* RAG */}
                     <td className="px-3 py-1.5 text-center">
                       <div
                         className="w-3 h-3 rounded-full mx-auto"
@@ -282,39 +266,57 @@ export function PortfolioCommandCenter() {
                         title={company.rag}
                       />
                     </td>
-                    {/* Action */}
-                    <td className="px-3 py-1.5 text-center">
-                      <span className={`text-[10px] px-2 py-0.5 rounded-md font-medium ${
-                        company.action === 'Lean In' ? 'bg-emerald-50 text-emerald-700' :
-                        company.action.includes('Anticipate') ? 'bg-blue-50 text-blue-600' :
-                        company.action === 'Watch' ? 'bg-amber-50 text-amber-700' :
-                        'bg-slate-50 text-slate-500'
-                      }`}>
-                        {company.action === 'De-prioritise' ? 'De-pri' : company.action}
-                      </span>
-                    </td>
                     {/* ARR */}
-                    <td className="px-3 py-1.5 text-right font-mono-num text-[12px] text-slate-500 tabular-nums">
+                    <td className="px-3 py-1.5 text-right font-mono-num text-[12px] text-slate-600 tabular-nums">
                       {!isExited ? formatCurrency(company.mrr * 12, company.currency) : '—'}
                     </td>
-                    {/* Burn */}
+                    {/* Revenue */}
                     <td className="px-3 py-1.5 text-right font-mono-num text-[12px] text-slate-500 tabular-nums">
-                      {!isExited ? formatCurrency(company.burn, company.currency) + '/m' : '—'}
+                      {!isExited && company.monthlyFinancials.length > 0
+                        ? formatCurrency(company.monthlyFinancials[company.monthlyFinancials.length - 1].revenue ?? 0, company.currency)
+                        : '—'}
                     </td>
-                    {/* Runway — inline bar */}
+                    {/* EBITDA */}
+                    <td className="px-3 py-1.5 text-right font-mono-num text-[12px] tabular-nums">
+                      {(() => {
+                        if (isExited) return '—';
+                        const latest = company.monthlyFinancials[company.monthlyFinancials.length - 1];
+                        if (!latest) return '—';
+                        const rev = (latest.revenue ?? 0) + (latest.revenueOther ?? 0);
+                        const costs = (latest.cogs ?? 0) + (latest.rdCosts ?? 0) + (latest.salesMarketingCosts ?? 0) + (latest.generalAdminCosts ?? 0);
+                        const ebitda = rev - costs;
+                        return <span className={ebitda < 0 ? 'text-red-500' : 'text-slate-600'}>{formatCurrency(ebitda, company.currency)}</span>;
+                      })()}
+                    </td>
+                    {/* Gross Margin % */}
+                    <td className="px-3 py-1.5 text-right font-mono-num text-[12px] text-slate-500 tabular-nums">
+                      {(() => {
+                        if (isExited) return '—';
+                        const latest = company.monthlyFinancials[company.monthlyFinancials.length - 1];
+                        if (!latest || !latest.revenue) return '—';
+                        const gm = ((latest.revenue - (latest.cogs ?? 0)) / latest.revenue * 100).toFixed(0);
+                        return `${gm}%`;
+                      })()}
+                    </td>
+                    {/* Cash Balance */}
+                    <td className="px-3 py-1.5 text-right font-mono-num text-[12px] text-slate-600 tabular-nums">
+                      {!isExited ? formatCurrency(latestCash, company.currency) : '—'}
+                    </td>
+                    {/* Cash Burn */}
+                    <td className="px-3 py-1.5 text-right font-mono-num text-[12px] text-slate-500 tabular-nums">
+                      {!isExited ? <span className="text-red-500">-{formatCurrency(company.burn, company.currency)}</span> : '—'}
+                    </td>
+                    {/* Runway */}
                     <td className="px-3 py-1.5">
                       <RunwayBar months={company.runway} isExited={isExited} />
                     </td>
-                    {/* Flags */}
-                    <td className="px-3 py-1.5 text-center">
-                      {flagCount > 0 ? (
-                        <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-red-500">
-                          <FlagIcon className="w-3 h-3" />
-                          {flagCount}
-                        </span>
-                      ) : (
-                        <span className="text-slate-300">—</span>
-                      )}
+                    {/* Headcount */}
+                    <td className="px-3 py-1.5 text-right font-mono-num text-[12px] text-slate-500 tabular-nums">
+                      {!isExited ? company.headcount : '—'}
+                    </td>
+                    {/* Lead Partner */}
+                    <td className="px-3 py-1.5 text-[11px] text-slate-500">
+                      {company.owners[0] || '—'}
                     </td>
                   </tr>
                 );
