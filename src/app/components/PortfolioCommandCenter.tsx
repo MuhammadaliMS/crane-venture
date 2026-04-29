@@ -288,15 +288,17 @@ export function PortfolioCommandCenter() {
                 return (
                   <tr
                     key={company.id}
-                    className={`border-b border-slate-100/80 last:border-0 hover:bg-slate-50/80 transition-[background-color,box-shadow] cursor-pointer h-[42px] ${
+                    className={`border-b border-slate-100/80 last:border-0 hover:bg-slate-50/80 transition-[background-color,box-shadow] h-[42px] ${
                       isExited ? 'opacity-50' : ''
                     }`}
-                    onClick={() => navigate(`/company/${company.id}`)}
                     style={{ borderLeft: `3px solid ${ragColor}` }}
                   >
-                    {/* Company */}
+                    {/* Company — only this cell navigates */}
                     <td className="px-3 py-1.5">
-                      <div className="flex items-center gap-2">
+                      <div
+                        className="flex items-center gap-2 cursor-pointer hover:text-indigo-600 transition-colors"
+                        onClick={() => navigate(`/company/${company.id}`)}
+                      >
                         <div
                           className="w-7 h-7 rounded-md flex items-center justify-center text-white text-[11px] font-semibold shrink-0"
                           style={{ background: company.logoColor }}
@@ -304,7 +306,7 @@ export function PortfolioCommandCenter() {
                           {company.name[0]}
                         </div>
                         <div className="min-w-0">
-                          <span className="text-[13px] font-medium text-slate-700 truncate block">{company.name}</span>
+                          <span className="text-[13px] font-medium text-slate-700 truncate block hover:text-indigo-600">{company.name}</span>
                           <span className="text-[10px] text-slate-400">{company.stage} · {company.sector}</span>
                         </div>
                       </div>
@@ -339,7 +341,14 @@ export function PortfolioCommandCenter() {
                         const isEditing = editingCell?.companyId === company.id && editingCell?.field === field;
 
                         return (
-                          <td key={field} className="px-3 py-1.5 text-right font-mono-num text-[12px] tabular-nums relative group/cell" onClick={e => e.stopPropagation()}>
+                          <td
+                            key={field}
+                            className={`px-3 py-1.5 text-right font-mono-num text-[12px] tabular-nums relative group/cell cursor-pointer transition-colors ${
+                              isEditing ? 'bg-indigo-50/50' : staged ? 'bg-amber-50 hover:bg-amber-100' : 'hover:bg-indigo-50/60'
+                            }`}
+                            onClick={() => { if (!isEditing && !isExited) setEditingCell({ companyId: company.id, field }); }}
+                            title="Click to edit"
+                          >
                             {isEditing ? (
                               <input
                                 autoFocus
@@ -347,15 +356,13 @@ export function PortfolioCommandCenter() {
                                 defaultValue={staged || display.replace(/[£$€,]/g, '')}
                                 onBlur={e => stageEdit(company.id, field, e.target.value)}
                                 onKeyDown={e => { if (e.key === 'Enter') stageEdit(company.id, field, (e.target as HTMLInputElement).value); if (e.key === 'Escape') setEditingCell(null); }}
+                                onClick={e => e.stopPropagation()}
                               />
                             ) : (
-                              <span
-                                className={`cursor-pointer hover:bg-indigo-50 hover:text-indigo-600 rounded px-1 py-0.5 transition-colors ${staged ? 'bg-amber-50 text-amber-700 font-medium' : className || 'text-slate-600'}`}
-                                onDoubleClick={() => { setEditingCell({ companyId: company.id, field }); setEditValue(''); }}
-                                title="Double-click to edit"
-                              >
+                              <span className={`inline-flex items-center gap-1 ${staged ? 'text-amber-700 font-medium' : className || 'text-slate-600'}`}>
+                                <Pencil className="w-3 h-3 text-indigo-400 opacity-0 group-hover/cell:opacity-100 transition-opacity" />
                                 {staged || display}
-                                {staged && <span className="text-[9px] ml-0.5 text-amber-500">*</span>}
+                                {staged && <span className="text-[9px] text-amber-500">*</span>}
                               </span>
                             )}
                           </td>
@@ -367,27 +374,36 @@ export function PortfolioCommandCenter() {
                       <RunwayBar months={company.runway} isExited={isExited} />
                     </td>
                     {/* Headcount */}
-                    <td className="px-3 py-1.5 text-right font-mono-num text-[12px] text-slate-500 tabular-nums" onClick={e => e.stopPropagation()}>
-                      {(() => {
-                        const staged = getStagedValue(company.id, 'headcount');
-                        const isEditing = editingCell?.companyId === company.id && editingCell?.field === 'headcount';
-                        if (isEditing) return (
-                          <input autoFocus className="w-full text-right text-[12px] font-mono-num border border-indigo-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                            defaultValue={staged || String(company.headcount)}
-                            onBlur={e => stageEdit(company.id, 'headcount', e.target.value)}
-                            onKeyDown={e => { if (e.key === 'Enter') stageEdit(company.id, 'headcount', (e.target as HTMLInputElement).value); if (e.key === 'Escape') setEditingCell(null); }}
-                          />
-                        );
-                        return (
-                          <span className={`cursor-pointer hover:bg-indigo-50 rounded px-1 py-0.5 ${staged ? 'bg-amber-50 text-amber-700 font-medium' : ''}`}
-                            onDoubleClick={() => setEditingCell({ companyId: company.id, field: 'headcount' })}
-                            title="Double-click to edit">
-                            {staged || (!isExited ? company.headcount : '—')}
-                            {staged && <span className="text-[9px] ml-0.5 text-amber-500">*</span>}
-                          </span>
-                        );
-                      })()}
-                    </td>
+                    {(() => {
+                      const staged = getStagedValue(company.id, 'headcount');
+                      const isEditing = editingCell?.companyId === company.id && editingCell?.field === 'headcount';
+                      return (
+                        <td
+                          className={`px-3 py-1.5 text-right font-mono-num text-[12px] tabular-nums relative group/cell cursor-pointer transition-colors ${
+                            isEditing ? 'bg-indigo-50/50' : staged ? 'bg-amber-50 hover:bg-amber-100' : 'hover:bg-indigo-50/60'
+                          }`}
+                          onClick={() => { if (!isEditing && !isExited) setEditingCell({ companyId: company.id, field: 'headcount' }); }}
+                          title="Click to edit"
+                        >
+                          {isEditing ? (
+                            <input
+                              autoFocus
+                              className="w-full text-right text-[12px] font-mono-num border border-indigo-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                              defaultValue={staged || String(company.headcount)}
+                              onBlur={e => stageEdit(company.id, 'headcount', e.target.value)}
+                              onKeyDown={e => { if (e.key === 'Enter') stageEdit(company.id, 'headcount', (e.target as HTMLInputElement).value); if (e.key === 'Escape') setEditingCell(null); }}
+                              onClick={e => e.stopPropagation()}
+                            />
+                          ) : (
+                            <span className={`inline-flex items-center gap-1 ${staged ? 'text-amber-700 font-medium' : 'text-slate-500'}`}>
+                              <Pencil className="w-3 h-3 text-indigo-400 opacity-0 group-hover/cell:opacity-100 transition-opacity" />
+                              {staged || (!isExited ? company.headcount : '—')}
+                              {staged && <span className="text-[9px] text-amber-500">*</span>}
+                            </span>
+                          )}
+                        </td>
+                      );
+                    })()}
                     {/* Lead Partner */}
                     <td className="px-3 py-1.5 text-[11px] text-slate-500">
                       {company.owners[0] || '—'}
