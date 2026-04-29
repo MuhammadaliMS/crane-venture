@@ -249,7 +249,6 @@ export function PortfolioCommandCenter() {
               <tr className="bg-slate-50/90 border-b border-slate-200">
                 {[
                   { key: 'name', label: 'Company', align: 'left' as const, w: 'min-w-[180px]' },
-                  { key: 'fund', label: 'Fund', align: 'left' as const, w: '' },
                   { key: 'rag', label: 'RAG', align: 'center' as const, w: 'w-[52px]' },
                   { key: 'arr', label: 'ARR', align: 'right' as const, w: '' },
                   { key: 'revenue', label: 'Revenue', align: 'right' as const, w: '' },
@@ -311,8 +310,6 @@ export function PortfolioCommandCenter() {
                         </div>
                       </div>
                     </td>
-                    {/* Fund */}
-                    <td className="px-3 py-1.5 text-[11px] text-slate-500">{company.fund}</td>
                     {/* RAG */}
                     <td className="px-3 py-1.5 text-center">
                       <div
