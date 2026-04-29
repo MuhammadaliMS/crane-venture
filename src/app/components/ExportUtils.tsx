@@ -150,50 +150,27 @@ function buildStaticSheet(companies: Company[]): XLSX.WorkSheet {
 // Sheet: Company Periodic
 // ---------------------
 function buildPeriodicSheet(companies: Company[], reportingDate: string): XLSX.WorkSheet {
+  // Reduced to 9 core metrics matching the founder form (Bonnie's confirmed list)
   const techNames = [
     'efront_id', 'company_name', 'reporting_item_value_date',
-    'revenue', 'ebitda', 'cogs',
-    'gross_profit', 'gross_margin',
-    'overheads', 'total_costs',
-    'ebitda_margin', 'cash_balance', 'monthly_net_burn',
-    'arr', 'cash_burn_ltm',
-    'bookings', 'customer_count', 'net_retention_rate',
-    'net_assets_liabilities',
-    'revenue_other', 'rd_costs', 'sales_marketing_costs', 'general_admin_costs',
-    'headcount_fte',
+    'revenue', 'arr',
+    'gross_margin', 'ebitda',
+    'cash_balance', 'cash_burn',
     'headcount_male', 'headcount_female', 'headcount_ethnic_minority',
-    'board_headcount',
-    'board_male', 'board_female', 'board_ethnic_minority',
   ];
   const dataTypes = [
     '', 'string', 'date',
-    'float', 'float', 'float',
     'float', 'float',
     'float', 'float',
-    'float', 'float', 'float',
     'float', 'float',
-    'float', 'integer', 'float',
-    'float',
-    'float', 'float', 'float', 'float',
-    'integer',
-    'integer', 'integer', 'integer',
-    'integer',
     'integer', 'integer', 'integer',
   ];
   const friendlyNames = [
     'Company ID', 'Company Name', 'Reporting Date',
-    'Revenue', 'EBITDA', 'COGS',
-    'Gross Profit', 'Gross Margin %',
-    'Overheads', 'Total Costs',
-    'EBITDA Margin %', 'Cash Balance', 'Monthly Net Burn',
-    'ARR', 'Cash Burn LTM',
-    'Bookings', 'Customer Count', 'Net Retention Rate %',
-    'Net Assets / Liabilities',
-    'Revenue Other', 'R&D Costs', 'Sales & Marketing Costs', 'General & Admin Costs',
-    'Headcount FTE',
+    'Revenue (core)', 'ARR',
+    'Gross Margin %', 'EBITDA',
+    'Cash Balance', 'Cash Burn (excl. funding)',
     'Headcount Male', 'Headcount Female', 'Headcount Ethnic Minority',
-    'Board Headcount',
-    'Board Male', 'Board Female', 'Board Ethnic Minority',
   ];
 
   const rows: (string | number | null)[][] = [];
@@ -205,49 +182,34 @@ function buildPeriodicSheet(companies: Company[], reportingDate: string): XLSX.W
   rows.push(friendlyNames);
 
   for (const c of companies) {
-    // Use the latest financials period, or all quarterly snapshots
     const quarterlyFinancials = getQuarterlySnapshots(c.monthlyFinancials, reportingDate);
 
     for (const f of quarterlyFinancials) {
+      // Cash burn must be negative per Bonnie's note
+      const cashBurnSigned = f.monthlyNetBurn != null
+        ? -Math.abs(f.monthlyNetBurn)
+        : null;
+
       rows.push([
         c.id,
         c.name,
         formatReportingDate(f.month),
         f.revenue ?? null,
-        f.ebitda ?? null,
-        f.cogs ?? null,
-        f.grossProfit ?? null,
-        f.grossMargin ?? null,
-        f.overheads ?? null,
-        f.totalCosts ?? null,
-        f.ebitdaMargin ?? null,
-        f.cashBalance ?? null,
-        f.monthlyNetBurn ?? null,
         f.arr ?? null,
-        f.cashBurnLTM ?? null,
-        f.bookings ?? null,
-        f.customerCount ?? null,
-        f.netRetentionRate ?? null,
-        f.netAssetsLiabilities ?? null,
-        f.revenueOther ?? null,
-        f.rdCosts ?? null,
-        f.salesMarketingCosts ?? null,
-        f.generalAdminCosts ?? null,
-        f.headcountFTE ?? null,
+        f.grossMargin ?? null,
+        f.ebitda ?? null,
+        f.cashBalance ?? null,
+        cashBurnSigned,
         f.headcountMale ?? null,
         f.headcountFemale ?? null,
         f.headcountEthnicMinority ?? null,
-        f.boardHeadcount ?? null,
-        f.boardMale ?? null,
-        f.boardFemale ?? null,
-        f.boardEthnicMinority ?? null,
       ]);
     }
   }
 
   const ws = XLSX.utils.aoa_to_sheet(rows);
   ws['!cols'] = techNames.map((_, i) => ({
-    wch: i <= 2 ? (i === 2 ? 14 : 12) : 16,
+    wch: i <= 2 ? (i === 2 ? 14 : 12) : 18,
   }));
   return ws;
 }

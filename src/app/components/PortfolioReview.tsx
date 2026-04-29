@@ -1083,40 +1083,65 @@ export function QuarterlyReview() {
                       </div>
                     </div>
                     {(fStatus === 'submitted' || fStatus === 'partial') ? (
-                      <div className="overflow-hidden rounded-lg border border-white/80 max-h-[420px] overflow-y-auto">
+                      <div className="overflow-hidden rounded-lg border border-white/80">
                         <table className="w-full text-[11px]">
                           <thead className="sticky top-0 z-10">
                             <tr className="bg-white/90 backdrop-blur border-b border-slate-100/50">
-                              <th className="text-left px-2.5 py-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.06em] w-[160px]">Metric</th>
-                              {['Jan 2026', 'Feb 2026', 'Mar 2026'].map(m => (
-                                <th key={m} className="text-right px-2.5 py-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.06em]">{m}</th>
+                              <th className="text-left px-2.5 py-2 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.06em] w-[160px]">Metric</th>
+                              {['Q1', 'Q2', 'Q3', 'Q4'].map(q => (
+                                <th key={q} className="text-right px-2.5 py-2 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.06em]">{q}</th>
                               ))}
                             </tr>
                           </thead>
                           <tbody>
                             {(() => {
-                              const allMetrics: { label: string; key: string; isCurrency: boolean; isPercentage?: boolean; section: string }[] = [
+                              // Reduced 9 core metrics — matches founder form (Bonnie's confirmed list)
+                              const allMetrics: { label: string; key: string; isCurrency: boolean; isPercentage?: boolean; section: string; isCalc?: boolean }[] = [
                                 { label: 'Revenue (core)', key: 'revenue', isCurrency: true, section: 'Revenue & Growth' },
-                                { label: 'Revenue (other)', key: 'revenueOther', isCurrency: true, section: 'Revenue & Growth' },
                                 { label: 'ARR', key: 'arr', isCurrency: true, section: 'Revenue & Growth' },
-                                { label: 'Bookings', key: 'bookings', isCurrency: true, section: 'Revenue & Growth' },
-                                { label: 'No. of Customers', key: 'customerCount', isCurrency: false, section: 'Revenue & Growth' },
-                                { label: 'Net Retention Rate %', key: 'netRetentionRate', isCurrency: false, isPercentage: true, section: 'Revenue & Growth' },
-                                { label: 'Cost of Sales', key: 'cogs', isCurrency: true, section: 'Costs' },
-                                { label: 'R&D Costs', key: 'rdCosts', isCurrency: true, section: 'Costs' },
-                                { label: 'Sales & Marketing', key: 'salesMarketingCosts', isCurrency: true, section: 'Costs' },
-                                { label: 'General & Admin', key: 'generalAdminCosts', isCurrency: true, section: 'Costs' },
-                                { label: 'EBITDA / (LBITDA)', key: 'ebitda', isCurrency: true, section: 'Profitability' },
+                                { label: 'Gross Margin (%)', key: 'grossMargin', isCurrency: false, isPercentage: true, section: 'Profitability & Margins' },
+                                { label: 'EBITDA', key: 'ebitda', isCurrency: true, section: 'Profitability & Margins', isCalc: true },
                                 { label: 'Cash Balance', key: 'cashBalance', isCurrency: true, section: 'Cash Position' },
-                                { label: 'Net Assets / (Liabilities)', key: 'netAssetsLiabilities', isCurrency: true, section: 'Cash Position' },
-                                { label: 'Cash Burn in Month', key: 'monthlyNetBurn', isCurrency: true, section: 'Cash Position' },
+                                { label: 'Cash Burn (excl. funding)', key: 'monthlyNetBurn', isCurrency: true, section: 'Cash Position' },
                                 { label: 'Headcount — Male (FTE)', key: 'headcountMale', isCurrency: false, section: 'Team & Diversity' },
                                 { label: 'Headcount — Female (FTE)', key: 'headcountFemale', isCurrency: false, section: 'Team & Diversity' },
                                 { label: 'Headcount — Ethnic Minority (FTE)', key: 'headcountEthnicMinority', isCurrency: false, section: 'Team & Diversity' },
-                                { label: 'Board — Male', key: 'boardMale', isCurrency: false, section: 'Team & Diversity' },
-                                { label: 'Board — Female', key: 'boardFemale', isCurrency: false, section: 'Team & Diversity' },
-                                { label: 'Board — Ethnic Minority', key: 'boardEthnicMinority', isCurrency: false, section: 'Team & Diversity' },
                               ];
+                              // Build quarterly aggregates from monthly data (sum currency, last-of-quarter for headcount/balance)
+                              const quarterMonths: Record<string, string[]> = {
+                                Q1: ['2025-04','2025-05','2025-06'],
+                                Q2: ['2025-07','2025-08','2025-09'],
+                                Q3: ['2025-10','2025-11','2025-12'],
+                                Q4: ['2026-01','2026-02','2026-03'],
+                              };
+                              const aggregateForQuarter = (q: string, key: string, isCurrency: boolean) => {
+                                const months = quarterMonths[q] || [];
+                                const data = months.map(m => qCurrent.monthlyFinancials.find((f: any) => f.month === m)).filter(Boolean) as any[];
+                                if (data.length === 0) return null;
+                                if (key === 'grossMargin') {
+                                  const rev = data.reduce((s, d) => s + (d.revenue ?? 0), 0);
+                                  const cogs = data.reduce((s, d) => s + (d.cogs ?? 0), 0);
+                                  return rev > 0 ? Math.round(((rev - cogs) / rev) * 100) : null;
+                                }
+                                if (key === 'ebitda') {
+                                  return data.reduce((s, d) => {
+                                    const rev = (d.revenue ?? 0) + (d.revenueOther ?? 0);
+                                    const costs = (d.cogs ?? 0) + (d.rdCosts ?? 0) + (d.salesMarketingCosts ?? 0) + (d.generalAdminCosts ?? 0);
+                                    return s + (rev - costs);
+                                  }, 0);
+                                }
+                                // Cash balance / headcount: take latest in quarter (point-in-time)
+                                if (key === 'cashBalance' || key.startsWith('headcount')) {
+                                  const last = data[data.length - 1];
+                                  return last[key] ?? null;
+                                }
+                                // Currency cumulative: sum across months
+                                if (isCurrency) {
+                                  return data.reduce((s, d) => s + (d[key] ?? 0), 0);
+                                }
+                                return data[data.length - 1][key] ?? null;
+                              };
+
                               let lastSection = '';
                               return allMetrics.map(metric => {
                                 const showSection = metric.section !== lastSection;
@@ -1125,22 +1150,21 @@ export function QuarterlyReview() {
                                   <>
                                     {showSection && (
                                       <tr key={`section-${metric.section}`}>
-                                        <td colSpan={4} className="px-2.5 pt-2 pb-1 text-[10px] font-semibold text-slate-500 uppercase tracking-[0.08em] bg-slate-50/30 border-t border-slate-100/50">
+                                        <td colSpan={5} className="px-2.5 pt-2 pb-1 text-[10px] font-semibold text-slate-500 uppercase tracking-[0.08em] bg-slate-50/30 border-t border-slate-100/50">
                                           {metric.section}
                                         </td>
                                       </tr>
                                     )}
                                     <tr key={metric.key} className="hover:bg-white/40 border-t border-slate-50/50">
-                                      <td className="px-2.5 py-1 text-slate-600">{metric.label}</td>
-                                      {['2026-01', '2026-02', '2026-03'].map(iso => {
-                                        const mData = qCurrent.monthlyFinancials.find((f: any) => f.month === iso);
-                                        const val = mData?.[metric.key as keyof typeof mData];
+                                      <td className="px-2.5 py-1.5 text-slate-600">{metric.label}{metric.isCalc && <span className="ml-1 text-[9px] text-slate-400">(auto)</span>}</td>
+                                      {['Q1','Q2','Q3','Q4'].map(q => {
+                                        const val = aggregateForQuarter(q, metric.key, metric.isCurrency);
                                         return (
-                                          <td key={iso} className="px-2.5 py-1 text-right font-mono-num text-slate-700">
+                                          <td key={q} className="px-2.5 py-1.5 text-right font-mono-num text-slate-700">
                                             {val != null
                                               ? metric.isCurrency ? formatCurrency(val as number, qCurrent.currency)
                                               : metric.isPercentage ? val + '%'
-                                              : val.toString()
+                                              : (val as number).toString()
                                               : <span className="text-slate-300">—</span>
                                             }
                                           </td>
