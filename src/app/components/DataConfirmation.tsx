@@ -280,21 +280,25 @@ function DataConfirmationUI() {
                       </div>
                     </div>
 
-                    {/* Old → New (editable) */}
+                    {/* Old → New (editable) — labels share fixed-height row so values baseline-align */}
                     <div className="bg-slate-50 rounded-xl p-4 grid grid-cols-2 gap-3">
-                      <div>
-                        <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400 mb-1">Current value</p>
-                        <p className="text-[18px] font-mono-num font-semibold text-slate-500 line-through decoration-slate-300">{active.oldValue}</p>
+                      <div className="flex flex-col">
+                        <div className="h-5 flex items-center mb-1.5">
+                          <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400 leading-none">Current value</p>
+                        </div>
+                        <div className="h-8 flex items-center">
+                          <p className="text-[18px] font-mono-num font-semibold text-slate-500 line-through decoration-slate-300 leading-none">{active.oldValue}</p>
+                        </div>
                       </div>
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <p className={`text-[10px] font-medium uppercase tracking-wider ${isEdited ? 'text-amber-600' : 'text-emerald-600'}`}>
+                      <div className="flex flex-col">
+                        <div className="h-5 flex items-center justify-between mb-1.5">
+                          <p className={`text-[10px] font-medium uppercase tracking-wider leading-none ${isEdited ? 'text-amber-600' : 'text-emerald-600'}`}>
                             {isEdited ? 'Edited value' : 'New value'}
                           </p>
                           {!isEditingValue && (
                             <button
                               onClick={() => setIsEditingValue(true)}
-                              className="flex items-center gap-1 text-[10px] text-slate-400 hover:text-indigo-600 transition-colors"
+                              className="flex items-center gap-1 text-[10px] text-slate-400 hover:text-indigo-600 transition-colors leading-none"
                               title="Edit the suggested value"
                             >
                               <Pencil className="w-3 h-3" /> Edit
@@ -303,31 +307,33 @@ function DataConfirmationUI() {
                           {isEditingValue && (
                             <button
                               onClick={() => setIsEditingValue(false)}
-                              className="text-[10px] text-indigo-600 hover:text-indigo-700 font-medium"
+                              className="text-[10px] text-indigo-600 hover:text-indigo-700 font-medium leading-none"
                             >
                               Done
                             </button>
                           )}
                         </div>
-                        {isEditingValue ? (
-                          <input
-                            autoFocus
-                            value={editedValue}
-                            onChange={e => setEditedValue(e.target.value)}
-                            onKeyDown={e => { if (e.key === 'Enter' && !validationError) setIsEditingValue(false); }}
-                            onBlur={() => { if (!validationError) setIsEditingValue(false); }}
-                            className={`w-full text-[18px] font-mono-num font-semibold rounded-md px-2 py-0.5 border focus:outline-none focus:ring-2 ${
-                              validationError ? 'text-red-600 border-red-300 focus:ring-red-200 bg-white' :
-                              isEdited ? 'text-amber-600 border-amber-300 focus:ring-amber-200 bg-white' :
-                              'text-emerald-600 border-emerald-300 focus:ring-emerald-200 bg-white'
-                            }`}
-                          />
-                        ) : (
-                          <p className={`text-[18px] font-mono-num font-semibold ${validationError ? 'text-red-600' : isEdited ? 'text-amber-600' : 'text-emerald-600'}`}>
-                            {editedValue}
-                            {isEdited && !validationError && <span className="text-[11px] ml-1.5 font-normal text-amber-500">· edited</span>}
-                          </p>
-                        )}
+                        <div className="h-8 flex items-center">
+                          {isEditingValue ? (
+                            <input
+                              autoFocus
+                              value={editedValue}
+                              onChange={e => setEditedValue(e.target.value)}
+                              onKeyDown={e => { if (e.key === 'Enter' && !validationError) setIsEditingValue(false); }}
+                              onBlur={() => { if (!validationError) setIsEditingValue(false); }}
+                              className={`w-full text-[18px] font-mono-num font-semibold rounded-md px-2 py-0 h-7 border focus:outline-none focus:ring-2 ${
+                                validationError ? 'text-red-600 border-red-300 focus:ring-red-200 bg-white' :
+                                isEdited ? 'text-amber-600 border-amber-300 focus:ring-amber-200 bg-white' :
+                                'text-emerald-600 border-emerald-300 focus:ring-emerald-200 bg-white'
+                              }`}
+                            />
+                          ) : (
+                            <p className={`text-[18px] font-mono-num font-semibold leading-none ${validationError ? 'text-red-600' : isEdited ? 'text-amber-600' : 'text-emerald-600'}`}>
+                              {editedValue}
+                              {isEdited && !validationError && <span className="text-[11px] ml-1.5 font-normal text-amber-500">· edited</span>}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
 
