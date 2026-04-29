@@ -4,15 +4,16 @@ import { companies, formatCurrencyFull } from './mock-data';
 import type { Currency } from './mock-data';
 import { Lock, Mail, CheckCircle2, Check, AlertCircle, Circle, Cloud } from 'lucide-react';
 
-// --- Quarter helper ---
+// --- Quarter helper — now quarterly columns (Q1-Q4) based on financial year-end ---
 function getQuarterInfo() {
-  // Q1 2026 = Jan, Feb, Mar
+  // Financial year 2025/26: Q1–Q4
   return {
-    label: 'Q1 2026',
-    months: [
-      { key: 'm1', label: 'Jan 2026', iso: '2026-01' },
-      { key: 'm2', label: 'Feb 2026', iso: '2026-02' },
-      { key: 'm3', label: 'Mar 2026', iso: '2026-03' },
+    label: 'FY 2025/26',
+    quarters: [
+      { key: 'q1', label: 'Q1' },
+      { key: 'q2', label: 'Q2' },
+      { key: 'q3', label: 'Q3' },
+      { key: 'q4', label: 'Q4' },
     ],
   };
 }
@@ -30,8 +31,7 @@ interface RowDef {
 
 const SECTIONS = [
   { id: 'revenue', label: 'Revenue & Growth', color: 'bg-blue-50 text-blue-800 border-blue-100' },
-  { id: 'costs', label: 'Cost Structure', color: 'bg-red-50 text-red-800 border-red-100' },
-  { id: 'profitability', label: 'Profitability', color: 'bg-green-50 text-green-800 border-green-100' },
+  { id: 'profitability', label: 'Profitability & Margins', color: 'bg-green-50 text-green-800 border-green-100' },
   { id: 'cash', label: 'Cash Position', color: 'bg-purple-50 text-purple-800 border-purple-100' },
   { id: 'team', label: 'Team & Diversity', color: 'bg-amber-50 text-amber-800 border-amber-100' },
 ] as const;
@@ -39,28 +39,17 @@ const SECTIONS = [
 const ROWS: RowDef[] = [
   // Revenue & Growth
   { key: 'revenue', label: 'Revenue (core)', section: 'revenue', isCurrency: true, dataKey: 'revenue' },
-  { key: 'revenueOther', label: 'Revenue (other)', section: 'revenue', isCurrency: true, dataKey: 'revenueOther' },
   { key: 'arr', label: 'ARR', section: 'revenue', isCurrency: true, dataKey: 'arr' },
-  { key: 'bookings', label: 'Bookings', section: 'revenue', isCurrency: true, dataKey: 'bookings' },
-  { key: 'customerCount', label: 'Customer Count', section: 'revenue', isCurrency: false, dataKey: 'customerCount' },
-  { key: 'netRetentionRate', label: 'Net Retention Rate %', section: 'revenue', isCurrency: false, isPercentage: true, dataKey: 'netRetentionRate' },
-  // Cost Structure
-  { key: 'cogs', label: 'Cost of Sales', section: 'costs', isCurrency: true, dataKey: 'cogs' },
-  { key: 'rdCosts', label: 'R&D Costs', section: 'costs', isCurrency: true, dataKey: 'rdCosts' },
-  { key: 'salesMarketingCosts', label: 'Sales & Marketing', section: 'costs', isCurrency: true, dataKey: 'salesMarketingCosts' },
-  { key: 'generalAdminCosts', label: 'General & Admin', section: 'costs', isCurrency: true, dataKey: 'generalAdminCosts' },
-  // Profitability (calculated)
-  { key: 'ebitda', label: 'EBITDA', section: 'profitability', isCurrency: true, isCalculated: true, dataKey: 'ebitda' },
+  // Profitability & Margins
+  { key: 'grossMargin', label: 'Gross Margin (%)', section: 'profitability', isCurrency: false, isPercentage: true, dataKey: 'grossMargin' },
+  { key: 'ebitda', label: 'EBITDA', section: 'profitability', isCurrency: true, dataKey: 'ebitda' },
   // Cash Position
-  { key: 'cashBalance', label: 'Month End Cash Balance', section: 'cash', isCurrency: true, dataKey: 'cashBalance' },
-  { key: 'monthlyNetBurn', label: 'Cash Burn in Month', section: 'cash', isCurrency: true, dataKey: 'monthlyNetBurn' },
+  { key: 'cashBalance', label: 'Cash Balance', section: 'cash', isCurrency: true, dataKey: 'cashBalance' },
+  { key: 'cashBurn', label: 'Cash Burn (excl. funding)', section: 'cash', isCurrency: true, dataKey: 'monthlyNetBurn' },
   // Team & Diversity
   { key: 'headcountMale', label: 'Headcount - Male (FTE)', section: 'team', isCurrency: false, dataKey: 'headcountMale' },
   { key: 'headcountFemale', label: 'Headcount - Female (FTE)', section: 'team', isCurrency: false, dataKey: 'headcountFemale' },
   { key: 'headcountEthnicMinority', label: 'Headcount - Ethnic Minority (FTE)', section: 'team', isCurrency: false, dataKey: 'headcountEthnicMinority' },
-  { key: 'boardMale', label: 'Board Headcount - Male', section: 'team', isCurrency: false, dataKey: 'boardMale' },
-  { key: 'boardFemale', label: 'Board Headcount - Female', section: 'team', isCurrency: false, dataKey: 'boardFemale' },
-  { key: 'boardEthnicMinority', label: 'Board Headcount - Ethnic Minority', section: 'team', isCurrency: false, dataKey: 'boardEthnicMinority' },
 ];
 
 function getCurrencySymbol(cur: Currency): string {
@@ -153,49 +142,37 @@ export function FounderForm() {
       if (row.isCalculated) continue;
       const lk = getLastKnown(row);
       if (lk != null) {
-        for (const month of quarter.months) {
-          initial[cellKey(row.key, month.key)] = String(lk);
+        for (const q of quarter.quarters) {
+          initial[cellKey(row.key, q.key)] = String(lk);
         }
       }
     }
-    // Only set if cellValues is empty (first render)
     if (Object.keys(cellValues).length === 0 && Object.keys(initial).length > 0) {
       setCellValues(initial);
     }
     return true;
   }, []);
 
-  // Calculate EBITDA for a given month column
-  function getEbitdaForMonth(monthKey: string): number {
-    const getNum = (rowKey: string) => {
-      const v = getCellValue(rowKey, monthKey);
-      return v ? parseFloat(v) || 0 : 0;
-    };
-    const rev = getNum('revenue') + getNum('revenueOther');
-    const costs = getNum('cogs') + getNum('rdCosts') + getNum('salesMarketingCosts') + getNum('generalAdminCosts');
-    return rev - costs;
-  }
-
   // Row status
   function getRowStatus(row: RowDef): 'complete' | 'partial' | 'empty' {
     if (row.isCalculated) return 'complete';
     let filled = 0;
-    for (const month of quarter.months) {
-      const v = getCellValue(row.key, month.key);
+    for (const q of quarter.quarters) {
+      const v = getCellValue(row.key, q.key);
       if (v && v.trim() !== '') filled++;
     }
-    if (filled === 3) return 'complete';
+    if (filled === 4) return 'complete';
     if (filled > 0) return 'partial';
     return 'empty';
   }
 
   // Progress
   const editableRows = ROWS.filter((r) => !r.isCalculated);
-  const totalCells = editableRows.length * 3;
+  const totalCells = editableRows.length * 4;
   const filledCells = editableRows.reduce((acc, row) => {
     let count = 0;
-    for (const month of quarter.months) {
-      const v = getCellValue(row.key, month.key);
+    for (const q of quarter.quarters) {
+      const v = getCellValue(row.key, q.key);
       if (v && v.trim() !== '') count++;
     }
     return acc + count;
@@ -227,7 +204,7 @@ export function FounderForm() {
   function renderSectionHeader(section: (typeof SECTIONS)[number]) {
     return (
       <tr key={`section-${section.id}`}>
-        <td colSpan={5} className={`px-3 py-2.5 text-[12px] font-bold uppercase tracking-wider border-b ${section.color}`}>
+        <td colSpan={5} className={`px-3 py-2.5 text-[12px] font-semibold uppercase tracking-wider border-b ${section.color}`}>
           {section.label}
         </td>
       </tr>
@@ -246,29 +223,20 @@ export function FounderForm() {
           {isCalc && <span className="ml-1.5 text-[10px] text-slate-400 font-normal">(auto)</span>}
         </td>
 
-        {/* Month 1, 2, 3 */}
-        {quarter.months.map((month) => {
-          if (isCalc && row.key === 'ebitda') {
-            const ebitdaVal = getEbitdaForMonth(month.key);
-            return (
-              <td key={month.key} className="px-2 py-1.5 text-right font-mono text-[13px] text-slate-500 bg-slate-50/80 border-b border-slate-100 whitespace-nowrap min-w-[120px]">
-                {formatCurrencyFull(ebitdaVal, cur)}
-              </td>
-            );
-          }
-
-          const key = cellKey(row.key, month.key);
-          const val = getCellValue(row.key, month.key);
+        {/* Q1, Q2, Q3, Q4 */}
+        {quarter.quarters.map((q) => {
+          const key = cellKey(row.key, q.key);
+          const val = getCellValue(row.key, q.key);
           const isEmpty = !val || val.trim() === '';
           const isAutoPopulated = !isEmpty && !editedCells.has(key);
 
           return (
-            <td key={month.key} className="px-1 py-1 border-b border-slate-100 min-w-[120px] relative">
+            <td key={q.key} className="px-1 py-1 border-b border-slate-100 min-w-[110px] relative">
               <input
                 type="text"
                 inputMode="decimal"
                 value={val}
-                onChange={(e) => setCellValue(row.key, month.key, e.target.value)}
+                onChange={(e) => setCellValue(row.key, q.key, e.target.value)}
                 placeholder={row.isCurrency ? `${sym}0` : '0'}
                 className={`w-full border rounded px-2 py-1.5 text-right font-mono text-[13px] placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-300 transition-shadow min-h-[44px] ${
                   isEmpty
@@ -310,8 +278,8 @@ export function FounderForm() {
         {/* Welcome */}
         <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-6 shadow-sm">
           <p className="text-slate-700 leading-relaxed">
-            Hi <span className="font-semibold">{ceoName}</span>, please provide your monthly data for{' '}
-            <span className="font-semibold">{company.name}</span> covering {quarter.months[0].label} to {quarter.months[2].label}.
+            Hi <span className="font-semibold">{ceoName}</span>, please provide your quarterly data for{' '}
+            <span className="font-semibold">{company.name}</span> for the latest completed quarter.
             Fields are pre-populated with last known values — update as needed.
           </p>
         </div>
@@ -353,12 +321,9 @@ export function FounderForm() {
                   <th className="sticky left-0 z-10 bg-slate-50 px-3 py-2.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider min-w-[180px]">
                     Metric
                   </th>
-                  {quarter.months.map((month) => (
-                    <th key={month.key} className="px-2 py-2.5 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider min-w-[120px]">
-                      <div className="text-[11px] leading-tight">
-                        <div>{month.label.split(' ')[0]}</div>
-                        <div className="text-slate-400 font-normal">{month.label.split(' ')[1]}</div>
-                      </div>
+                  {quarter.quarters.map((q) => (
+                    <th key={q.key} className="px-2 py-2.5 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider min-w-[110px]">
+                      <div className="text-[12px]">{q.label}</div>
                     </th>
                   ))}
                   {/* Status column removed — empty cells highlighted instead */}

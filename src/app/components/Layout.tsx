@@ -51,9 +51,7 @@ const navSections: NavSection[] = [
   {
     label: 'Workflows',
     items: [
-      { path: '/review/monthly', label: 'Monthly Review', icon: ClipboardList, m1: true },
       { path: '/review/quarterly', label: 'Quarterly Review', icon: CalendarCheck, m1: true },
-      { path: '/board-prep', label: 'Board Prep', icon: FileText },
       { path: '/founder-data', label: 'Founder Data', icon: SendHorizonal, m1: true },
     ],
   },
@@ -276,32 +274,6 @@ export function Layout() {
                   </div>
                 )}
               </div>
-
-              <button
-                onClick={() => navigate('/matrix')}
-                className={`mb-2 flex w-full items-center gap-2 rounded-md border border-white/[0.06] bg-white/[0.03] px-2.5 py-2 text-left transition-colors hover:bg-white/[0.07] ${
-                  collapsed ? 'justify-center' : ''
-                }`}
-                aria-label={`Open notifications${notificationCount > 0 ? ` (${notificationCount})` : ''}`}
-                title={collapsed ? `Notifications${notificationCount > 0 ? ` (${notificationCount})` : ''}` : undefined}
-              >
-                <div className="relative shrink-0">
-                  <Bell className="h-4 w-4 text-slate-300" />
-                  {notificationCount > 0 && (
-                    <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">
-                      {notificationCount}
-                    </span>
-                  )}
-                </div>
-                {!collapsed && (
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[12px] font-medium text-white">Notifications</p>
-                    <p className="truncate text-[11px] text-slate-400">
-                      {notificationCount > 0 ? `${urgentFlags.length} critical flags · ${overdueTodos.length} overdue to-dos` : 'No urgent updates'}
-                    </p>
-                  </div>
-                )}
-              </button>
 
               {/* Collapse button */}
               <button

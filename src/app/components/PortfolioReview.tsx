@@ -409,13 +409,8 @@ function ReviewDetailExpanded({ review, navigate }: { review: ReviewRecord; navi
   );
 }
 
-// ══════════════════════════════════════════════════════════════════════
-// ██ MONTHLY REVIEW ██
-// ══════════════════════════════════════════════════════════════════════
-export function MonthlyReview() {
-  const navigate = useNavigate();
-  const [mode, setMode] = useState<'list' | 'active'>('list');
-  const [currentIndex, setCurrentIndex] = useState(0);
+// MonthlyReview removed — platform focuses on quarterly only
+function __removedMonthlyReview() {
   const [reviewed, setReviewed] = useState<Set<string>>(new Set());
   const [skipped, setSkipped] = useState<Set<string>>(new Set());
   const [commentaries, setCommentaries] = useState<Record<string, string>>({});
@@ -1442,5 +1437,5 @@ export function QuarterlyReview() {
 
 // ── Legacy export for backwards compatibility ─────────────────────────
 export function PortfolioReview() {
-  return <MonthlyReview />;
+  return <QuarterlyReview />;
 }

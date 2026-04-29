@@ -4,8 +4,7 @@ import { Dashboard } from './components/Dashboard';
 import { PortfolioCommandCenter } from './components/PortfolioCommandCenter';
 import { ActionMatrix } from './components/ActionMatrix';
 import { CompanyDetail } from './components/CompanyDetail';
-import { BoardPrep } from './components/BoardPrep';
-import { MonthlyReview, QuarterlyReview } from './components/PortfolioReview';
+import { QuarterlyReview } from './components/PortfolioReview';
 import { SearchDiscovery } from './components/SearchDiscovery';
 import { IntelligenceHub } from './components/IntelligenceHub';
 import { Settings } from './components/Settings';
@@ -25,8 +24,6 @@ export const router = createBrowserRouter([
       { path: 'portfolio', Component: PortfolioCommandCenter },
       { path: 'matrix', Component: ActionMatrix },
       { path: 'company/:id', Component: CompanyDetail },
-      { path: 'board-prep', Component: BoardPrep },
-      { path: 'review/monthly', Component: MonthlyReview },
       { path: 'review/quarterly', Component: QuarterlyReview },
       { path: 'founder-data', Component: FounderData },
       { path: 'search', Component: SearchDiscovery },
