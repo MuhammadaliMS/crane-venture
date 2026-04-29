@@ -312,33 +312,22 @@ export function FounderData() {
                 })}
 
                 {/* Actions */}
-                <div className="px-3 py-3 flex items-center justify-end gap-1.5" onClick={e => e.stopPropagation()}>
-                  {(currentSub.status === 'not_sent' || currentSub.status === 'sent') && (
+                <div className="px-3 py-3 flex items-center justify-end" onClick={e => e.stopPropagation()}>
+                  {currentSub.status === 'sent' || currentSub.status === 'partial' || currentSub.status === 'submitted' ? (
                     <button
                       onClick={() => {}}
-                      title={currentSub.status === 'sent' ? 'Resend form' : 'Send form'}
-                      className="w-7 h-7 rounded-md bg-indigo-50 border border-indigo-200 flex items-center justify-center hover:bg-indigo-100 transition-colors"
+                      className="inline-flex items-center gap-1.5 text-[11px] font-medium px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 transition-colors"
                     >
-                      {currentSub.status === 'sent'
-                        ? <RefreshCw className="w-3.5 h-3.5 text-indigo-500" />
-                        : <Send className="w-3.5 h-3.5 text-indigo-500" />
-                      }
+                      <RefreshCw className="w-3 h-3" /> Resend
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {}}
+                      className="inline-flex items-center gap-1.5 text-[11px] font-medium px-3 py-1.5 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 transition-colors"
+                    >
+                      <Send className="w-3 h-3" /> Send
                     </button>
                   )}
-                  <button
-                    onClick={() => handleCopyLink(company.id)}
-                    title="Copy form link"
-                    className="w-7 h-7 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-center hover:bg-slate-100 transition-colors"
-                  >
-                    <Copy className={`w-3.5 h-3.5 ${isCopied ? 'text-emerald-500' : 'text-slate-400'}`} />
-                  </button>
-                  <button
-                    onClick={() => navigate(`/form/${company.id}`)}
-                    title="Open form"
-                    className="w-7 h-7 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-center hover:bg-slate-100 transition-colors"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-                  </button>
                 </div>
               </div>
 
