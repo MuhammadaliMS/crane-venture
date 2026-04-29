@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
-import { Sparkles, Check, X, Mic, Mail, FileText, Database, Calendar, Bell } from 'lucide-react';
+import { Sparkles, Check, X, Mic, Mail, FileText, Database, Calendar, Bell, Pencil } from 'lucide-react';
 import { companies } from './mock-data';
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -142,6 +142,8 @@ function DataConfirmationUI() {
   const { pending, confirm, reject, triggerDemo } = useDataConfirmation();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [animatingId, setAnimatingId] = useState<string | null>(null);
+  const [isEditingValue, setIsEditingValue] = useState(false);
+  const [editedValue, setEditedValue] = useState('');
 
   // When a new confirmation arrives, animate it in
   useEffect(() => {
@@ -154,6 +156,19 @@ function DataConfirmationUI() {
   }, [pending.length]);
 
   const active = activeId ? pending.find(c => c.id === activeId) : null;
+
+  // Reset edit state when modal opens or active changes
+  useEffect(() => {
+    if (active) {
+      setEditedValue(active.newValue);
+      setIsEditingValue(false);
+    }
+  }, [activeId]);
+
+  const closeModal = () => {
+    setActiveId(null);
+    setIsEditingValue(false);
+  };
 
   return (
     <>
@@ -215,7 +230,7 @@ function DataConfirmationUI() {
       {active && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]"
-          onClick={() => setActiveId(null)}
+          onClick={closeModal}
         >
           <div
             className="bg-white rounded-2xl shadow-2xl max-w-[520px] w-full mx-4 overflow-hidden animate-[scaleIn_0.2s_ease-out]"
@@ -224,6 +239,7 @@ function DataConfirmationUI() {
             {(() => {
               const cfg = sourceConfig[active.source];
               const Icon = cfg.icon;
+              const isEdited = editedValue !== active.newValue;
               return (
                 <>
                   {/* Header */}
@@ -235,7 +251,7 @@ function DataConfirmationUI() {
                       <h3 className="text-[15px] font-semibold text-slate-900">Confirm data update</h3>
                       <p className="text-[12px] text-slate-500">Detected from <span className={`font-medium ${cfg.color}`}>{cfg.label}</span> · {timeAgo(active.detectedAt)}</p>
                     </div>
-                    <button onClick={() => setActiveId(null)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                    <button onClick={closeModal} className="text-slate-400 hover:text-slate-600 transition-colors">
                       <X className="w-5 h-5" />
                     </button>
                   </div>
@@ -253,15 +269,52 @@ function DataConfirmationUI() {
                       </div>
                     </div>
 
-                    {/* Old → New */}
+                    {/* Old → New (editable) */}
                     <div className="bg-slate-50 rounded-xl p-4 grid grid-cols-2 gap-3">
                       <div>
                         <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400 mb-1">Current value</p>
                         <p className="text-[18px] font-mono-num font-semibold text-slate-500 line-through decoration-slate-300">{active.oldValue}</p>
                       </div>
                       <div>
-                        <p className="text-[10px] font-medium uppercase tracking-wider text-emerald-600 mb-1">New value</p>
-                        <p className="text-[18px] font-mono-num font-semibold text-emerald-600">{active.newValue}</p>
+                        <div className="flex items-center justify-between mb-1">
+                          <p className={`text-[10px] font-medium uppercase tracking-wider ${isEdited ? 'text-amber-600' : 'text-emerald-600'}`}>
+                            {isEdited ? 'Edited value' : 'New value'}
+                          </p>
+                          {!isEditingValue && (
+                            <button
+                              onClick={() => setIsEditingValue(true)}
+                              className="flex items-center gap-1 text-[10px] text-slate-400 hover:text-indigo-600 transition-colors"
+                              title="Edit the suggested value"
+                            >
+                              <Pencil className="w-3 h-3" /> Edit
+                            </button>
+                          )}
+                          {isEditingValue && (
+                            <button
+                              onClick={() => setIsEditingValue(false)}
+                              className="text-[10px] text-indigo-600 hover:text-indigo-700 font-medium"
+                            >
+                              Done
+                            </button>
+                          )}
+                        </div>
+                        {isEditingValue ? (
+                          <input
+                            autoFocus
+                            value={editedValue}
+                            onChange={e => setEditedValue(e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter') setIsEditingValue(false); }}
+                            onBlur={() => setIsEditingValue(false)}
+                            className={`w-full text-[18px] font-mono-num font-semibold rounded-md px-2 py-0.5 border focus:outline-none focus:ring-2 ${
+                              isEdited ? 'text-amber-600 border-amber-300 focus:ring-amber-200 bg-white' : 'text-emerald-600 border-emerald-300 focus:ring-emerald-200 bg-white'
+                            }`}
+                          />
+                        ) : (
+                          <p className={`text-[18px] font-mono-num font-semibold ${isEdited ? 'text-amber-600' : 'text-emerald-600'}`}>
+                            {editedValue}
+                            {isEdited && <span className="text-[11px] ml-1.5 font-normal text-amber-500">· edited</span>}
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -276,6 +329,7 @@ function DataConfirmationUI() {
                     {/* Helper text */}
                     <p className="text-[11px] text-slate-400 leading-relaxed">
                       As the company owner, please confirm this update before it is written to the database.
+                      You can edit the value if the detection isn't quite right.
                       Confirming pushes to the staging table; rejecting discards the suggestion.
                     </p>
                   </div>
@@ -283,16 +337,16 @@ function DataConfirmationUI() {
                   {/* Footer */}
                   <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
                     <button
-                      onClick={() => { reject(active.id); setActiveId(null); }}
+                      onClick={() => { reject(active.id); closeModal(); }}
                       className="px-4 py-2 text-[13px] font-medium text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
                     >
                       Reject
                     </button>
                     <button
-                      onClick={() => { confirm(active.id); setActiveId(null); }}
+                      onClick={() => { confirm(active.id); closeModal(); }}
                       className="flex items-center gap-1.5 px-4 py-2 text-[13px] font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg transition-colors"
                     >
-                      <Check className="w-3.5 h-3.5" /> Confirm update
+                      <Check className="w-3.5 h-3.5" /> {isEdited ? 'Confirm with edit' : 'Confirm update'}
                     </button>
                   </div>
                 </>
