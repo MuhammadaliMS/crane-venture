@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
-import { Sparkles, Check, X, Mic, Mail, FileText, Database, Calendar, Bell, Pencil } from 'lucide-react';
+import { Sparkles, Check, X, Mic, Mail, FileText, Database, Calendar, Bell, Pencil, AlertCircle } from 'lucide-react';
 import { companies } from './mock-data';
+import { validateFieldValue, type FieldKey } from './fieldValidation';
 
 // ── Types ──────────────────────────────────────────────────────────────
 export type ConnectorSource = 'granola' | 'gmail' | 'notion' | 'attio' | 'calendar' | 'specter';
@@ -144,6 +145,7 @@ function DataConfirmationUI() {
   const [animatingId, setAnimatingId] = useState<string | null>(null);
   const [isEditingValue, setIsEditingValue] = useState(false);
   const [editedValue, setEditedValue] = useState('');
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   // When a new confirmation arrives, animate it in
   useEffect(() => {
@@ -162,12 +164,21 @@ function DataConfirmationUI() {
     if (active) {
       setEditedValue(active.newValue);
       setIsEditingValue(false);
+      setValidationError(null);
     }
   }, [activeId]);
+
+  // Live-validate the edited value
+  useEffect(() => {
+    if (!active) return;
+    const result = validateFieldValue(active.field as FieldKey, editedValue);
+    setValidationError(result.valid ? null : result.error || 'Invalid value');
+  }, [editedValue, active]);
 
   const closeModal = () => {
     setActiveId(null);
     setIsEditingValue(false);
+    setValidationError(null);
   };
 
   return (
@@ -303,20 +314,30 @@ function DataConfirmationUI() {
                             autoFocus
                             value={editedValue}
                             onChange={e => setEditedValue(e.target.value)}
-                            onKeyDown={e => { if (e.key === 'Enter') setIsEditingValue(false); }}
-                            onBlur={() => setIsEditingValue(false)}
+                            onKeyDown={e => { if (e.key === 'Enter' && !validationError) setIsEditingValue(false); }}
+                            onBlur={() => { if (!validationError) setIsEditingValue(false); }}
                             className={`w-full text-[18px] font-mono-num font-semibold rounded-md px-2 py-0.5 border focus:outline-none focus:ring-2 ${
-                              isEdited ? 'text-amber-600 border-amber-300 focus:ring-amber-200 bg-white' : 'text-emerald-600 border-emerald-300 focus:ring-emerald-200 bg-white'
+                              validationError ? 'text-red-600 border-red-300 focus:ring-red-200 bg-white' :
+                              isEdited ? 'text-amber-600 border-amber-300 focus:ring-amber-200 bg-white' :
+                              'text-emerald-600 border-emerald-300 focus:ring-emerald-200 bg-white'
                             }`}
                           />
                         ) : (
-                          <p className={`text-[18px] font-mono-num font-semibold ${isEdited ? 'text-amber-600' : 'text-emerald-600'}`}>
+                          <p className={`text-[18px] font-mono-num font-semibold ${validationError ? 'text-red-600' : isEdited ? 'text-amber-600' : 'text-emerald-600'}`}>
                             {editedValue}
-                            {isEdited && <span className="text-[11px] ml-1.5 font-normal text-amber-500">· edited</span>}
+                            {isEdited && !validationError && <span className="text-[11px] ml-1.5 font-normal text-amber-500">· edited</span>}
                           </p>
                         )}
                       </div>
                     </div>
+
+                    {/* Validation error */}
+                    {validationError && (
+                      <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                        <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                        <p className="text-[12px] text-red-700">{validationError}</p>
+                      </div>
+                    )}
 
                     {/* Context / source quote */}
                     <div>
@@ -343,8 +364,11 @@ function DataConfirmationUI() {
                       Reject
                     </button>
                     <button
-                      onClick={() => { confirm(active.id); closeModal(); }}
-                      className="flex items-center gap-1.5 px-4 py-2 text-[13px] font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg transition-colors"
+                      onClick={() => { if (!validationError) { confirm(active.id); closeModal(); } }}
+                      disabled={!!validationError}
+                      className={`flex items-center gap-1.5 px-4 py-2 text-[13px] font-medium text-white rounded-lg transition-colors ${
+                        validationError ? 'bg-slate-300 cursor-not-allowed' : 'bg-emerald-500 hover:bg-emerald-600'
+                      }`}
                     >
                       <Check className="w-3.5 h-3.5" /> {isEdited ? 'Confirm with edit' : 'Confirm update'}
                     </button>

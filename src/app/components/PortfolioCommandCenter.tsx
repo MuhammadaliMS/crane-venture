@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router';
-import { Download, ChevronDown, ChevronUp, Flag as FlagIcon, Pencil } from 'lucide-react';
+import { Download, ChevronDown, ChevronUp, Flag as FlagIcon, Pencil, AlertCircle } from 'lucide-react';
+import { validateFieldValue, type FieldKey } from './fieldValidation';
 import { useFundFilter } from './Layout';
 import {
   companies, funds, flags, formatCurrency, getRAGColor,
@@ -46,17 +47,33 @@ export function PortfolioCommandCenter() {
   // Staging: editable fields pushed to staging before confirm
   const [editingCell, setEditingCell] = useState<{ companyId: string; field: string } | null>(null);
   const [editValue, setEditValue] = useState('');
+  const [editError, setEditError] = useState<string | null>(null);
+  const [draftValue, setDraftValue] = useState<string>('');
   const [stagedEdits, setStagedEdits] = useState<StagedEdit[]>([]);
   const [showConfirm, setShowConfirm] = useState(false);
 
   const hasStagedEdits = stagedEdits.length > 0;
 
-  const stageEdit = (companyId: string, field: string, value: string) => {
+  const tryStageEdit = (companyId: string, field: string, rawValue: string, currency: 'GBP' | 'USD' | 'EUR' = 'GBP') => {
+    const result = validateFieldValue(field as FieldKey, rawValue, currency);
+    if (!result.valid) {
+      setEditError(result.error || 'Invalid value');
+      return false;
+    }
     setStagedEdits(prev => {
       const filtered = prev.filter(e => !(e.companyId === companyId && e.field === field));
-      return [...filtered, { companyId, field, value }];
+      return [...filtered, { companyId, field, value: result.normalized || rawValue }];
     });
     setEditingCell(null);
+    setEditError(null);
+    setDraftValue('');
+    return true;
+  };
+
+  const cancelEdit = () => {
+    setEditingCell(null);
+    setEditError(null);
+    setDraftValue('');
   };
 
   const getStagedValue = (companyId: string, field: string): string | undefined => {
@@ -343,18 +360,33 @@ export function PortfolioCommandCenter() {
                             className={`px-3 py-1.5 text-right font-mono-num text-[12px] tabular-nums relative group/cell cursor-pointer transition-colors ${
                               isEditing ? 'bg-indigo-50/50' : staged ? 'bg-amber-50 hover:bg-amber-100' : 'hover:bg-indigo-50/60'
                             }`}
-                            onClick={() => { if (!isEditing && !isExited) setEditingCell({ companyId: company.id, field }); }}
+                            onClick={() => { if (!isEditing && !isExited) { setEditingCell({ companyId: company.id, field }); setEditError(null); } }}
                             title="Click to edit"
                           >
                             {isEditing ? (
-                              <input
-                                autoFocus
-                                className="w-full text-right text-[12px] font-mono-num border border-indigo-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                                defaultValue={staged || display.replace(/[£$€,]/g, '')}
-                                onBlur={e => stageEdit(company.id, field, e.target.value)}
-                                onKeyDown={e => { if (e.key === 'Enter') stageEdit(company.id, field, (e.target as HTMLInputElement).value); if (e.key === 'Escape') setEditingCell(null); }}
-                                onClick={e => e.stopPropagation()}
-                              />
+                              <div className="relative">
+                                <input
+                                  autoFocus
+                                  value={draftValue}
+                                  onChange={e => { setDraftValue(e.target.value); setEditError(null); }}
+                                  className={`w-full text-right text-[12px] font-mono-num border rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 ${
+                                    editError ? 'border-red-400 focus:ring-red-200' : 'border-indigo-300 focus:ring-indigo-200'
+                                  }`}
+                                  onFocus={() => { if (!draftValue) setDraftValue(staged || display.replace(/[£$€,\s]/g, '')); }}
+                                  onBlur={() => { if (draftValue) tryStageEdit(company.id, field, draftValue, company.currency as any); }}
+                                  onKeyDown={e => {
+                                    if (e.key === 'Enter') { tryStageEdit(company.id, field, draftValue, company.currency as any); }
+                                    if (e.key === 'Escape') cancelEdit();
+                                  }}
+                                  onClick={e => e.stopPropagation()}
+                                />
+                                {editError && (
+                                  <div className="absolute top-full right-0 mt-1 z-20 bg-red-500 text-white text-[10px] font-medium px-2 py-1 rounded shadow-lg whitespace-nowrap flex items-center gap-1 max-w-[260px]">
+                                    <AlertCircle className="w-2.5 h-2.5 flex-shrink-0" />
+                                    <span className="truncate">{editError}</span>
+                                  </div>
+                                )}
+                              </div>
                             ) : (
                               <span className={`inline-flex items-center gap-1 ${staged ? 'text-amber-700 font-medium' : className || 'text-slate-600'}`}>
                                 <Pencil className="w-3 h-3 text-indigo-400 opacity-0 group-hover/cell:opacity-100 transition-opacity" />
@@ -379,18 +411,33 @@ export function PortfolioCommandCenter() {
                           className={`px-3 py-1.5 text-right font-mono-num text-[12px] tabular-nums relative group/cell cursor-pointer transition-colors ${
                             isEditing ? 'bg-indigo-50/50' : staged ? 'bg-amber-50 hover:bg-amber-100' : 'hover:bg-indigo-50/60'
                           }`}
-                          onClick={() => { if (!isEditing && !isExited) setEditingCell({ companyId: company.id, field: 'headcount' }); }}
+                          onClick={() => { if (!isEditing && !isExited) { setEditingCell({ companyId: company.id, field: 'headcount' }); setEditError(null); } }}
                           title="Click to edit"
                         >
                           {isEditing ? (
-                            <input
-                              autoFocus
-                              className="w-full text-right text-[12px] font-mono-num border border-indigo-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                              defaultValue={staged || String(company.headcount)}
-                              onBlur={e => stageEdit(company.id, 'headcount', e.target.value)}
-                              onKeyDown={e => { if (e.key === 'Enter') stageEdit(company.id, 'headcount', (e.target as HTMLInputElement).value); if (e.key === 'Escape') setEditingCell(null); }}
-                              onClick={e => e.stopPropagation()}
-                            />
+                            <div className="relative">
+                              <input
+                                autoFocus
+                                value={draftValue}
+                                onChange={e => { setDraftValue(e.target.value); setEditError(null); }}
+                                onFocus={() => { if (!draftValue) setDraftValue(staged || String(company.headcount)); }}
+                                className={`w-full text-right text-[12px] font-mono-num border rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 ${
+                                  editError ? 'border-red-400 focus:ring-red-200' : 'border-indigo-300 focus:ring-indigo-200'
+                                }`}
+                                onBlur={() => { if (draftValue) tryStageEdit(company.id, 'headcount', draftValue, company.currency as any); }}
+                                onKeyDown={e => {
+                                  if (e.key === 'Enter') tryStageEdit(company.id, 'headcount', draftValue, company.currency as any);
+                                  if (e.key === 'Escape') cancelEdit();
+                                }}
+                                onClick={e => e.stopPropagation()}
+                              />
+                              {editError && (
+                                <div className="absolute top-full right-0 mt-1 z-20 bg-red-500 text-white text-[10px] font-medium px-2 py-1 rounded shadow-lg whitespace-nowrap flex items-center gap-1 max-w-[260px]">
+                                  <AlertCircle className="w-2.5 h-2.5 flex-shrink-0" />
+                                  <span className="truncate">{editError}</span>
+                                </div>
+                              )}
+                            </div>
                           ) : (
                             <span className={`inline-flex items-center gap-1 ${staged ? 'text-amber-700 font-medium' : 'text-slate-500'}`}>
                               <Pencil className="w-3 h-3 text-indigo-400 opacity-0 group-hover/cell:opacity-100 transition-opacity" />

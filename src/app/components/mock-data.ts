@@ -819,9 +819,11 @@ export function getActionType(health: HealthStatus, upside: UpsideCategory): Act
 
 export function formatCurrency(value: number, currency: Currency = 'GBP'): string {
   const sym = currency === 'GBP' ? '£' : currency === 'USD' ? '$' : '€';
-  if (value >= 1000000) return `${sym}${(value / 1000000).toFixed(1)}M`;
-  if (value >= 1000) return `${sym}${(value / 1000).toFixed(0)}K`;
-  return `${sym}${value}`;
+  const sign = value < 0 ? '-' : '';
+  const abs = Math.abs(value);
+  if (abs >= 1000000) return `${sign}${sym}${(abs / 1000000).toFixed(1)}M`;
+  if (abs >= 1000) return `${sign}${sym}${(abs / 1000).toFixed(0)}K`;
+  return `${sign}${sym}${abs}`;
 }
 
 export function formatCurrencyFull(value: number, currency: Currency = 'GBP'): string {
