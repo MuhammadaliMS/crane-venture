@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { currentUser, companies, type Fund } from './mock-data';
 import { useWorkflow } from './WorkflowContext';
+import { DataConfirmationProvider } from './DataConfirmation';
 
 // ── Milestone context ─────────────────────────────────────────────────
 export const MilestoneContext = createContext<{
@@ -104,6 +105,7 @@ export function Layout() {
     <MilestoneContext.Provider value={{ milestone, setMilestone }}>
     <FundFilterContext.Provider value={{ fundFilter, setFundFilter }}>
       <NotificationContext.Provider value={{ urgentFlags, overdueTodos, notificationCount }}>
+      <DataConfirmationProvider>
         <div className="flex h-screen overflow-hidden bg-[#f8fafc]" style={{ fontFamily: "'Inter', sans-serif" }}>
 
           {/* ─── Sidebar ─── always dark ─── */}
@@ -300,6 +302,7 @@ export function Layout() {
             </div>
           </main>
         </div>
+      </DataConfirmationProvider>
       </NotificationContext.Provider>
     </FundFilterContext.Provider>
     </MilestoneContext.Provider>
