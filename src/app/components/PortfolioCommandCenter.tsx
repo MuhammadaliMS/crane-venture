@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router';
-import { Download, ChevronDown, ChevronUp, Flag as FlagIcon, Pencil, AlertCircle, Undo2 } from 'lucide-react';
+import { Download, ChevronDown, ChevronUp, Flag as FlagIcon, Pencil, AlertCircle, Undo2, CheckCircle2 } from 'lucide-react';
 import { validateFieldValue, type FieldKey } from './fieldValidation';
 import { useFundFilter } from './Layout';
 import {
@@ -197,6 +197,33 @@ export function PortfolioCommandCenter() {
         </div>
       </div>
 
+      {/* Staging banner — appears when there are uncommitted edits */}
+      {hasStagedEdits && (
+        <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            <span className="text-[13px] text-amber-800 font-medium">
+              {stagedEdits.length} pending {stagedEdits.length === 1 ? 'change' : 'changes'} in staging
+            </span>
+            <span className="text-[11px] text-amber-600">— review the highlighted cells, then confirm to save</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={discardAllEdits}
+              className="text-[12px] px-3 py-1.5 text-amber-700 hover:bg-amber-100 rounded-lg transition-colors"
+            >
+              Discard all
+            </button>
+            <button
+              onClick={confirmAllEdits}
+              className="text-[12px] px-4 py-1.5 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors font-medium flex items-center gap-1.5"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" /> Confirm all changes
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* TABLE */}
       <div className="bg-white rounded-xl border border-slate-200/80 overflow-hidden">
         <div className="overflow-x-auto">
@@ -297,7 +324,7 @@ export function PortfolioCommandCenter() {
                           <td
                             key={field}
                             className={`px-3 py-1.5 text-right font-mono-num text-[12px] tabular-nums relative group/cell transition-colors ${
-                              isEditing ? 'bg-indigo-50/50' : 'hover:bg-slate-50'
+                              isEditing ? 'bg-indigo-50/50' : staged ? 'bg-amber-50/60 hover:bg-amber-50' : 'hover:bg-slate-50'
                             }`}
                           >
                             {isEditing ? (
@@ -383,7 +410,7 @@ export function PortfolioCommandCenter() {
                       return (
                         <td
                           className={`px-3 py-1.5 text-right font-mono-num text-[12px] tabular-nums relative group/cell transition-colors ${
-                            isEditing ? 'bg-indigo-50/50' : 'hover:bg-slate-50'
+                            isEditing ? 'bg-indigo-50/50' : staged ? 'bg-amber-50/60 hover:bg-amber-50' : 'hover:bg-slate-50'
                           }`}
                         >
                           {isEditing ? (
