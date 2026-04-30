@@ -59,16 +59,56 @@ function getCurrencySymbol(cur: Currency): string {
 // Type for cell values keyed by "rowKey_monthKey"
 type CellValues = Record<string, string>;
 
+// Currencies supported (Bonnie's email + extensible)
+const REPORTING_CURRENCIES = ['USD','GBP','EUR','CHF','INR','SGD','AUD','NZD','DKK','SEK','CAD','KRW','CNY'];
+
 export function FounderForm() {
   const { token } = useParams<{ token: string }>();
   const company = companies.find((c) => c.id === token);
 
   const quarter = getQuarterInfo();
 
+  // ── Email + OTP authentication gate ──
+  const [authStep, setAuthStep] = useState<'email' | 'otp' | 'authed'>(() => {
+    try {
+      return sessionStorage.getItem(`crane.form.${token}.authed`) === 'true' ? 'authed' : 'email';
+    } catch { return 'email'; }
+  });
+  const [authEmail, setAuthEmail] = useState('');
+  const [authOtp, setAuthOtp] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [otpSending, setOtpSending] = useState(false);
+
+  const sendOtp = (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    if (!authEmail || !authEmail.includes('@')) {
+      setAuthError('Please enter a valid email address');
+      return;
+    }
+    setOtpSending(true);
+    setTimeout(() => {
+      setAuthStep('otp');
+      setOtpSending(false);
+    }, 600);
+  };
+  const verifyOtp = (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    if (!authOtp || authOtp.length < 4) {
+      setAuthError('Enter the 6-digit code from your email');
+      return;
+    }
+    try { sessionStorage.setItem(`crane.form.${token}.authed`, 'true'); } catch {}
+    setAuthStep('authed');
+  };
+
   const [cellValues, setCellValues] = useState<CellValues>({});
   const [additionalNotes, setAdditionalNotes] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [reportingCurrency, setReportingCurrency] = useState<string>(company?.currency || 'GBP');
+  const [fyEnd, setFyEnd] = useState<string>('March');
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Autosave when cell values change
@@ -97,7 +137,8 @@ export function FounderForm() {
 
   const latest = company.monthlyFinancials[company.monthlyFinancials.length - 1];
   const ceoName = company.managementTeam.match(/CEO:\s*([^,]+)/)?.[1]?.trim() ?? 'Founder';
-  const cur = company.currency;
+  // Use the currency the founder selected (falls back to company default)
+  const cur = (reportingCurrency as Currency) || company.currency;
   const sym = getCurrencySymbol(cur);
 
   // --- Helpers ---
@@ -262,6 +303,114 @@ export function FounderForm() {
     rows: ROWS.filter((r) => r.section === section.id),
   }));
 
+  // ── Auth gate (email + OTP) — render before form if not authed ──
+  if (authStep !== 'authed') {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-[440px]">
+          <div className="text-center mb-6">
+            <h1 className="text-[24px] font-bold tracking-tight text-indigo-600 mb-1">CRANE</h1>
+            <p className="text-[12px] text-slate-500 font-medium uppercase tracking-wider">Quarterly Data Collection</p>
+            <div className="mt-3">
+              <span className="text-lg font-semibold text-slate-900">{company.name}</span>
+              <span className="ml-2 px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-[11px] font-semibold">{quarter.label}</span>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
+            {authStep === 'email' && (
+              <form onSubmit={sendOtp} className="space-y-4">
+                <div>
+                  <h2 className="text-[16px] font-semibold text-slate-900">Verify your email</h2>
+                  <p className="text-[12px] text-slate-500 mt-1">
+                    Enter your email to receive a 6-digit access code. The code is sent only to founders registered for {company.name}.
+                  </p>
+                </div>
+                {authError && (
+                  <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                    <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-[12px] text-red-700">{authError}</p>
+                  </div>
+                )}
+                <div>
+                  <label className="text-[12px] font-medium text-slate-700">Email</label>
+                  <div className="relative mt-1">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input
+                      type="email"
+                      value={authEmail}
+                      onChange={e => setAuthEmail(e.target.value)}
+                      placeholder="founder@yourcompany.com"
+                      className="w-full pl-9 pr-3 py-2.5 text-[13px] border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300"
+                      autoFocus
+                      autoComplete="email"
+                    />
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  disabled={otpSending}
+                  className={`w-full py-2.5 rounded-lg text-[13px] font-medium transition-colors ${
+                    otpSending ? 'bg-indigo-400 text-white cursor-wait' : 'bg-indigo-500 text-white hover:bg-indigo-600'
+                  }`}
+                >
+                  {otpSending ? 'Sending code…' : 'Send access code'}
+                </button>
+              </form>
+            )}
+
+            {authStep === 'otp' && (
+              <form onSubmit={verifyOtp} className="space-y-4">
+                <div>
+                  <h2 className="text-[16px] font-semibold text-slate-900">Enter access code</h2>
+                  <p className="text-[12px] text-slate-500 mt-1">
+                    We sent a 6-digit code to <span className="font-medium text-slate-700">{authEmail}</span>. Check your inbox.
+                  </p>
+                </div>
+                {authError && (
+                  <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                    <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-[12px] text-red-700">{authError}</p>
+                  </div>
+                )}
+                <div>
+                  <label className="text-[12px] font-medium text-slate-700">6-digit code</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={authOtp}
+                    onChange={e => setAuthOtp(e.target.value.replace(/\D/g, ''))}
+                    placeholder="000000"
+                    className="w-full mt-1 px-3 py-2.5 text-[18px] font-mono tracking-[0.4em] text-center border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300"
+                    autoFocus
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="w-full py-2.5 rounded-lg bg-indigo-500 text-white text-[13px] font-medium hover:bg-indigo-600 transition-colors"
+                >
+                  Verify and continue
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setAuthStep('email'); setAuthOtp(''); setAuthError(''); }}
+                  className="w-full text-[12px] text-slate-500 hover:text-slate-700 transition-colors"
+                >
+                  Use a different email
+                </button>
+              </form>
+            )}
+          </div>
+
+          <p className="text-[11px] text-slate-400 text-center mt-4 flex items-center justify-center gap-1">
+            <Lock className="w-3 h-3" /> Secure access — your data is encrypted in transit.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-[900px] mx-auto px-4 py-8">
@@ -275,24 +424,40 @@ export function FounderForm() {
           </div>
         </div>
 
-        {/* Welcome + Financial Year End */}
+        {/* Welcome + Financial Year End + Reporting Currency */}
         <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-6 shadow-sm space-y-4">
           <p className="text-slate-700 leading-relaxed">
             Hi <span className="font-semibold">{ceoName}</span>, please provide your quarterly data for{' '}
             <span className="font-semibold">{company.name}</span> for the latest completed quarter.
             Fields are pre-populated with last known values — update as needed.
           </p>
-          <div className="flex items-center gap-3 pt-2 border-t border-slate-100">
-            <label className="text-sm font-medium text-slate-600 whitespace-nowrap">Company Financial Year End</label>
-            <select
-              className="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-              defaultValue="March"
-            >
-              {['January','February','March','April','May','June','July','August','September','October','November','December'].map(m => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
-            <span className="text-xs text-slate-400">Quarters (Q1-Q4) are based on your financial year</span>
+          <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+            <div>
+              <label className="text-[12px] font-medium text-slate-600">Company Financial Year End</label>
+              <select
+                value={fyEnd}
+                onChange={e => setFyEnd(e.target.value)}
+                className="mt-1 w-full text-[13px] border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              >
+                {['January','February','March','April','May','June','July','August','September','October','November','December'].map(m => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+              <p className="text-[11px] text-slate-400 mt-1">Q1–Q4 align to your financial year</p>
+            </div>
+            <div>
+              <label className="text-[12px] font-medium text-slate-600">Reporting Currency</label>
+              <select
+                value={reportingCurrency}
+                onChange={e => setReportingCurrency(e.target.value)}
+                className="mt-1 w-full text-[13px] border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              >
+                {REPORTING_CURRENCIES.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+              <p className="text-[11px] text-slate-400 mt-1">All numeric values are reported in this currency</p>
+            </div>
           </div>
         </div>
 

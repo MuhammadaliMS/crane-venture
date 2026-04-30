@@ -11,6 +11,7 @@ import { FlagIcon } from './FlagIcon';
 import { generateAssetMetrixXLSX, generateFundSummaryCSV, downloadCSV } from './ExportUtils';
 import LPReportPreview from './LPReportPreview';
 import { useFundFilter, useMilestone } from './Layout';
+import { aggregateQuarter } from './quarterlyAggregation';
 
 // ── Shared data ───────────────────────────────────────────────────────
 const activeCompanies = companies.filter(c => c.lifecycle === 'Active — Core');
@@ -1021,28 +1022,42 @@ export function QuarterlyReview() {
                   </div>
                 </div>
 
-                {/* KPIs strip — 9 founder form metrics matching the form */}
+                {/* KPIs strip — Bonnie's quarterly aggregation rules (latest quarter Q4) */}
                 {(() => {
-                  const latest = qCurrent.monthlyFinancials[qCurrent.monthlyFinancials.length - 1];
-                  if (!latest) return null;
-                  const ebitdaVal = ((latest.revenue ?? 0) + (latest.revenueOther ?? 0)) - ((latest.cogs ?? 0) + (latest.rdCosts ?? 0) + (latest.salesMarketingCosts ?? 0) + (latest.generalAdminCosts ?? 0));
-                  const gm = latest.revenue ? Math.round(((latest.revenue - (latest.cogs ?? 0)) / latest.revenue) * 100) : null;
-                  const headcountSum = (latest.headcountMale ?? 0) + (latest.headcountFemale ?? 0) + (latest.headcountEthnicMinority ?? 0);
+                  // Use the most recent quarter (Q4 of FY 25/26 in mock data = Jan-Mar 2026)
+                  const latestQuarterMonths = ['2026-01','2026-02','2026-03'];
+                  const data = latestQuarterMonths.map(m => qCurrent.monthlyFinancials.find((f: any) => f.month === m)).filter(Boolean) as any[];
+                  if (data.length === 0) return null;
+                  const revenue = aggregateQuarter(data, 'revenue');
+                  const arr = aggregateQuarter(data, 'arr');
+                  const gm = aggregateQuarter(data, 'grossMargin');
+                  const ebitda = aggregateQuarter(data, 'ebitda');
+                  const cashBalance = aggregateQuarter(data, 'cashBalance');
+                  const cashBurn = aggregateQuarter(data, 'cashBurn');
+                  const headcountM = aggregateQuarter(data, 'headcountMale') ?? 0;
+                  const headcountF = aggregateQuarter(data, 'headcountFemale') ?? 0;
+                  const headcountE = aggregateQuarter(data, 'headcountEthnicMinority') ?? 0;
+                  const headcountTotal = headcountM + headcountF + headcountE;
+
                   const metrics = [
-                    { label: 'Revenue', value: formatCurrency(latest.revenue ?? 0, qCurrent.currency) },
-                    { label: 'ARR', value: formatCurrency(qCurrent.mrr * 12, qCurrent.currency) },
+                    { label: 'Revenue', value: revenue != null ? formatCurrency(revenue, qCurrent.currency) : '—' },
+                    { label: 'ARR', value: arr != null ? formatCurrency(arr, qCurrent.currency) : '—' },
                     { label: 'Gross Margin', value: gm != null ? gm + '%' : '—' },
-                    { label: 'EBITDA', value: formatCurrency(ebitdaVal, qCurrent.currency), red: ebitdaVal < 0 },
-                    { label: 'Cash Balance', value: formatCurrency(latest.cashBalance ?? 0, qCurrent.currency) },
-                    { label: 'Cash Burn', value: '-' + formatCurrency(qCurrent.burn, qCurrent.currency), red: true },
-                    { label: 'Headcount', value: headcountSum.toString() },
+                    { label: 'EBITDA', value: ebitda != null ? formatCurrency(ebitda, qCurrent.currency) : '—', red: (ebitda ?? 0) < 0 },
+                    { label: 'Cash Balance', value: cashBalance != null ? formatCurrency(cashBalance, qCurrent.currency) : '—' },
+                    { label: 'Cash Burn', value: cashBurn != null ? formatCurrency(cashBurn, qCurrent.currency) : '—', red: true },
+                    { label: 'Headcount', value: String(headcountTotal) },
                   ];
                   return (
                     <div className="grid grid-cols-7 gap-2 mt-2.5">
                       {metrics.map(m => (
-                        <div key={m.label} className="bg-slate-50 rounded-lg px-2.5 py-2">
+                        <div key={m.label} className="bg-slate-50 rounded-lg px-2.5 py-2 group/k relative">
                           <p className="text-[10px] text-slate-400">{m.label}</p>
                           <p className={`text-[13px] font-semibold font-mono-num mt-0.5 ${m.red ? 'text-red-600' : 'text-slate-700'}`}>{m.value}</p>
+                          <span className="invisible group-hover/k:visible absolute z-30 bottom-full left-1/2 -translate-x-1/2 mb-1 bg-slate-800 text-white text-[10px] font-normal rounded-lg shadow-lg px-3 py-2 whitespace-nowrap text-left pointer-events-none">
+                            <div>Source: <span className="font-medium text-white">Founder Form</span></div>
+                            <div className="text-slate-300">Q4 2025/26 · 3-month aggregation</div>
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -1105,39 +1120,20 @@ export function QuarterlyReview() {
                                 { label: 'Headcount — Female (FTE)', key: 'headcountFemale', isCurrency: false, section: 'Team & Diversity' },
                                 { label: 'Headcount — Ethnic Minority (FTE)', key: 'headcountEthnicMinority', isCurrency: false, section: 'Team & Diversity' },
                               ];
-                              // Build quarterly aggregates from monthly data (sum currency, last-of-quarter for headcount/balance)
+                              // Quarterly aggregation per Bonnie's confirmed rules (see quarterlyAggregation.ts)
                               const quarterMonths: Record<string, string[]> = {
                                 Q1: ['2025-04','2025-05','2025-06'],
                                 Q2: ['2025-07','2025-08','2025-09'],
                                 Q3: ['2025-10','2025-11','2025-12'],
                                 Q4: ['2026-01','2026-02','2026-03'],
                               };
-                              const aggregateForQuarter = (q: string, key: string, isCurrency: boolean) => {
+                              const aggregateForQuarter = (q: string, key: string, _isCurrency: boolean) => {
                                 const months = quarterMonths[q] || [];
                                 const data = months.map(m => qCurrent.monthlyFinancials.find((f: any) => f.month === m)).filter(Boolean) as any[];
                                 if (data.length === 0) return null;
-                                if (key === 'grossMargin') {
-                                  const rev = data.reduce((s, d) => s + (d.revenue ?? 0), 0);
-                                  const cogs = data.reduce((s, d) => s + (d.cogs ?? 0), 0);
-                                  return rev > 0 ? Math.round(((rev - cogs) / rev) * 100) : null;
-                                }
-                                if (key === 'ebitda') {
-                                  return data.reduce((s, d) => {
-                                    const rev = (d.revenue ?? 0) + (d.revenueOther ?? 0);
-                                    const costs = (d.cogs ?? 0) + (d.rdCosts ?? 0) + (d.salesMarketingCosts ?? 0) + (d.generalAdminCosts ?? 0);
-                                    return s + (rev - costs);
-                                  }, 0);
-                                }
-                                // Cash balance / headcount: take latest in quarter (point-in-time)
-                                if (key === 'cashBalance' || key.startsWith('headcount')) {
-                                  const last = data[data.length - 1];
-                                  return last[key] ?? null;
-                                }
-                                // Currency cumulative: sum across months
-                                if (isCurrency) {
-                                  return data.reduce((s, d) => s + (d[key] ?? 0), 0);
-                                }
-                                return data[data.length - 1][key] ?? null;
+                                // Map metric key → Bonnie's aggregation rule
+                                const aggKey = key === 'monthlyNetBurn' ? 'cashBurn' : key;
+                                return aggregateQuarter(data, aggKey as any);
                               };
 
                               let lastSection = '';

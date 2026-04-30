@@ -2,6 +2,15 @@ import { useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { Download, ChevronDown, ChevronUp, Flag as FlagIcon, Pencil, AlertCircle, Undo2, CheckCircle2 } from 'lucide-react';
 import { validateFieldValue, type FieldKey } from './fieldValidation';
+import { aggregateQuarter } from './quarterlyAggregation';
+
+// Quarter → months mapping (FY 2025/26, Mar year-end as default)
+const QUARTER_MONTHS: Record<string, string[]> = {
+  'Q1 2025/26': ['2025-04','2025-05','2025-06'],
+  'Q2 2025/26': ['2025-07','2025-08','2025-09'],
+  'Q3 2025/26': ['2025-10','2025-11','2025-12'],
+  'Q4 2025/26': ['2026-01','2026-02','2026-03'],
+};
 import { useFundFilter } from './Layout';
 import {
   companies, funds, flags, formatCurrency, getRAGColor,
@@ -40,6 +49,7 @@ export function PortfolioCommandCenter() {
   const [stageFilter, setStageFilter] = useState<Stage | 'all'>('all');
   const [localFundFilter, setLocalFundFilter] = useState<Fund | 'all'>('all');
   const [ownerFilter, setOwnerFilter] = useState<string>('all');
+  const [quarterFilter, setQuarterFilter] = useState<string>('Q4 2025/26'); // latest quarter by default
   const [tableView, setTableView] = useState<'active' | 'exited' | 'all'>('active');
   const [sortField, setSortField] = useState<string>('action');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
@@ -181,6 +191,14 @@ export function PortfolioCommandCenter() {
         </div>
         <div className="flex items-center gap-2">
           <select
+            value={quarterFilter}
+            onChange={e => setQuarterFilter(e.target.value)}
+            className="text-[12px] border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            title="Quarter view — values aggregate using Bonnie's rules"
+          >
+            {Object.keys(QUARTER_MONTHS).map(q => <option key={q} value={q}>{q}</option>)}
+          </select>
+          <select
             value={ownerFilter}
             onChange={e => setOwnerFilter(e.target.value)}
             className="text-[12px] border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-200"
@@ -300,19 +318,39 @@ export function PortfolioCommandCenter() {
                         title={company.rag}
                       />
                     </td>
-                    {/* Editable cells — double-click to edit, staged before confirm */}
+                    {/* Editable cells — quarterly aggregation per Bonnie's rules */}
                     {(() => {
-                      const latest = company.monthlyFinancials[company.monthlyFinancials.length - 1];
-                      const ebitdaVal = latest ? ((latest.revenue ?? 0) + (latest.revenueOther ?? 0)) - ((latest.cogs ?? 0) + (latest.rdCosts ?? 0) + (latest.salesMarketingCosts ?? 0) + (latest.generalAdminCosts ?? 0)) : 0;
-                      const gmVal = latest && latest.revenue ? ((latest.revenue - (latest.cogs ?? 0)) / latest.revenue * 100).toFixed(0) + '%' : '—';
+                      // Pull months for the selected quarter
+                      const months = QUARTER_MONTHS[quarterFilter] || [];
+                      const data = months.map(m => company.monthlyFinancials.find((f: any) => f.month === m)).filter(Boolean) as any[];
 
-                      const editableFields: { field: string; display: string; className?: string }[] = [
-                        { field: 'arr', display: !isExited ? formatCurrency(company.mrr * 12, company.currency) : '—' },
-                        { field: 'revenue', display: !isExited && latest ? formatCurrency(latest.revenue ?? 0, company.currency) : '—' },
-                        { field: 'ebitda', display: !isExited ? formatCurrency(ebitdaVal, company.currency) : '—', className: ebitdaVal < 0 ? 'text-red-500' : '' },
-                        { field: 'grossMargin', display: !isExited ? gmVal : '—' },
-                        { field: 'cashBalance', display: !isExited ? formatCurrency(latestCash, company.currency) : '—' },
-                        { field: 'cashBurn', display: !isExited ? '-' + formatCurrency(company.burn, company.currency) : '—', className: 'text-red-500' },
+                      const fmt = (n: number | null, red?: boolean): { display: string; red?: boolean } => {
+                        if (n == null) return { display: '—' };
+                        return { display: formatCurrency(n, company.currency), red };
+                      };
+
+                      const arr = aggregateQuarter(data, 'arr');
+                      const revenue = aggregateQuarter(data, 'revenue');
+                      const ebitda = aggregateQuarter(data, 'ebitda');
+                      const gm = aggregateQuarter(data, 'grossMargin');
+                      const cashBalance = aggregateQuarter(data, 'cashBalance');
+                      const cashBurn = aggregateQuarter(data, 'cashBurn');
+
+                      const editableFields: { field: string; display: string; className?: string }[] = !isExited && data.length > 0 ? [
+                        { field: 'arr', display: arr != null ? formatCurrency(arr, company.currency) : '—' },
+                        { field: 'revenue', display: revenue != null ? formatCurrency(revenue, company.currency) : '—' },
+                        { field: 'ebitda', display: ebitda != null ? formatCurrency(ebitda, company.currency) : '—', className: (ebitda ?? 0) < 0 ? 'text-red-500' : '' },
+                        { field: 'grossMargin', display: gm != null ? gm + '%' : '—' },
+                        { field: 'cashBalance', display: cashBalance != null ? formatCurrency(cashBalance, company.currency) : '—' },
+                        { field: 'cashBurn', display: cashBurn != null ? formatCurrency(cashBurn, company.currency) : '—', className: 'text-red-500' },
+                      ] : [
+                        // No data for this quarter (or exited) — show em-dashes
+                        { field: 'arr', display: '—' },
+                        { field: 'revenue', display: '—' },
+                        { field: 'ebitda', display: '—' },
+                        { field: 'grossMargin', display: '—' },
+                        { field: 'cashBalance', display: '—' },
+                        { field: 'cashBurn', display: '—' },
                       ];
 
                       return editableFields.map(({ field, display, className }) => {
@@ -397,16 +435,18 @@ export function PortfolioCommandCenter() {
                         );
                       });
                     })()}
-                    {/* Headcount — sum of M+F+Ethnic Minority FTE matching founder form */}
+                    {/* Headcount — last month (M3) sum of M+F+Ethnic Minority */}
                     {(() => {
                       const staged = getStagedValue(company.id, 'headcount');
                       const isEditing = editingCell?.companyId === company.id && editingCell?.field === 'headcount';
-                      const latestFin = company.monthlyFinancials[company.monthlyFinancials.length - 1];
-                      const headcountSum = latestFin
-                        ? (latestFin.headcountMale ?? 0) + (latestFin.headcountFemale ?? 0) + (latestFin.headcountEthnicMinority ?? 0)
-                        : company.headcount;
+                      const months = QUARTER_MONTHS[quarterFilter] || [];
+                      const data = months.map(m => company.monthlyFinancials.find((f: any) => f.month === m)).filter(Boolean) as any[];
+                      const m = aggregateQuarter(data, 'headcountMale') ?? 0;
+                      const f = aggregateQuarter(data, 'headcountFemale') ?? 0;
+                      const e = aggregateQuarter(data, 'headcountEthnicMinority') ?? 0;
+                      const headcountSum = m + f + e;
                       const hcSrc = getDataSource(company.id, 'headcount');
-                      const displayValue = !isExited ? String(headcountSum) : '—';
+                      const displayValue = (!isExited && data.length > 0) ? String(headcountSum) : '—';
                       return (
                         <td
                           className={`px-3 py-1.5 text-right font-mono-num text-[12px] tabular-nums relative group/cell transition-colors ${

@@ -16,6 +16,7 @@ import { useWorkflow } from './WorkflowContext';
 import { LogNoteModal, NewTodoModal, ScheduleCheckInModal } from './ActionModals';
 import { FlagActionDropdown } from './FlagActionDropdown';
 import { useMilestone } from './Layout';
+import { aggregateQuarter } from './quarterlyAggregation';
 
 export function CompanyDetail() {
   const { id } = useParams();
@@ -200,32 +201,44 @@ export function CompanyDetail() {
         </div>
       </div>
 
-      {/* ===== ZONE 2: Key Metrics — only 9 founder form metrics ===== */}
+      {/* ===== ZONE 2: Key Metrics — Bonnie's quarterly aggregation rules ===== */}
       {(() => {
-        const latest = company.monthlyFinancials[company.monthlyFinancials.length - 1];
-        if (!latest) return null;
-        const ebitdaVal = ((latest.revenue ?? 0) + (latest.revenueOther ?? 0)) - ((latest.cogs ?? 0) + (latest.rdCosts ?? 0) + (latest.salesMarketingCosts ?? 0) + (latest.generalAdminCosts ?? 0));
-        const grossMarginPct = latest.revenue ? Math.round(((latest.revenue - (latest.cogs ?? 0)) / latest.revenue) * 100) : null;
-        const headcountSum = (latest.headcountMale ?? 0) + (latest.headcountFemale ?? 0) + (latest.headcountEthnicMinority ?? 0);
-        const cashBurn = -Math.abs(company.burn);
+        // Use latest quarter Q4 2025/26 (Jan-Mar 2026)
+        const latestQuarterMonths = ['2026-01','2026-02','2026-03'];
+        const data = latestQuarterMonths.map(m => company.monthlyFinancials.find((f: any) => f.month === m)).filter(Boolean) as any[];
+        if (data.length === 0) return null;
+        const revenue = aggregateQuarter(data, 'revenue');
+        const arr = aggregateQuarter(data, 'arr');
+        const gm = aggregateQuarter(data, 'grossMargin');
+        const ebitda = aggregateQuarter(data, 'ebitda');
+        const cashBalance = aggregateQuarter(data, 'cashBalance');
+        const cashBurn = aggregateQuarter(data, 'cashBurn');
+        const hcM = aggregateQuarter(data, 'headcountMale') ?? 0;
+        const hcF = aggregateQuarter(data, 'headcountFemale') ?? 0;
+        const hcE = aggregateQuarter(data, 'headcountEthnicMinority') ?? 0;
+
         const metrics = [
-          { label: 'Revenue', value: formatCurrency(latest.revenue ?? 0, company.currency) },
-          { label: 'ARR', value: formatCurrency(computedARR, company.currency) },
-          { label: 'Gross Margin', value: grossMarginPct != null ? grossMarginPct + '%' : '—' },
-          { label: 'EBITDA', value: formatCurrency(ebitdaVal, company.currency), red: ebitdaVal < 0 },
-          { label: 'Cash Balance', value: formatCurrency(latest.cashBalance ?? 0, company.currency) },
-          { label: 'Cash Burn', value: formatCurrency(cashBurn, company.currency), red: true },
-          { label: 'Headcount — M', value: String(latest.headcountMale ?? 0) },
-          { label: 'Headcount — F', value: String(latest.headcountFemale ?? 0) },
-          { label: 'Headcount — Ethnic Minority', value: String(latest.headcountEthnicMinority ?? 0) },
+          { label: 'Revenue', value: revenue != null ? formatCurrency(revenue, company.currency) : '—', source: 'Founder Form', when: 'Q4 2025/26' },
+          { label: 'ARR', value: arr != null ? formatCurrency(arr, company.currency) : '—', source: 'Founder Form', when: 'M3 of Q4' },
+          { label: 'Gross Margin', value: gm != null ? gm + '%' : '—', source: 'Founder Form', when: 'Q4 derived' },
+          { label: 'EBITDA', value: ebitda != null ? formatCurrency(ebitda, company.currency) : '—', red: (ebitda ?? 0) < 0, source: 'Founder Form', when: 'Q4 sum' },
+          { label: 'Cash Balance', value: cashBalance != null ? formatCurrency(cashBalance, company.currency) : '—', source: 'Founder Form', when: 'M3 of Q4' },
+          { label: 'Cash Burn', value: cashBurn != null ? formatCurrency(cashBurn, company.currency) : '—', red: true, source: 'Founder Form', when: 'Q4 sum' },
+          { label: 'Headcount — M', value: String(hcM), source: 'Founder Form', when: 'M3 of Q4' },
+          { label: 'Headcount — F', value: String(hcF), source: 'Founder Form', when: 'M3 of Q4' },
+          { label: 'Headcount — EM', value: String(hcE), source: 'Founder Form', when: 'M3 of Q4' },
         ];
         return (
           <div className="bg-white rounded-xl border border-slate-200/60 p-1 mb-6">
             <div className="grid grid-cols-9 divide-x divide-slate-200 stagger-children">
               {metrics.map(m => (
-                <div key={m.label} className="px-3 py-3 text-center">
+                <div key={m.label} className="px-3 py-3 text-center group/m relative">
                   <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400 leading-tight">{m.label}</p>
                   <p className={`text-[16px] font-mono-num font-bold mt-1 ${m.red ? 'text-red-600' : 'text-slate-700'}`}>{m.value}</p>
+                  <span className="invisible group-hover/m:visible absolute z-30 bottom-full left-1/2 -translate-x-1/2 mb-1 bg-slate-800 text-white text-[10px] font-normal rounded-lg shadow-lg px-3 py-2 whitespace-nowrap text-left pointer-events-none">
+                    <div>Source: <span className="font-medium text-white">{m.source}</span></div>
+                    <div className="text-slate-300">{m.when}</div>
+                  </span>
                 </div>
               ))}
             </div>
