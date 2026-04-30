@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 import {
   Play, SkipForward, Check, ChevronRight, Download, Clock, Send, FileText,
   Upload, Users, Sparkles, CheckCircle, AlertCircle, Printer, Plus, Calendar,
-  ChevronDown, ArrowRight, Save, Pencil,
+  ChevronDown, ArrowRight, Save, Pencil, Info,
 } from 'lucide-react';
 import { SparklineChart } from './SparklineChart';
 import { companies, funds, flags, formatCurrency, getHealthColor, getRAGColor, getActionColor, teamMembers, type RAGStatus } from './mock-data';
@@ -804,26 +804,16 @@ export function QuarterlyReview() {
               Full team review — add commentary per company, then export Asset Metrix XLSX{!isM1 && ' or LP Report PDF'}
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <select
-              value={fundFilter}
-              onChange={e => setFundFilter(e.target.value as any)}
-              className="text-[13px] border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-700"
-            >
-              <option value="all">All Funds</option>
-              {funds.map(f => <option key={f.id} value={f.name}>{f.name}</option>)}
-            </select>
-            <button
-              onClick={() => { setMode('active'); setCurrentIndex(0); setQuarterlyStep(1); }}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg text-[13px] hover:bg-indigo-600 transition-colors"
-            >
-              {inProgressQuarterly ? (
-                <><FileText className="w-3.5 h-3.5" /> Edit {inProgressQuarterly.quarter} Review</>
-              ) : (
-                <><Plus className="w-3.5 h-3.5" /> Start {currentQuarterLabel} Review</>
-              )}
-            </button>
-          </div>
+          <button
+            onClick={() => { setMode('active'); setCurrentIndex(0); setQuarterlyStep(1); }}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg text-[13px] hover:bg-indigo-600 transition-colors"
+          >
+            {inProgressQuarterly ? (
+              <><FileText className="w-3.5 h-3.5" /> Edit {inProgressQuarterly.quarter} Review</>
+            ) : (
+              <><Plus className="w-3.5 h-3.5" /> Start {currentQuarterLabel} Review</>
+            )}
+          </button>
         </div>
 
         {/* Upcoming / Current quarter callout */}
@@ -1019,7 +1009,7 @@ export function QuarterlyReview() {
                       <h2 className="text-[16px] font-semibold text-slate-800">{qCurrent.name}</h2>
                       <div className="w-2.5 h-2.5 rounded-full" style={{ background: getRAGColor(qCurrent.rag) }} title={qCurrent.rag} />
                       <span className="text-[11px] px-2 py-0.5 bg-slate-100 rounded-md text-slate-600">{qCurrent.stage}</span>
-                      <span className="text-[11px] px-2 py-0.5 bg-slate-100 rounded-md text-slate-600">{qCurrent.fund}</span>
+                      <span className="text-[11px] px-2 py-0.5 bg-slate-100 rounded-md text-slate-600">{qCurrent.sector}</span>
                       <div className="flex items-center gap-1 ml-auto">
                         {(qCurrent.ownerAvatars || []).map((a: string, i: number) => (
                           <div key={i} className="w-5 h-5 rounded-full bg-indigo-500 text-white flex items-center justify-center text-[9px]">{a}</div>
@@ -1029,27 +1019,35 @@ export function QuarterlyReview() {
                     </div>
                     <p className="text-[12px] text-slate-500 mt-0.5">{qCurrent.description}</p>
                   </div>
-                  <button onClick={() => navigate(`/company/${qCurrent.id}`)} className="text-[11px] text-indigo-500 hover:text-indigo-700 flex items-center gap-0.5 flex-shrink-0">
-                    Full detail <ChevronRight className="w-3 h-3" />
-                  </button>
                 </div>
 
-                {/* KPIs strip */}
-                <div className="grid grid-cols-6 gap-2 mt-2.5">
-                  {[
-                    { label: 'MRR', value: formatCurrency(qCurrent.mrr, qCurrent.currency) },
+                {/* KPIs strip — 9 founder form metrics matching the form */}
+                {(() => {
+                  const latest = qCurrent.monthlyFinancials[qCurrent.monthlyFinancials.length - 1];
+                  if (!latest) return null;
+                  const ebitdaVal = ((latest.revenue ?? 0) + (latest.revenueOther ?? 0)) - ((latest.cogs ?? 0) + (latest.rdCosts ?? 0) + (latest.salesMarketingCosts ?? 0) + (latest.generalAdminCosts ?? 0));
+                  const gm = latest.revenue ? Math.round(((latest.revenue - (latest.cogs ?? 0)) / latest.revenue) * 100) : null;
+                  const headcountSum = (latest.headcountMale ?? 0) + (latest.headcountFemale ?? 0) + (latest.headcountEthnicMinority ?? 0);
+                  const metrics = [
+                    { label: 'Revenue', value: formatCurrency(latest.revenue ?? 0, qCurrent.currency) },
                     { label: 'ARR', value: formatCurrency(qCurrent.mrr * 12, qCurrent.currency) },
-                    { label: 'Burn/mo', value: formatCurrency(qCurrent.burn, qCurrent.currency) },
-                    { label: 'Runway', value: qCurrent.runway + ' mo', red: qCurrent.runway < 6 },
-                    { label: 'Headcount', value: qCurrent.headcount.toString() },
-                    { label: 'Customers', value: qCurrent.customers.toString() },
-                  ].map(m => (
-                    <div key={m.label} className="bg-slate-50 rounded-lg px-2.5 py-2">
-                      <p className="text-[10px] text-slate-400">{m.label}</p>
-                      <p className={`text-[13px] font-semibold font-mono-num mt-0.5 ${m.red ? 'text-red-600' : 'text-slate-700'}`}>{m.value}</p>
+                    { label: 'Gross Margin', value: gm != null ? gm + '%' : '—' },
+                    { label: 'EBITDA', value: formatCurrency(ebitdaVal, qCurrent.currency), red: ebitdaVal < 0 },
+                    { label: 'Cash Balance', value: formatCurrency(latest.cashBalance ?? 0, qCurrent.currency) },
+                    { label: 'Cash Burn', value: '-' + formatCurrency(qCurrent.burn, qCurrent.currency), red: true },
+                    { label: 'Headcount', value: headcountSum.toString() },
+                  ];
+                  return (
+                    <div className="grid grid-cols-7 gap-2 mt-2.5">
+                      {metrics.map(m => (
+                        <div key={m.label} className="bg-slate-50 rounded-lg px-2.5 py-2">
+                          <p className="text-[10px] text-slate-400">{m.label}</p>
+                          <p className={`text-[13px] font-semibold font-mono-num mt-0.5 ${m.red ? 'text-red-600' : 'text-slate-700'}`}>{m.value}</p>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  );
+                })()}
               </div>
 
               {/* Founder submission panel */}
@@ -1187,44 +1185,6 @@ export function QuarterlyReview() {
                 );
               })()}
 
-              {/* Alerts */}
-              {qCurrentFlags.length > 0 && (
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
-                  <p className="text-[11px] font-medium text-amber-700 uppercase tracking-[0.06em]">Active Alerts</p>
-                  {qCurrentFlags.map(flag => (
-                    <div key={flag.id} className="flex items-start gap-2">
-                      <FlagIcon type={flag.type} size={13} />
-                      <p className="text-[12px] text-slate-700">{flag.headline}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Monthly comments context — surface the 3 monthly comments from this quarter */}
-              {(() => {
-                const monthlyComments = monthlyReviewsHistory
-                  .filter(r => r.status === 'Complete')
-                  .flatMap(r => r.companyComments
-                    .filter(cc => cc.company === qCurrent.name)
-                    .map(cc => ({ month: r.month, comment: cc.comment }))
-                  )
-                  .slice(0, 3);
-                if (monthlyComments.length === 0) return null;
-                return (
-                  <div className="bg-slate-50 rounded-xl border border-slate-200/60 p-4">
-                    <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-2">Monthly Review Comments</p>
-                    <div className="space-y-2">
-                      {monthlyComments.map((mc, i) => (
-                        <div key={i} className="flex items-start gap-2">
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-600 flex-shrink-0 mt-0.5">{mc.month.split(' ')[0]}</span>
-                          <p className="text-[12px] text-slate-600 leading-relaxed">{mc.comment}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })()}
-
               {/* Commentary fields — matches AI prompt + Asset Metrix Company Commentary sheet */}
               {(() => {
                 const cc = companyCommentary[qCurrent.id] || {
@@ -1269,8 +1229,15 @@ export function QuarterlyReview() {
                     </div>
 
                     <div>
-                      <label className="text-[11px] text-slate-500">Summary <span className="text-red-400">*</span></label>
-                      <p className="text-[10px] text-slate-400 mt-0.5">2-3 sentences: overall performance, current ARR, growth, key metrics</p>
+                      <label className="text-[11px] text-slate-500 inline-flex items-center gap-1">
+                        Summary <span className="text-red-400">*</span>
+                        <span className="group/tip relative inline-flex">
+                          <Info className="w-3 h-3 text-slate-300 hover:text-slate-500 cursor-help" />
+                          <span className="invisible group-hover/tip:visible absolute left-0 top-5 z-10 bg-slate-800 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap shadow-lg">
+                            2–3 sentences: overall performance, current ARR, growth, key metrics
+                          </span>
+                        </span>
+                      </label>
                       <textarea
                         className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white resize-none h-[72px]"
                         defaultValue={cc.summary}
@@ -1280,8 +1247,15 @@ export function QuarterlyReview() {
                     </div>
 
                     <div>
-                      <label className="text-[11px] text-slate-500">Recent Progress <span className="text-red-400">*</span></label>
-                      <p className="text-[10px] text-slate-400 mt-0.5">2-3 sentences: team, customers, revenue, partnerships, product</p>
+                      <label className="text-[11px] text-slate-500 inline-flex items-center gap-1">
+                        Recent Progress <span className="text-red-400">*</span>
+                        <span className="group/tip relative inline-flex">
+                          <Info className="w-3 h-3 text-slate-300 hover:text-slate-500 cursor-help" />
+                          <span className="invisible group-hover/tip:visible absolute left-0 top-5 z-10 bg-slate-800 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap shadow-lg">
+                            2–3 sentences: team, customers, revenue, partnerships, product
+                          </span>
+                        </span>
+                      </label>
                       <textarea
                         className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white resize-none h-[72px]"
                         defaultValue={cc.recentProgress}
@@ -1362,19 +1336,6 @@ export function QuarterlyReview() {
             <p className="text-[13px] text-slate-500 mb-4">
               Q1 2026 data is ready. {activeCompanies.length} companies reviewed. Export Asset Metrix XLSX or optionally generate LP Report PDF.
             </p>
-          </div>
-
-          <div className="flex items-center gap-3 bg-white rounded-xl border border-slate-200/60 p-3">
-            <label className="text-[12px] text-slate-500">Export for:</label>
-            <select
-              className="text-[13px] border border-slate-200 rounded-lg px-3 py-1.5 bg-white"
-              value={selectedFund.id}
-              onChange={e => setSelectedFund(funds.find(f => f.id === e.target.value) || funds[0])}
-            >
-              {funds.map(f => (
-                <option key={f.id} value={f.id}>{f.name} ({f.currency} · {f.vintage})</option>
-              ))}
-            </select>
           </div>
 
           <div className="grid grid-cols-3 gap-4">

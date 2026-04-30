@@ -27,7 +27,9 @@ export function CompanyDetail() {
   const [showAllFlags, setShowAllFlags] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<string[]>([]);
+  const [searchResponse, setSearchResponse] = useState('');
+  const [searchStreaming, setSearchStreaming] = useState(false);
+  const [searchSources, setSearchSources] = useState<{ source: string; date: string }[]>([]);
   const { flags, activityFeed, getNotesForCompany, todos, toggleTodo } = useWorkflow();
   const { milestone } = useMilestone();
   const isM1 = milestone === 'm1';
@@ -40,13 +42,11 @@ export function CompanyDetail() {
   const companyTodos = todos.filter(t => t.companyName === company.name && !t.completed);
   const isExited = company.lifecycle === 'Exited' || company.lifecycle === 'Wound Down';
 
+  // Slimmed tabs — Market Context, Notes & Actions, Fundraising removed (descoped)
   const allTabs = [
     { id: 'overview', label: 'Overview', m1: true },
     { id: 'metrics', label: 'Metrics & Charts' },
     { id: 'documents', label: 'Documents' },
-    { id: 'market', label: 'Market Context' },
-    { id: 'notes', label: 'Notes & Actions' },
-    { id: 'fundraising', label: 'Fundraising' },
   ];
   const tabs = isM1 ? allTabs.filter(t => t.m1) : allTabs;
 
@@ -137,7 +137,6 @@ export function CompanyDetail() {
               <div className="flex items-center gap-2 mt-3 flex-wrap">
                 <span className="bg-white/10 text-white/80 text-[12px] px-2.5 py-1 rounded-md">{company.stage}</span>
                 <span className="bg-white/10 text-white/80 text-[12px] px-2.5 py-1 rounded-md">{company.sector}</span>
-                <span className="bg-white/10 text-white/80 text-[12px] px-2.5 py-1 rounded-md">{company.fund}</span>
                 {isExited && (
                   <span className="bg-white/10 text-white/60 text-[12px] px-2.5 py-1 rounded-md">{company.lifecycle}</span>
                 )}
@@ -196,163 +195,43 @@ export function CompanyDetail() {
               )}
             </div>
 
-            {/* Action buttons */}
-            {!isExited && !isM1 && (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setShowLogNote(true)}
-                  className="bg-white/10 hover:bg-white/20 rounded-lg p-2.5 transition-colors"
-                  title="Log Note"
-                >
-                  <StickyNote className="w-4 h-4 text-white/80" />
-                </button>
-                <button
-                  onClick={() => setShowNewTodo(true)}
-                  className="bg-white/10 hover:bg-white/20 rounded-lg p-2.5 transition-colors"
-                  title="To-Do"
-                >
-                  <Plus className="w-4 h-4 text-white/80" />
-                </button>
-                <button
-                  onClick={() => setShowCheckIn(true)}
-                  className="bg-white/10 hover:bg-white/20 rounded-lg p-2.5 transition-colors"
-                  title="Schedule Check-in"
-                >
-                  <CalendarDays className="w-4 h-4 text-white/80" />
-                </button>
-
-                {/* More menu */}
-                <div className="relative">
-                  <button
-                    onClick={() => setShowMoreMenu(!showMoreMenu)}
-                    className="bg-white/10 hover:bg-white/20 rounded-lg p-2.5 transition-colors"
-                    title="More actions"
-                  >
-                    <MoreHorizontal className="w-4 h-4 text-white/80" />
-                  </button>
-                  {showMoreMenu && (
-                    <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50 min-w-[160px]">
-                      <button
-                        onClick={() => { navigate('/board-prep'); setShowMoreMenu(false); }}
-                        className="w-full text-left px-3 py-2 text-[13px] text-slate-700 hover:bg-slate-50 flex items-center gap-2"
-                      >
-                        <FileText className="w-3.5 h-3.5" /> Board Prep
-                      </button>
-                      <a
-                        href="https://app.attio.com"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={() => setShowMoreMenu(false)}
-                        className="w-full text-left px-3 py-2 text-[13px] text-slate-700 hover:bg-slate-50 flex items-center gap-2"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" /> Open in Attio
-                      </a>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+            {/* Action buttons removed — descoped */}
           </div>
         </div>
       </div>
 
-      {/* ===== ZONE 2: Key Metrics Strip (2 rows of 5) ===== */}
-      {!isM1 && <div className="bg-white rounded-xl border border-slate-200/60 p-1 mb-6">
-        <div className="grid grid-cols-5 divide-x divide-slate-200 stagger-children">
-          {/* Row 1 */}
-          {/* Cost */}
-          <div className="px-4 py-3 text-center">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Cost</p>
-            <p className="text-[18px] font-mono-num font-bold text-slate-700 mt-0.5">{formatCurrency(company.accounting.costAtPeriodEnd)}</p>
-          </div>
-          {/* Carrying Value */}
-          <div className="px-4 py-3 text-center">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Carrying Value</p>
-            <p className="text-[18px] font-mono-num font-bold text-slate-700 mt-0.5">{formatCurrency(company.accounting.carryingValue)}</p>
-          </div>
-          {/* MoIC */}
-          <div className="px-4 py-3 text-center">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">MoIC</p>
-            <div className="flex items-center justify-center gap-2 mt-0.5">
-              <span className="text-[18px] font-mono-num font-bold text-slate-700">{company.accounting.moic.toFixed(1)}x</span>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
-                company.accounting.moic >= 2 ? 'bg-emerald-100 text-emerald-700' :
-                company.accounting.moic >= 1 ? 'bg-blue-100 text-blue-700' :
-                'bg-red-100 text-red-700'
-              }`}>
-                {company.accounting.moic >= 2 ? 'Strong' : company.accounting.moic >= 1 ? 'On Track' : 'Below'}
-              </span>
+      {/* ===== ZONE 2: Key Metrics — only 9 founder form metrics ===== */}
+      {(() => {
+        const latest = company.monthlyFinancials[company.monthlyFinancials.length - 1];
+        if (!latest) return null;
+        const ebitdaVal = ((latest.revenue ?? 0) + (latest.revenueOther ?? 0)) - ((latest.cogs ?? 0) + (latest.rdCosts ?? 0) + (latest.salesMarketingCosts ?? 0) + (latest.generalAdminCosts ?? 0));
+        const grossMarginPct = latest.revenue ? Math.round(((latest.revenue - (latest.cogs ?? 0)) / latest.revenue) * 100) : null;
+        const headcountSum = (latest.headcountMale ?? 0) + (latest.headcountFemale ?? 0) + (latest.headcountEthnicMinority ?? 0);
+        const cashBurn = -Math.abs(company.burn);
+        const metrics = [
+          { label: 'Revenue', value: formatCurrency(latest.revenue ?? 0, company.currency) },
+          { label: 'ARR', value: formatCurrency(computedARR, company.currency) },
+          { label: 'Gross Margin', value: grossMarginPct != null ? grossMarginPct + '%' : '—' },
+          { label: 'EBITDA', value: formatCurrency(ebitdaVal, company.currency), red: ebitdaVal < 0 },
+          { label: 'Cash Balance', value: formatCurrency(latest.cashBalance ?? 0, company.currency) },
+          { label: 'Cash Burn', value: formatCurrency(cashBurn, company.currency), red: true },
+          { label: 'Headcount — M', value: String(latest.headcountMale ?? 0) },
+          { label: 'Headcount — F', value: String(latest.headcountFemale ?? 0) },
+          { label: 'Headcount — Ethnic Minority', value: String(latest.headcountEthnicMinority ?? 0) },
+        ];
+        return (
+          <div className="bg-white rounded-xl border border-slate-200/60 p-1 mb-6">
+            <div className="grid grid-cols-9 divide-x divide-slate-200 stagger-children">
+              {metrics.map(m => (
+                <div key={m.label} className="px-3 py-3 text-center">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400 leading-tight">{m.label}</p>
+                  <p className={`text-[16px] font-mono-num font-bold mt-1 ${m.red ? 'text-red-600' : 'text-slate-700'}`}>{m.value}</p>
+                </div>
+              ))}
             </div>
           </div>
-          {/* Ownership */}
-          <div className="px-4 py-3 text-center">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Ownership</p>
-            <p className="text-[18px] font-mono-num font-bold text-slate-700 mt-0.5">{company.ownership}</p>
-          </div>
-          {/* MRR */}
-          <div className="px-4 py-3 text-center">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">MRR</p>
-            <div className="flex items-center justify-center gap-1.5 mt-0.5">
-              <span className="text-[18px] font-mono-num font-bold text-slate-700">{formatCurrency(company.mrr)}</span>
-              {mrrUp ? (
-                <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
-              ) : (
-                <TrendingDown className="w-3.5 h-3.5 text-red-500" />
-              )}
-            </div>
-          </div>
-        </div>
-        {/* Row 2 divider */}
-        <div className="border-t border-slate-200" />
-        <div className="grid grid-cols-5 divide-x divide-slate-200">
-          {/* ARR */}
-          <div className="px-4 py-3 text-center">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">ARR</p>
-            <div className="flex items-center justify-center gap-1.5 mt-0.5">
-              <span className="text-[18px] font-mono-num font-bold text-slate-700">{formatCurrency(computedARR)}</span>
-              {mrrUp ? (
-                <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
-              ) : (
-                <TrendingDown className="w-3.5 h-3.5 text-red-500" />
-              )}
-            </div>
-          </div>
-          {/* Runway */}
-          <div className="px-4 py-3 text-center">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Runway</p>
-            <div className="flex items-center justify-center gap-1.5 mt-0.5">
-              <span className={`text-[18px] font-mono-num font-bold ${company.runway <= 9 ? 'text-red-600' : 'text-slate-700'}`}>
-                {company.runway}mo
-              </span>
-              {company.runway <= 9 && <AlertTriangle className="w-3.5 h-3.5 text-red-500" />}
-            </div>
-          </div>
-          {/* Customers */}
-          <div className="px-4 py-3 text-center">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Customers</p>
-            <div className="flex items-center justify-center gap-1.5 mt-0.5">
-              <span className="text-[18px] font-mono-num font-bold text-slate-700">{company.customers.toLocaleString()}</span>
-              <Users className="w-3.5 h-3.5 text-slate-400" />
-            </div>
-          </div>
-          {/* Burn */}
-          <div className="px-4 py-3 text-center">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Monthly Burn</p>
-            <div className="flex items-center justify-center gap-1.5 mt-0.5">
-              <span className="text-[18px] font-mono-num font-bold text-slate-700">{formatCurrency(company.burn, company.currency)}</span>
-              {company.burn > 0 && <TrendingDown className="w-3.5 h-3.5 text-red-400" />}
-            </div>
-          </div>
-          {/* Headcount */}
-          <div className="px-4 py-3 text-center">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Headcount</p>
-            <div className="flex items-center justify-center gap-1.5 mt-0.5">
-              <span className="text-[18px] font-mono-num font-bold text-slate-700">{company.headcount}</span>
-              <Minus className="w-3.5 h-3.5 text-slate-300" />
-            </div>
-          </div>
-        </div>
-      </div>}
+        );
+      })()}
 
       {/* ===== ZONE 3: Alert Banner (conditional) ===== */}
       {!isM1 && companyFlags.length > 0 && (
@@ -390,7 +269,7 @@ export function CompanyDetail() {
       )}
 
       {/* ===== ZONE 4: Tabs + Content ===== */}
-      {/* Natural language search — replaces Board Prep */}
+      {/* AI search — streaming single-response */}
       <div className="mb-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -398,15 +277,28 @@ export function CompanyDetail() {
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder={`Ask anything about ${company.name} — board prep, metrics, recent updates, concerns...`}
+            placeholder={`Ask anything about ${company.name}...`}
             className="w-full pl-10 pr-20 py-2.5 text-[13px] border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 transition-shadow"
             onKeyDown={e => {
-              if (e.key === 'Enter' && searchQuery.trim()) {
-                setSearchResults([
-                  `Based on the latest quarterly data, ${company.name}'s ARR is ${formatCurrency(company.mrr * 12, company.currency)} with a runway of ${company.runway} months.`,
-                  `Recent activity shows ${companyActivity.length} events. ${companyFlags.length > 0 ? `There are ${companyFlags.length} active flags requiring attention.` : 'No active flags.'}`,
-                  `The company is currently rated ${company.rag} RAG status with ${company.health} health classification.`,
+              if (e.key === 'Enter' && searchQuery.trim() && !searchStreaming) {
+                const fullResponse = `Based on the latest quarterly data, ${company.name}'s ARR is ${formatCurrency(company.mrr * 12, company.currency)} with a current cash runway of ${company.runway} months. The company is rated ${company.rag} status. Recent founder updates indicate continued momentum on customer acquisition, with the team flagging ${companyFlags.length > 0 ? `${companyFlags.length} active concern${companyFlags.length === 1 ? '' : 's'} this quarter` : 'no major concerns this quarter'}. Cash burn is approximately ${formatCurrency(company.burn, company.currency)} per month against a balance from the latest founder submission.`;
+                setSearchResponse('');
+                setSearchSources([
+                  { source: 'Founder Form', date: 'Q1 2026 submission' },
+                  { source: 'Granola transcript', date: 'Board call · 3 days ago' },
+                  { source: 'Gmail thread', date: 'Latest founder update · 1 week ago' },
                 ]);
+                setSearchStreaming(true);
+                // Stream characters one by one
+                let i = 0;
+                const stream = setInterval(() => {
+                  i += 4;
+                  setSearchResponse(fullResponse.slice(0, i));
+                  if (i >= fullResponse.length) {
+                    clearInterval(stream);
+                    setSearchStreaming(false);
+                  }
+                }, 20);
               }
             }}
           />
@@ -415,16 +307,33 @@ export function CompanyDetail() {
             <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
           </div>
         </div>
-        {searchResults.length > 0 && (
-          <div className="mt-2 bg-indigo-50/50 border border-indigo-100 rounded-xl p-4 space-y-2">
-            <div className="flex items-center justify-between">
-              <p className="text-[11px] font-medium text-indigo-600 uppercase tracking-wider">Search Results</p>
-              <button onClick={() => { setSearchResults([]); setSearchQuery(''); }} className="text-[11px] text-slate-400 hover:text-slate-600">Clear</button>
+        {(searchResponse || searchStreaming) && (
+          <div className="mt-2 bg-indigo-50/50 border border-indigo-100 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[11px] font-medium text-indigo-600 uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles className="w-3 h-3" />
+                {searchStreaming ? 'Generating answer…' : 'Answer'}
+              </p>
+              {!searchStreaming && (
+                <button onClick={() => { setSearchResponse(''); setSearchQuery(''); setSearchSources([]); }} className="text-[11px] text-slate-400 hover:text-slate-600">Clear</button>
+              )}
             </div>
-            {searchResults.map((r, i) => (
-              <p key={i} className="text-[12px] text-slate-700 leading-relaxed">{r}</p>
-            ))}
-            <p className="text-[10px] text-slate-400 mt-1">Post-M1: results powered by AI from all ingested data (emails, board decks, founder forms)</p>
+            <p className="text-[13px] text-slate-700 leading-relaxed">
+              {searchResponse}
+              {searchStreaming && <span className="inline-block w-1.5 h-3 bg-indigo-400 ml-0.5 animate-pulse align-middle" />}
+            </p>
+            {!searchStreaming && searchSources.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-indigo-100">
+                <p className="text-[10px] font-medium text-indigo-600 uppercase tracking-wider mb-1.5">Sources</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {searchSources.map((s, i) => (
+                    <span key={i} className="text-[11px] bg-white border border-indigo-200 rounded-full px-2.5 py-1 text-slate-700">
+                      <span className="font-medium text-indigo-600">{s.source}</span> · {s.date}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

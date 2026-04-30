@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router';
-import { Download, ChevronDown, ChevronUp, Flag as FlagIcon, Pencil, AlertCircle } from 'lucide-react';
+import { Download, ChevronDown, ChevronUp, Flag as FlagIcon, Pencil, AlertCircle, Undo2 } from 'lucide-react';
 import { validateFieldValue, type FieldKey } from './fieldValidation';
 import { useFundFilter } from './Layout';
 import {
@@ -74,6 +74,26 @@ export function PortfolioCommandCenter() {
     setEditingCell(null);
     setEditError(null);
     setDraftValue('');
+  };
+
+  const discardEdit = (companyId: string, field: string) => {
+    setStagedEdits(prev => prev.filter(e => !(e.companyId === companyId && e.field === field)));
+  };
+
+  // Mock data source map — in production this comes from the database
+  const getDataSource = (companyId: string, field: string): { source: string; when: string } => {
+    const sources = [
+      { source: 'Founder Form', when: 'Q1 2026' },
+      { source: 'Granola transcript', when: '3 days ago' },
+      { source: 'Edited by Anna', when: '2 days ago' },
+      { source: 'Edited by Marcus', when: '1 week ago' },
+      { source: 'Gmail email', when: '5 days ago' },
+      { source: 'Notion doc', when: '2 weeks ago' },
+      { source: 'Attio', when: 'Yesterday' },
+    ];
+    // Deterministic per (companyId, field)
+    const hash = (companyId + field).split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+    return sources[hash % sources.length];
   };
 
   const getStagedValue = (companyId: string, field: string): string | undefined => {
@@ -156,105 +176,24 @@ export function PortfolioCommandCenter() {
         <div>
           <h1 className="text-[22px] font-semibold tracking-tight text-slate-800">Command Center</h1>
           <p className="mt-0.5 text-[13px] text-slate-400">
-            {activeCompanies.length} active companies &middot; {formatCurrency(totalPortfolioValue)} portfolio value
+            {activeCompanies.length} active companies
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {globalFund === 'all' && (
-            <select
-              value={localFundFilter}
-              onChange={e => setLocalFundFilter(e.target.value as Fund | 'all')}
-              className="text-[12px] border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600"
-            >
-              <option value="all">All Funds</option>
-              <option value="Fund I">Fund I</option>
-              <option value="Fund II">Fund II</option>
-              <option value="Fund III">Fund III</option>
-            </select>
-          )}
-          <div className="flex border border-slate-200 rounded-lg overflow-hidden">
-            {(['active', 'exited', 'all'] as const).map(v => (
-              <button
-                key={v}
-                onClick={() => setTableView(v)}
-                className={`text-[12px] px-3 py-1.5 font-medium transition-colors ${
-                  tableView === v ? 'bg-slate-800 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'
-                }`}
-              >
-                {v === 'active' ? 'Active' : v === 'exited' ? 'Exited' : 'All'}
-              </button>
-            ))}
-          </div>
+          <select
+            value={ownerFilter}
+            onChange={e => setOwnerFilter(e.target.value)}
+            className="text-[12px] border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+          >
+            <option value="all">All Lead Partners</option>
+            {Array.from(new Set(companies.flatMap(c => c.owners))).map(o => <option key={o} value={o}>{o}</option>)}
+          </select>
           <button
-            onClick={() => {
-              const fund = funds.find(f => f.name === localFundFilter) || funds[0];
-              generateAssetMetrixXLSX(fund, companies);
-            }}
+            onClick={() => generateAssetMetrixXLSX(funds[0], companies)}
             className="text-[12px] flex items-center gap-1.5 text-slate-500 hover:text-slate-700 border border-slate-200 rounded-lg px-3 py-1.5 bg-white hover:bg-slate-50 transition-colors"
           >
             <Download className="w-3.5 h-3.5" /> Export
           </button>
-        </div>
-      </div>
-
-      {/* Staging banner — shown when there are unsaved edits */}
-      {hasStagedEdits && (
-        <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-            <span className="text-[13px] text-amber-800 font-medium">{stagedEdits.length} pending {stagedEdits.length === 1 ? 'change' : 'changes'} in staging</span>
-            <span className="text-[11px] text-amber-600">— changes are not yet saved to the database</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={discardAllEdits} className="text-[12px] px-3 py-1.5 text-amber-700 hover:bg-amber-100 rounded-lg transition-colors">
-              Discard
-            </button>
-            <button onClick={confirmAllEdits} className="text-[12px] px-4 py-1.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-medium">
-              Confirm Changes
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* RAG distribution bar + filter row */}
-      <div className="flex items-center gap-4">
-        {/* Compact RAG bar */}
-        <div className="flex items-center gap-2.5 shrink-0">
-          <div className="flex h-[6px] w-[120px] rounded-full overflow-hidden bg-slate-100">
-            <div className="h-full bg-emerald-500 transition-all" style={{ width: `${gPct}%` }} />
-            <div className="h-full bg-amber-400 transition-all" style={{ width: `${aPct}%` }} />
-            <div className="h-full bg-red-500 transition-all" style={{ width: `${100 - gPct - aPct}%` }} />
-          </div>
-          <span className="text-[11px] text-slate-400 tabular-nums font-mono-num">{greenCount}G {amberCount}A {redCount}R</span>
-        </div>
-
-        {/* Filters */}
-        <div className="flex items-center gap-1.5 flex-wrap flex-1">
-          {[
-            { value: healthFilter, setter: setHealthFilter, options: ['all', 'On Track', 'At Risk', 'Underperforming'], labels: ['Health', 'On Track', 'At Risk', 'Underperf.'] },
-            { value: upsideFilter, setter: setUpsideFilter, options: ['all', 'High Potential', 'Emerging', 'Limited Potential'], labels: ['Upside', 'High Pot.', 'Emerging', 'Limited'] },
-            { value: stageFilter, setter: setStageFilter, options: ['all', 'Pre-seed', 'Seed', 'Series A', 'Series B+'], labels: ['Stage', 'Pre-seed', 'Seed', 'Series A', 'B+'] },
-            { value: ownerFilter, setter: setOwnerFilter, options: ['all', ...Array.from(new Set(companies.flatMap(c => c.owners)))], labels: ['Owner', ...Array.from(new Set(companies.flatMap(c => c.owners)))] },
-          ].map((filter, i) => (
-            <select
-              key={i}
-              value={filter.value}
-              onChange={e => filter.setter(e.target.value as never)}
-              className="text-[11px] border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-500 focus:ring-1 focus:ring-indigo-500/20"
-            >
-              {filter.options.map((opt, j) => (
-                <option key={opt} value={opt}>{filter.labels[j]}</option>
-              ))}
-            </select>
-          ))}
-          {hasActiveFilters && (
-            <button
-              onClick={() => { setHealthFilter('all'); setUpsideFilter('all'); setStageFilter('all'); setLocalFundFilter('all'); setOwnerFilter('all'); }}
-              className="text-[11px] text-indigo-500 hover:text-indigo-700 font-medium ml-1"
-            >
-              Clear
-            </button>
-          )}
         </div>
       </div>
 
@@ -352,15 +291,14 @@ export function PortfolioCommandCenter() {
                       return editableFields.map(({ field, display, className }) => {
                         const staged = getStagedValue(company.id, field);
                         const isEditing = editingCell?.companyId === company.id && editingCell?.field === field;
+                        const src = getDataSource(company.id, field);
 
                         return (
                           <td
                             key={field}
-                            className={`px-3 py-1.5 text-right font-mono-num text-[12px] tabular-nums relative group/cell cursor-pointer transition-colors ${
-                              isEditing ? 'bg-indigo-50/50' : staged ? 'bg-amber-50 hover:bg-amber-100' : 'hover:bg-indigo-50/60'
+                            className={`px-3 py-1.5 text-right font-mono-num text-[12px] tabular-nums relative group/cell transition-colors ${
+                              isEditing ? 'bg-indigo-50/50' : 'hover:bg-slate-50'
                             }`}
-                            onClick={() => { if (!isEditing && !isExited) { setEditingCell({ companyId: company.id, field }); setEditError(null); } }}
-                            title="Click to edit"
                           >
                             {isEditing ? (
                               <div className="relative">
@@ -387,10 +325,45 @@ export function PortfolioCommandCenter() {
                                 )}
                               </div>
                             ) : (
-                              <span className={`inline-flex items-center gap-1 ${staged ? 'text-amber-700 font-medium' : className || 'text-slate-600'}`}>
-                                <Pencil className="w-3 h-3 text-indigo-400 opacity-0 group-hover/cell:opacity-100 transition-opacity" />
-                                {staged || display}
-                                {staged && <span className="text-[9px] text-amber-500">*</span>}
+                              <span className={`inline-flex items-center justify-end gap-1 ${className || 'text-slate-600'}`}>
+                                {/* Undo button — only when this cell has a staged edit */}
+                                {staged && (
+                                  <button
+                                    onClick={e => { e.stopPropagation(); discardEdit(company.id, field); }}
+                                    className="text-amber-500 hover:text-amber-600 transition-colors"
+                                    title="Discard this edit"
+                                  >
+                                    <Undo2 className="w-3 h-3" />
+                                  </button>
+                                )}
+                                {/* Pencil to enter edit mode */}
+                                <button
+                                  onClick={() => { if (!isExited) { setEditingCell({ companyId: company.id, field }); setEditError(null); } }}
+                                  className="text-indigo-400 hover:text-indigo-600 opacity-0 group-hover/cell:opacity-100 transition-opacity"
+                                  title="Edit this value"
+                                >
+                                  <Pencil className="w-3 h-3" />
+                                </button>
+                                <span className={staged ? 'text-amber-700 font-medium' : ''}>
+                                  {staged || display}
+                                </span>
+
+                                {/* Hover tooltip — previous value + source */}
+                                <span className="invisible group-hover/cell:visible absolute z-30 bottom-full right-2 mb-1 bg-slate-800 text-white text-[10px] font-normal rounded-lg shadow-lg px-3 py-2 whitespace-nowrap text-left pointer-events-none">
+                                  {staged ? (
+                                    <>
+                                      <div className="text-amber-300 font-medium mb-1">Pending change (not saved)</div>
+                                      <div>Previous: <span className="font-mono-num">{display}</span></div>
+                                      <div>New: <span className="font-mono-num text-amber-200">{staged}</span></div>
+                                      <div className="mt-1 pt-1 border-t border-white/10 text-slate-300">Source: {src.source} · {src.when}</div>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <div>Source: <span className="font-medium text-white">{src.source}</span></div>
+                                      <div className="text-slate-300">{src.when}</div>
+                                    </>
+                                  )}
+                                </span>
                               </span>
                             )}
                           </td>
@@ -405,13 +378,13 @@ export function PortfolioCommandCenter() {
                       const headcountSum = latestFin
                         ? (latestFin.headcountMale ?? 0) + (latestFin.headcountFemale ?? 0) + (latestFin.headcountEthnicMinority ?? 0)
                         : company.headcount;
+                      const hcSrc = getDataSource(company.id, 'headcount');
+                      const displayValue = !isExited ? String(headcountSum) : '—';
                       return (
                         <td
-                          className={`px-3 py-1.5 text-right font-mono-num text-[12px] tabular-nums relative group/cell cursor-pointer transition-colors ${
-                            isEditing ? 'bg-indigo-50/50' : staged ? 'bg-amber-50 hover:bg-amber-100' : 'hover:bg-indigo-50/60'
+                          className={`px-3 py-1.5 text-right font-mono-num text-[12px] tabular-nums relative group/cell transition-colors ${
+                            isEditing ? 'bg-indigo-50/50' : 'hover:bg-slate-50'
                           }`}
-                          onClick={() => { if (!isEditing && !isExited) { setEditingCell({ companyId: company.id, field: 'headcount' }); setEditError(null); } }}
-                          title="Click to edit"
                         >
                           {isEditing ? (
                             <div className="relative">
@@ -438,10 +411,31 @@ export function PortfolioCommandCenter() {
                               )}
                             </div>
                           ) : (
-                            <span className={`inline-flex items-center gap-1 ${staged ? 'text-amber-700 font-medium' : 'text-slate-500'}`}>
-                              <Pencil className="w-3 h-3 text-indigo-400 opacity-0 group-hover/cell:opacity-100 transition-opacity" />
-                              {staged || (!isExited ? headcountSum : '—')}
-                              {staged && <span className="text-[9px] text-amber-500">*</span>}
+                            <span className="inline-flex items-center justify-end gap-1 text-slate-600">
+                              {staged && (
+                                <button onClick={e => { e.stopPropagation(); discardEdit(company.id, 'headcount'); }} className="text-amber-500 hover:text-amber-600 transition-colors" title="Discard this edit">
+                                  <Undo2 className="w-3 h-3" />
+                                </button>
+                              )}
+                              <button onClick={() => { if (!isExited) { setEditingCell({ companyId: company.id, field: 'headcount' }); setEditError(null); } }} className="text-indigo-400 hover:text-indigo-600 opacity-0 group-hover/cell:opacity-100 transition-opacity" title="Edit this value">
+                                <Pencil className="w-3 h-3" />
+                              </button>
+                              <span className={staged ? 'text-amber-700 font-medium' : ''}>{staged || displayValue}</span>
+                              <span className="invisible group-hover/cell:visible absolute z-30 bottom-full right-2 mb-1 bg-slate-800 text-white text-[10px] font-normal rounded-lg shadow-lg px-3 py-2 whitespace-nowrap text-left pointer-events-none">
+                                {staged ? (
+                                  <>
+                                    <div className="text-amber-300 font-medium mb-1">Pending change (not saved)</div>
+                                    <div>Previous: <span className="font-mono-num">{displayValue}</span></div>
+                                    <div>New: <span className="font-mono-num text-amber-200">{staged}</span></div>
+                                    <div className="mt-1 pt-1 border-t border-white/10 text-slate-300">Source: {hcSrc.source} · {hcSrc.when}</div>
+                                  </>
+                                ) : (
+                                  <>
+                                    <div>Source: <span className="font-medium text-white">{hcSrc.source}</span></div>
+                                    <div className="text-slate-300">{hcSrc.when}</div>
+                                  </>
+                                )}
+                              </span>
                             </span>
                           )}
                         </td>

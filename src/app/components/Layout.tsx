@@ -2,13 +2,12 @@ import { useState, createContext, useContext } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router';
 import {
   LayoutDashboard, Building2, Grid3X3, FileText, ClipboardList, CalendarCheck,
-  Search, Settings, TrendingUp, Globe,
+  Search, Settings, TrendingUp, Globe, Sparkles, LogOut,
   PanelLeftClose, PanelLeft,
   Bell, SendHorizonal, ToggleLeft, ToggleRight,
 } from 'lucide-react';
 import { currentUser, companies, type Fund } from './mock-data';
 import { useWorkflow } from './WorkflowContext';
-import { DataConfirmationProvider } from './DataConfirmation';
 
 // ── Milestone context ─────────────────────────────────────────────────
 export const MilestoneContext = createContext<{
@@ -43,24 +42,19 @@ type NavSection = { label: string; items: NavItem[]; m1?: boolean };
 const navSections: NavSection[] = [
   {
     label: 'Workspace',
+    m1: true,
     items: [
-      { path: '/', label: 'My Dashboard', icon: LayoutDashboard },
+      { path: '/', label: 'Intelligence Hub', icon: Sparkles, m1: true },
       { path: '/portfolio', label: 'Command Center', icon: Building2, m1: true },
-      { path: '/matrix', label: 'Action Matrix', icon: Grid3X3 },
+      { path: '/matrix', label: 'Action Matrix', icon: Grid3X3, m1: true },
     ],
   },
   {
     label: 'Workflows',
+    m1: true,
     items: [
       { path: '/review/quarterly', label: 'Quarterly Review', icon: CalendarCheck, m1: true },
       { path: '/founder-data', label: 'Founder Data', icon: SendHorizonal, m1: true },
-    ],
-  },
-  {
-    label: 'Research',
-    items: [
-      { path: '/search', label: 'Search & Discovery', icon: Search, soon: true },
-      { path: '/intelligence', label: 'Intelligence Hub', icon: Globe, soon: true },
     ],
   },
   {
@@ -105,7 +99,6 @@ export function Layout() {
     <MilestoneContext.Provider value={{ milestone, setMilestone }}>
     <FundFilterContext.Provider value={{ fundFilter, setFundFilter }}>
       <NotificationContext.Provider value={{ urgentFlags, overdueTodos, notificationCount }}>
-      <DataConfirmationProvider>
         <div className="flex h-screen overflow-hidden bg-[#f8fafc]" style={{ fontFamily: "'Inter', sans-serif" }}>
 
           {/* ─── Sidebar ─── always dark ─── */}
@@ -114,14 +107,13 @@ export function Layout() {
           >
             {/* Logo */}
             <div className="h-14 flex items-center px-4 gap-2.5 shrink-0">
-              <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center shrink-0">
-                <TrendingUp className="w-4 h-4 text-white" />
-              </div>
-              {!collapsed && (
-                <span className="text-[15px] font-semibold tracking-tight text-white">
-                  CRANE
-                </span>
-              )}
+              {/* Crane Venture wordmark — invert to show white on dark sidebar */}
+              <img
+                src="/crane-logo.png"
+                alt="Crane Venture Partners"
+                className={`object-contain ${collapsed ? 'h-7 w-7' : 'h-7'}`}
+                style={{ filter: 'brightness(0) invert(1)' }}
+              />
             </div>
 
             {/* Milestone toggle */}
@@ -262,7 +254,7 @@ export function Layout() {
               )}
             </nav>
 
-            {/* ─── User + Collapse toggle ─── */}
+            {/* ─── User + Sign out + Collapse toggle ─── */}
             <div className="border-t border-white/[0.06] px-4 py-3">
               {/* User info */}
               <div className="flex items-center gap-2.5 mb-2">
@@ -276,6 +268,19 @@ export function Layout() {
                   </div>
                 )}
               </div>
+
+              {/* Sign out */}
+              <button
+                onClick={() => {
+                  try { localStorage.removeItem('crane.signedIn'); } catch {}
+                  navigate('/signin');
+                }}
+                className={`w-full flex items-center gap-2 text-slate-400 hover:text-white py-1.5 px-2 rounded-md hover:bg-white/[0.06] transition-colors text-[12px] mb-1 ${collapsed ? 'justify-center' : ''}`}
+                title="Sign out"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                {!collapsed && <span>Sign out</span>}
+              </button>
 
               {/* Collapse button */}
               <button
@@ -302,7 +307,6 @@ export function Layout() {
             </div>
           </main>
         </div>
-      </DataConfirmationProvider>
       </NotificationContext.Provider>
     </FundFilterContext.Provider>
     </MilestoneContext.Provider>

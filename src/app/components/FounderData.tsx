@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 import {
   Send, ChevronDown, ChevronRight, CheckCircle2, Clock, AlertCircle, MinusCircle,
@@ -35,33 +35,21 @@ function getMonthlyData(company: Company, iso: string): MonthlyFinancials | unde
   return company.monthlyFinancials.find(m => m.month === iso);
 }
 
-// All founder form metrics grouped by section
-const ALL_METRICS: { label: string; key: keyof MonthlyFinancials; isCurrency: boolean; isPercentage?: boolean; section: string }[] = [
+// Core 9 metrics — matches founder form (Bonnie's confirmed list)
+const ALL_METRICS: { label: string; key: keyof MonthlyFinancials | 'grossMargin'; isCurrency: boolean; isPercentage?: boolean; section: string; isCalc?: boolean }[] = [
   // Revenue & Growth
   { label: 'Revenue (core)', key: 'revenue', isCurrency: true, section: 'Revenue & Growth' },
-  { label: 'Revenue (other)', key: 'revenueOther', isCurrency: true, section: 'Revenue & Growth' },
   { label: 'ARR', key: 'arr', isCurrency: true, section: 'Revenue & Growth' },
-  { label: 'Bookings', key: 'bookings', isCurrency: true, section: 'Revenue & Growth' },
-  { label: 'No. of Customers', key: 'customerCount', isCurrency: false, section: 'Revenue & Growth' },
-  { label: 'Net Retention Rate %', key: 'netRetentionRate', isCurrency: false, isPercentage: true, section: 'Revenue & Growth' },
-  // Costs
-  { label: 'Cost of Sales', key: 'cogs', isCurrency: true, section: 'Costs' },
-  { label: 'R&D Costs', key: 'rdCosts', isCurrency: true, section: 'Costs' },
-  { label: 'Sales & Marketing', key: 'salesMarketingCosts', isCurrency: true, section: 'Costs' },
-  { label: 'General & Admin', key: 'generalAdminCosts', isCurrency: true, section: 'Costs' },
-  // Profitability
-  { label: 'EBITDA / (LBITDA)', key: 'ebitda', isCurrency: true, section: 'Profitability' },
-  // Cash
+  // Profitability & Margins
+  { label: 'Gross Margin (%)', key: 'grossMargin', isCurrency: false, isPercentage: true, section: 'Profitability & Margins' },
+  { label: 'EBITDA', key: 'ebitda', isCurrency: true, section: 'Profitability & Margins', isCalc: true },
+  // Cash Position
   { label: 'Cash Balance', key: 'cashBalance', isCurrency: true, section: 'Cash Position' },
-  { label: 'Net Assets / (Liabilities)', key: 'netAssetsLiabilities', isCurrency: true, section: 'Cash Position' },
-  { label: 'Cash Burn in Month', key: 'monthlyNetBurn', isCurrency: true, section: 'Cash Position' },
+  { label: 'Cash Burn (excl. funding)', key: 'monthlyNetBurn', isCurrency: true, section: 'Cash Position' },
   // Team & Diversity
   { label: 'Headcount — Male (FTE)', key: 'headcountMale', isCurrency: false, section: 'Team & Diversity' },
   { label: 'Headcount — Female (FTE)', key: 'headcountFemale', isCurrency: false, section: 'Team & Diversity' },
   { label: 'Headcount — Ethnic Minority (FTE)', key: 'headcountEthnicMinority', isCurrency: false, section: 'Team & Diversity' },
-  { label: 'Board — Male', key: 'boardMale', isCurrency: false, section: 'Team & Diversity' },
-  { label: 'Board — Female', key: 'boardFemale', isCurrency: false, section: 'Team & Diversity' },
-  { label: 'Board — Ethnic Minority', key: 'boardEthnicMinority', isCurrency: false, section: 'Team & Diversity' },
 ];
 
 // ── Types ────────────────────────────────────────────────────────────────
@@ -323,18 +311,48 @@ export function FounderData() {
                   ) : (
                     <button
                       onClick={() => {}}
+                      title="Sends a personalised invite to the founder via email"
                       className="inline-flex items-center gap-1.5 text-[11px] font-medium px-3 py-1.5 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 transition-colors"
                     >
-                      <Send className="w-3 h-3" /> Send
+                      <Send className="w-3 h-3" /> Send personally
                     </button>
                   )}
                 </div>
               </div>
 
-              {/* Expanded detail — only shows the active quarter */}
+              {/* Expanded detail — quarterly value (one column) */}
               {isExpanded && (() => {
                 const sub = getSubmission(company.id, activeQuarter);
                 const months = QUARTER_MONTHS[activeQuarter] || [];
+                // Aggregate to a single quarterly value per metric
+                const quarterValueFor = (key: string, isCurrency: boolean): number | null => {
+                  const monthData = months.map(m => getMonthlyData(company, m.iso)).filter(Boolean) as any[];
+                  if (monthData.length === 0) return null;
+                  if (key === 'grossMargin') {
+                    const rev = monthData.reduce((s, d) => s + (d.revenue ?? 0), 0);
+                    const cogs = monthData.reduce((s, d) => s + (d.cogs ?? 0), 0);
+                    return rev > 0 ? Math.round(((rev - cogs) / rev) * 100) : null;
+                  }
+                  if (key === 'ebitda') {
+                    return monthData.reduce((s, d) => {
+                      const rev = (d.revenue ?? 0) + (d.revenueOther ?? 0);
+                      const costs = (d.cogs ?? 0) + (d.rdCosts ?? 0) + (d.salesMarketingCosts ?? 0) + (d.generalAdminCosts ?? 0);
+                      return s + (rev - costs);
+                    }, 0);
+                  }
+                  if (key === 'cashBalance' || key === 'arr' || key.startsWith('headcount')) {
+                    const last = monthData[monthData.length - 1];
+                    return last[key] ?? null;
+                  }
+                  if (key === 'monthlyNetBurn') {
+                    const sum = monthData.reduce((s, d) => s + (d[key] ?? 0), 0);
+                    return -Math.abs(sum);
+                  }
+                  if (isCurrency) {
+                    return monthData.reduce((s, d) => s + (d[key] ?? 0), 0);
+                  }
+                  return monthData[monthData.length - 1][key] ?? null;
+                };
 
                 return (
                   <div className="px-4 pb-4 pt-0 border-t border-slate-100">
@@ -395,16 +413,14 @@ export function FounderData() {
                         <p className="text-[12px] text-slate-400 py-2">Form sent — awaiting founder response.</p>
                       )}
 
-                      {/* Full monthly data table */}
+                      {/* Quarterly values — 9 metrics matching founder form, one quarter column */}
                       {(sub.status === 'submitted' || sub.status === 'partial') && (
                         <div className="overflow-hidden rounded-lg border border-slate-100">
                           <table className="w-full text-[11px]">
                             <thead>
                               <tr className="bg-slate-50 border-b border-slate-100">
-                                <th className="text-left px-2.5 py-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.06em] w-[180px]">Metric</th>
-                                {months.map(m => (
-                                  <th key={m.iso} className="text-right px-2.5 py-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.06em]">{m.label}</th>
-                                ))}
+                                <th className="text-left px-2.5 py-2 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.06em] w-[260px]">Metric</th>
+                                <th className="text-right px-2.5 py-2 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.06em]">{activeQuarter}</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -413,35 +429,32 @@ export function FounderData() {
                                 return ALL_METRICS.map(metric => {
                                   const showSection = metric.section !== lastSection;
                                   lastSection = metric.section;
+                                  const val = quarterValueFor(metric.key as string, metric.isCurrency);
                                   return (
-                                    <>
+                                    <React.Fragment key={metric.key}>
                                       {showSection && (
                                         <tr key={`section-${metric.section}`}>
-                                          <td colSpan={4} className="px-2.5 pt-2.5 pb-1 text-[10px] font-semibold text-slate-500 uppercase tracking-[0.08em] bg-slate-50/50 border-t border-slate-100">
+                                          <td colSpan={2} className="px-2.5 pt-2.5 pb-1 text-[10px] font-semibold text-slate-500 uppercase tracking-[0.08em] bg-slate-50/50 border-t border-slate-100">
                                             {metric.section}
                                           </td>
                                         </tr>
                                       )}
-                                      <tr key={metric.key} className="hover:bg-slate-50/40 border-t border-slate-50">
-                                        <td className="px-2.5 py-1.5 text-slate-600">{metric.label}</td>
-                                        {months.map(m => {
-                                          const mData = getMonthlyData(company, m.iso);
-                                          const val = mData?.[metric.key];
-                                          return (
-                                            <td key={m.iso} className="px-2.5 py-1.5 text-right font-mono-num text-slate-700">
-                                              {val != null
-                                                ? metric.isCurrency
-                                                  ? formatCurrency(val as number, company.currency)
-                                                  : metric.isPercentage
-                                                    ? val + '%'
-                                                    : val.toString()
-                                                : <span className="text-slate-300">—</span>
-                                              }
-                                            </td>
-                                          );
-                                        })}
+                                      <tr className="hover:bg-slate-50/40 border-t border-slate-50">
+                                        <td className="px-2.5 py-1.5 text-slate-600">
+                                          {metric.label}
+                                          {metric.isCalc && <span className="ml-1 text-[9px] text-slate-400">(auto)</span>}
+                                        </td>
+                                        <td className="px-2.5 py-1.5 text-right font-mono-num text-slate-700">
+                                          {val != null
+                                            ? metric.isCurrency
+                                              ? formatCurrency(val as number, company.currency)
+                                              : metric.isPercentage
+                                                ? val + '%'
+                                                : (val as number).toString()
+                                            : <span className="text-slate-300">—</span>}
+                                        </td>
                                       </tr>
-                                    </>
+                                    </React.Fragment>
                                   );
                                 });
                               })()}
