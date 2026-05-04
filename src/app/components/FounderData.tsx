@@ -379,11 +379,7 @@ export function FounderData() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          {(sub.status === 'submitted' || sub.status === 'partial') && (
-                            <button onClick={() => navigate(`/form/${company.id}`)} className="flex items-center gap-1 text-[11px] text-indigo-500 hover:text-indigo-700">
-                              View submission <ExternalLink className="w-3 h-3" />
-                            </button>
-                          )}
+                          {/* "View submission" removed — form is private to founders, only data shown */}
                           {sub.status === 'not_sent' && (
                             <button className="flex items-center gap-1 text-[11px] px-3 py-1.5 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors">
                               <Send className="w-3 h-3" /> Send form

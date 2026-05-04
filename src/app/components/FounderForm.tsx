@@ -4,17 +4,11 @@ import { companies, formatCurrencyFull } from './mock-data';
 import type { Currency } from './mock-data';
 import { Lock, Mail, CheckCircle2, Check, AlertCircle, Circle, Cloud } from 'lucide-react';
 
-// --- Quarter helper — now quarterly columns (Q1-Q4) based on financial year-end ---
+// --- Quarter helper — single quarter (the one being collected) ---
 function getQuarterInfo() {
-  // Financial year 2025/26: Q1–Q4
   return {
-    label: 'FY 2025/26',
-    quarters: [
-      { key: 'q1', label: 'Q1' },
-      { key: 'q2', label: 'Q2' },
-      { key: 'q3', label: 'Q3' },
-      { key: 'q4', label: 'Q4' },
-    ],
+    label: 'Q4 2025/26',                   // shown to founder
+    quarters: [{ key: 'q4', label: 'Q4' }], // single column for the active quarter
   };
 }
 
@@ -202,14 +196,14 @@ export function FounderForm() {
       const v = getCellValue(row.key, q.key);
       if (v && v.trim() !== '') filled++;
     }
-    if (filled === 4) return 'complete';
+    if (filled === quarter.quarters.length) return 'complete';
     if (filled > 0) return 'partial';
     return 'empty';
   }
 
   // Progress
   const editableRows = ROWS.filter((r) => !r.isCalculated);
-  const totalCells = editableRows.length * 4;
+  const totalCells = editableRows.length * quarter.quarters.length;
   const filledCells = editableRows.reduce((acc, row) => {
     let count = 0;
     for (const q of quarter.quarters) {

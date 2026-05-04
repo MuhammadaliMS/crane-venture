@@ -909,7 +909,7 @@ export function QuarterlyReview() {
         <button onClick={() => { setMode('list'); setEditingReview(null); }} className="text-[13px] text-slate-500 hover:text-slate-700 transition-colors">← Back to Reviews</button>
         <div className="flex items-center gap-3">
           <h2 className="text-[18px] font-semibold tracking-tight text-slate-800">
-            {isM1 ? quarterlyReviewTitle : `${editingReview ? editingReview.quarter : currentQuarterLabel} LP Report`}
+            {quarterlyReviewTitle}
           </h2>
           {autoSaveStatus === 'saving' && (
             <span className="text-[11px] text-slate-400 flex items-center gap-1"><Save className="w-3 h-3 animate-pulse" /> Saving...</span>
@@ -922,35 +922,16 @@ export function QuarterlyReview() {
           )}
         </div>
         <div className="flex items-center gap-2">
-          {!isM1 && <span className="text-[12px] text-slate-500">Step {quarterlyStep} of 2</span>}
-          {isM1 && (
-            <button
-              onClick={() => { generateAssetMetrixXLSX(selectedFund, companies); }}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg text-[13px] hover:bg-indigo-600 transition-colors"
-            >
-              <Download className="w-3.5 h-3.5" /> Export Asset Metrix
-            </button>
-          )}
+          <button
+            onClick={() => { generateAssetMetrixXLSX(selectedFund, companies); }}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg text-[13px] hover:bg-indigo-600 transition-colors"
+          >
+            <Download className="w-3.5 h-3.5" /> Export Asset Metrix
+          </button>
         </div>
       </div>
 
-      {/* 2-step stepper (hidden in M1) */}
-      {!isM1 && <div className="flex items-center gap-2">
-        {steps.map((s) => (
-          <button key={s.num} onClick={() => setQuarterlyStep(s.num)}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-[12px] font-medium transition-all ${
-              quarterlyStep === s.num ? 'bg-indigo-500 text-white ring-2 ring-indigo-500 ring-offset-2' :
-              quarterlyStep > s.num ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
-            }`}>
-            {quarterlyStep > s.num ? <CheckCircle className="w-3.5 h-3.5" /> : (
-              <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[11px]">{s.num}</span>
-            )}
-            {s.label}
-          </button>
-        ))}
-      </div>}
-
-      {/* ── Step 1: Team Commentary — sidebar + main panel ─────── */}
+      {/* Single-page layout — same as M1, no 2-step stepper */}
       {quarterlyStep === 1 && (
         <div className="flex gap-4">
           {/* Left sidebar */}
@@ -1080,11 +1061,7 @@ export function QuarterlyReview() {
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        {(fStatus === 'submitted' || fStatus === 'partial') && (
-                          <button onClick={() => navigate(`/form/${qCurrent.id}`)} className="text-[11px] text-indigo-500 hover:text-indigo-700 flex items-center gap-0.5">
-                            View form <ChevronRight className="w-3 h-3" />
-                          </button>
-                        )}
+                        {/* "View form" removed — form is private to founders, only data is visible here */}
                         <button className={`flex items-center gap-1 text-[11px] px-3 py-1.5 rounded-lg transition-colors ${
                           fStatus === 'not_sent'
                             ? 'bg-indigo-500 text-white hover:bg-indigo-600'
@@ -1100,10 +1077,8 @@ export function QuarterlyReview() {
                         <table className="w-full text-[11px]">
                           <thead className="sticky top-0 z-10">
                             <tr className="bg-white/90 backdrop-blur border-b border-slate-100/50">
-                              <th className="text-left px-2.5 py-2 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.06em] w-[160px]">Metric</th>
-                              {['Q1', 'Q2', 'Q3', 'Q4'].map(q => (
-                                <th key={q} className="text-right px-2.5 py-2 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.06em]">{q}</th>
-                              ))}
+                              <th className="text-left px-2.5 py-2 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.06em] w-[260px]">Metric</th>
+                              <th className="text-right px-2.5 py-2 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.06em]">{currentQuarterLabel}</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -1120,18 +1095,12 @@ export function QuarterlyReview() {
                                 { label: 'Headcount — Female (FTE)', key: 'headcountFemale', isCurrency: false, section: 'Team & Diversity' },
                                 { label: 'Headcount — Ethnic Minority (FTE)', key: 'headcountEthnicMinority', isCurrency: false, section: 'Team & Diversity' },
                               ];
-                              // Quarterly aggregation per Bonnie's confirmed rules (see quarterlyAggregation.ts)
-                              const quarterMonths: Record<string, string[]> = {
-                                Q1: ['2025-04','2025-05','2025-06'],
-                                Q2: ['2025-07','2025-08','2025-09'],
-                                Q3: ['2025-10','2025-11','2025-12'],
-                                Q4: ['2026-01','2026-02','2026-03'],
-                              };
-                              const aggregateForQuarter = (q: string, key: string, _isCurrency: boolean) => {
-                                const months = quarterMonths[q] || [];
-                                const data = months.map(m => qCurrent.monthlyFinancials.find((f: any) => f.month === m)).filter(Boolean) as any[];
+                              // Show only the quarter being reviewed (latest sent quarter — Q4 2025/26 in mock data)
+                              const reviewQuarterMonths = ['2026-01','2026-02','2026-03'];
+                              const data = reviewQuarterMonths.map(m => qCurrent.monthlyFinancials.find((f: any) => f.month === m)).filter(Boolean) as any[];
+
+                              const valueFor = (key: string) => {
                                 if (data.length === 0) return null;
-                                // Map metric key → Bonnie's aggregation rule
                                 const aggKey = key === 'monthlyNetBurn' ? 'cashBurn' : key;
                                 return aggregateQuarter(data, aggKey as any);
                               };
@@ -1140,30 +1109,26 @@ export function QuarterlyReview() {
                               return allMetrics.map(metric => {
                                 const showSection = metric.section !== lastSection;
                                 lastSection = metric.section;
+                                const val = valueFor(metric.key);
                                 return (
                                   <>
                                     {showSection && (
                                       <tr key={`section-${metric.section}`}>
-                                        <td colSpan={5} className="px-2.5 pt-2 pb-1 text-[10px] font-semibold text-slate-500 uppercase tracking-[0.08em] bg-slate-50/30 border-t border-slate-100/50">
+                                        <td colSpan={2} className="px-2.5 pt-2 pb-1 text-[10px] font-semibold text-slate-500 uppercase tracking-[0.08em] bg-slate-50/30 border-t border-slate-100/50">
                                           {metric.section}
                                         </td>
                                       </tr>
                                     )}
                                     <tr key={metric.key} className="hover:bg-white/40 border-t border-slate-50/50">
                                       <td className="px-2.5 py-1.5 text-slate-600">{metric.label}{metric.isCalc && <span className="ml-1 text-[9px] text-slate-400">(auto)</span>}</td>
-                                      {['Q1','Q2','Q3','Q4'].map(q => {
-                                        const val = aggregateForQuarter(q, metric.key, metric.isCurrency);
-                                        return (
-                                          <td key={q} className="px-2.5 py-1.5 text-right font-mono-num text-slate-700">
-                                            {val != null
-                                              ? metric.isCurrency ? formatCurrency(val as number, qCurrent.currency)
-                                              : metric.isPercentage ? val + '%'
-                                              : (val as number).toString()
-                                              : <span className="text-slate-300">—</span>
-                                            }
-                                          </td>
-                                        );
-                                      })}
+                                      <td className="px-2.5 py-1.5 text-right font-mono-num text-slate-700">
+                                        {val != null
+                                          ? metric.isCurrency ? formatCurrency(val as number, qCurrent.currency)
+                                          : metric.isPercentage ? val + '%'
+                                          : (val as number).toString()
+                                          : <span className="text-slate-300">—</span>
+                                        }
+                                      </td>
                                     </tr>
                                   </>
                                 );
