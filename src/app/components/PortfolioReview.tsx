@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import {
   Play, SkipForward, Check, ChevronRight, Download, Clock, Send, FileText,
@@ -12,6 +12,7 @@ import { generateAssetMetrixXLSX, generateFundSummaryCSV, downloadCSV } from './
 import LPReportPreview from './LPReportPreview';
 import { useFundFilter, useMilestone } from './Layout';
 import { aggregateQuarter } from './quarterlyAggregation';
+import { validateFieldValue, type FieldKey } from './fieldValidation';
 
 // ── Shared data ───────────────────────────────────────────────────────
 const activeCompanies = companies.filter(c => c.lifecycle === 'Active — Core');
@@ -721,6 +722,12 @@ export function QuarterlyReview() {
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Inline founder submission edits (per company → per metric → numeric value)
+  const [editingFounderId, setEditingFounderId] = useState<string | null>(null);
+  const [founderEdits, setFounderEdits] = useState<Record<string, Record<string, number>>>({});
+  const [founderDrafts, setFounderDrafts] = useState<Record<string, string>>({});
+  const [founderEditError, setFounderEditError] = useState<string | null>(null);
+
   const { fundFilter, setFundFilter } = useFundFilter();
   const { milestone } = useMilestone();
   const isM1 = milestone === 'm1';
@@ -1003,75 +1010,84 @@ export function QuarterlyReview() {
                   </div>
                 </div>
 
-                {/* KPIs strip — Bonnie's quarterly aggregation rules (latest quarter Q4) */}
-                {(() => {
-                  // Use the most recent quarter (Q4 of FY 25/26 in mock data = Jan-Mar 2026)
-                  const latestQuarterMonths = ['2026-01','2026-02','2026-03'];
-                  const data = latestQuarterMonths.map(m => qCurrent.monthlyFinancials.find((f: any) => f.month === m)).filter(Boolean) as any[];
-                  if (data.length === 0) return null;
-                  const revenue = aggregateQuarter(data, 'revenue');
-                  const arr = aggregateQuarter(data, 'arr');
-                  const gm = aggregateQuarter(data, 'grossMargin');
-                  const ebitda = aggregateQuarter(data, 'ebitda');
-                  const cashBalance = aggregateQuarter(data, 'cashBalance');
-                  const cashBurn = aggregateQuarter(data, 'cashBurn');
-                  const headcountM = aggregateQuarter(data, 'headcountMale') ?? 0;
-                  const headcountF = aggregateQuarter(data, 'headcountFemale') ?? 0;
-                  const headcountE = aggregateQuarter(data, 'headcountEthnicMinority') ?? 0;
-                  const headcountTotal = headcountM + headcountF + headcountE;
-
-                  const metrics = [
-                    { label: 'Revenue', value: revenue != null ? formatCurrency(revenue, qCurrent.currency) : '—' },
-                    { label: 'ARR', value: arr != null ? formatCurrency(arr, qCurrent.currency) : '—' },
-                    { label: 'Gross Margin', value: gm != null ? gm + '%' : '—' },
-                    { label: 'EBITDA', value: ebitda != null ? formatCurrency(ebitda, qCurrent.currency) : '—', red: (ebitda ?? 0) < 0 },
-                    { label: 'Cash Balance', value: cashBalance != null ? formatCurrency(cashBalance, qCurrent.currency) : '—' },
-                    { label: 'Cash Burn', value: cashBurn != null ? formatCurrency(cashBurn, qCurrent.currency) : '—', red: true },
-                    { label: 'Headcount', value: String(headcountTotal) },
-                  ];
-                  return (
-                    <div className="grid grid-cols-7 gap-2 mt-2.5">
-                      {metrics.map(m => (
-                        <div key={m.label} className="bg-slate-50 rounded-lg px-2.5 py-2 group/k relative">
-                          <p className="text-[10px] text-slate-400">{m.label}</p>
-                          <p className={`text-[13px] font-semibold font-mono-num mt-0.5 ${m.red ? 'text-red-600' : 'text-slate-700'}`}>{m.value}</p>
-                          <span className="invisible group-hover/k:visible absolute z-30 bottom-full left-1/2 -translate-x-1/2 mb-1 bg-slate-800 text-white text-[10px] font-normal rounded-lg shadow-lg px-3 py-2 whitespace-nowrap text-left pointer-events-none">
-                            <div>Source: <span className="font-medium text-white">Founder Form</span></div>
-                            <div className="text-slate-300">Q4 2025/26 · 3-month aggregation</div>
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()}
               </div>
 
               {/* Founder submission panel */}
               {(() => {
                 const fStatus = getFounderStatus(qCurrent.id);
                 const fCfg = founderStatusConfig[fStatus];
+                const isEditing = editingFounderId === qCurrent.id;
                 return (
                   <div className={`rounded-xl border p-4 ${fCfg.bg} ${fCfg.border}`}>
                     <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-[12px] font-medium text-slate-700">Founder Submission — Q1 2026</p>
                         <span className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md border ${fCfg.bg} ${fCfg.text} ${fCfg.border}`}>
                           <span className="w-1.5 h-1.5 rounded-full" style={{ background: fCfg.dot }} />
                           {fCfg.label}
                         </span>
+                        {/* Resend / Send only when NOT submitted */}
+                        {fStatus !== 'submitted' && (
+                          <button className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
+                            <Send className="w-3 h-3" />
+                            {fStatus === 'not_sent' ? 'Send form' : fStatus === 'sent' ? 'Resend reminder' : 'Resend form'}
+                          </button>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
-                        {/* "View form" removed — form is private to founders, only data is visible here */}
-                        <button className={`flex items-center gap-1 text-[11px] px-3 py-1.5 rounded-lg transition-colors ${
-                          fStatus === 'not_sent'
-                            ? 'bg-indigo-500 text-white hover:bg-indigo-600'
-                            : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-                        }`}>
-                          <Send className="w-3 h-3" />
-                          {fStatus === 'not_sent' ? 'Send form' : fStatus === 'sent' ? 'Resend reminder' : 'Resend form'}
-                        </button>
+                        {!isEditing ? (
+                          <button
+                            onClick={() => { setEditingFounderId(qCurrent.id); setFounderDrafts({}); setFounderEditError(null); }}
+                            className="inline-flex items-center gap-1 text-[11px] px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+                          >
+                            <Pencil className="w-3 h-3" /> Edit
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => { setEditingFounderId(null); setFounderDrafts({}); setFounderEditError(null); }}
+                              className="text-[11px] px-3 py-1.5 rounded-lg text-slate-500 hover:bg-white/50 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={() => {
+                                // Validate every draft, accumulate parsed values
+                                const parsed: Record<string, number> = {};
+                                let firstError: string | null = null;
+                                for (const [key, raw] of Object.entries(founderDrafts)) {
+                                  if (!raw) continue;
+                                  const fieldKey = key === 'monthlyNetBurn' ? 'cashBurn' : key;
+                                  const result = validateFieldValue(fieldKey as FieldKey, raw, qCurrent.currency as any);
+                                  if (!result.valid) {
+                                    firstError = `${key}: ${result.error}`;
+                                    break;
+                                  }
+                                  if (result.parsedNumber != null) parsed[key] = result.parsedNumber;
+                                }
+                                if (firstError) { setFounderEditError(firstError); return; }
+                                setFounderEdits(prev => ({
+                                  ...prev,
+                                  [qCurrent.id]: { ...(prev[qCurrent.id] || {}), ...parsed },
+                                }));
+                                setEditingFounderId(null);
+                                setFounderDrafts({});
+                                setFounderEditError(null);
+                              }}
+                              className="inline-flex items-center gap-1 text-[11px] px-3 py-1.5 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
+                            >
+                              <Check className="w-3 h-3" /> Save
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
+                    {founderEditError && isEditing && (
+                      <div className="mb-2 flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                        <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                        <p className="text-[12px] text-red-700">{founderEditError}</p>
+                      </div>
+                    )}
                     {(fStatus === 'submitted' || fStatus === 'partial') ? (
                       <div className="overflow-hidden rounded-lg border border-white/80">
                         <table className="w-full text-[11px]">
@@ -1100,9 +1116,19 @@ export function QuarterlyReview() {
                               const data = reviewQuarterMonths.map(m => qCurrent.monthlyFinancials.find((f: any) => f.month === m)).filter(Boolean) as any[];
 
                               const valueFor = (key: string) => {
+                                // Override with saved edit if present
+                                const savedEdit = founderEdits[qCurrent.id]?.[key];
+                                if (savedEdit != null) return savedEdit;
                                 if (data.length === 0) return null;
                                 const aggKey = key === 'monthlyNetBurn' ? 'cashBurn' : key;
                                 return aggregateQuarter(data, aggKey as any);
+                              };
+
+                              const formatVal = (val: number | null, metric: typeof allMetrics[number]) => {
+                                if (val == null) return null;
+                                if (metric.isCurrency) return formatCurrency(val, qCurrent.currency);
+                                if (metric.isPercentage) return val + '%';
+                                return String(val);
                               };
 
                               let lastSection = '';
@@ -1110,8 +1136,10 @@ export function QuarterlyReview() {
                                 const showSection = metric.section !== lastSection;
                                 lastSection = metric.section;
                                 const val = valueFor(metric.key);
+                                const draftValue = founderDrafts[metric.key];
+                                const inputValue = draftValue !== undefined ? draftValue : (val != null ? String(val) : '');
                                 return (
-                                  <>
+                                  <React.Fragment key={metric.key}>
                                     {showSection && (
                                       <tr key={`section-${metric.section}`}>
                                         <td colSpan={2} className="px-2.5 pt-2 pb-1 text-[10px] font-semibold text-slate-500 uppercase tracking-[0.08em] bg-slate-50/30 border-t border-slate-100/50">
@@ -1119,18 +1147,23 @@ export function QuarterlyReview() {
                                         </td>
                                       </tr>
                                     )}
-                                    <tr key={metric.key} className="hover:bg-white/40 border-t border-slate-50/50">
+                                    <tr className="hover:bg-white/40 border-t border-slate-50/50">
                                       <td className="px-2.5 py-1.5 text-slate-600">{metric.label}{metric.isCalc && <span className="ml-1 text-[9px] text-slate-400">(auto)</span>}</td>
                                       <td className="px-2.5 py-1.5 text-right font-mono-num text-slate-700">
-                                        {val != null
-                                          ? metric.isCurrency ? formatCurrency(val as number, qCurrent.currency)
-                                          : metric.isPercentage ? val + '%'
-                                          : (val as number).toString()
-                                          : <span className="text-slate-300">—</span>
-                                        }
+                                        {isEditing && !metric.isCalc ? (
+                                          <input
+                                            type="text"
+                                            value={inputValue}
+                                            onChange={e => { setFounderDrafts(prev => ({ ...prev, [metric.key]: e.target.value })); setFounderEditError(null); }}
+                                            placeholder={metric.isCurrency ? 'e.g. 176000 or 176K' : metric.isPercentage ? '0–100' : '0'}
+                                            className="w-[140px] text-right text-[11px] font-mono-num border border-slate-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300"
+                                          />
+                                        ) : (
+                                          val != null ? formatVal(val, metric) : <span className="text-slate-300">—</span>
+                                        )}
                                       </td>
                                     </tr>
-                                  </>
+                                  </React.Fragment>
                                 );
                               });
                             })()}
