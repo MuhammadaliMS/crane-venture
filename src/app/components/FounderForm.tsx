@@ -2,13 +2,18 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useParams } from 'react-router';
 import { companies, formatCurrencyFull } from './mock-data';
 import type { Currency } from './mock-data';
-import { Lock, Mail, CheckCircle2, Check, AlertCircle, Circle, Cloud } from 'lucide-react';
+import { Lock, Mail, CheckCircle2, Check, AlertCircle, Circle, Cloud, HelpCircle } from 'lucide-react';
 
-// --- Quarter helper — single quarter (the one being collected) ---
+// --- Quarter helper — current quarter + previous quarter ---
+// Per Anna/Bonnie: form should show the previous quarter alongside the current
+// quarter so founders can amend last quarter's submission and play catch-up.
 function getQuarterInfo() {
   return {
-    label: 'Q4 2025/26',                   // shown to founder
-    quarters: [{ key: 'q4', label: 'Q4' }], // single column for the active quarter
+    label: 'Q4 2025/26',
+    quarters: [
+      { key: 'q3', label: 'Q3 (previous)', editable: true,  isPrevious: true,  hint: 'Last submission. You may amend if there has been a material change.' },
+      { key: 'q4', label: 'Q4 (current)',  editable: true,  isPrevious: false, hint: 'Latest completed quarter — please complete.' },
+    ],
   };
 }
 
@@ -21,6 +26,7 @@ interface RowDef {
   isPercentage?: boolean;
   isCalculated?: boolean;
   dataKey: string; // key in MonthlyFinancials
+  helpText: string; // shown in a tooltip on hover of the help icon
 }
 
 const SECTIONS = [
@@ -32,18 +38,27 @@ const SECTIONS = [
 
 const ROWS: RowDef[] = [
   // Revenue & Growth
-  { key: 'revenue', label: 'Revenue (core)', section: 'revenue', isCurrency: true, dataKey: 'revenue' },
-  { key: 'arr', label: 'ARR', section: 'revenue', isCurrency: true, dataKey: 'arr' },
+  { key: 'revenue', label: 'Revenue (core)', section: 'revenue', isCurrency: true, dataKey: 'revenue',
+    helpText: 'Aggregate of revenue earned in the quarter (3 months) from your core product or service. Exclude one-off items such as grants, investment inflows, or non-recurring contracts.' },
+  { key: 'arr', label: 'ARR', section: 'revenue', isCurrency: true, dataKey: 'arr',
+    helpText: 'Annual Recurring Revenue at the END of the quarter (last reported month). If you only track MRR, multiply MRR × 12. Reflects the run-rate value of recurring contracts in place at quarter-end.' },
   // Profitability & Margins
-  { key: 'grossMargin', label: 'Gross Margin (%)', section: 'profitability', isCurrency: false, isPercentage: true, dataKey: 'grossMargin' },
-  { key: 'ebitda', label: 'EBITDA', section: 'profitability', isCurrency: true, dataKey: 'ebitda' },
+  { key: 'grossMargin', label: 'Gross Margin (%)', section: 'profitability', isCurrency: false, isPercentage: true, dataKey: 'grossMargin',
+    helpText: 'Gross margin % calculated across the full quarter: (Σ Revenue − Σ Cost of Sales) / Σ Revenue. Cost of Sales = direct costs to deliver your product (hosting, third-party services, payment processing, etc).' },
+  { key: 'ebitda', label: 'EBITDA', section: 'profitability', isCurrency: true, dataKey: 'ebitda',
+    helpText: 'Auto-calculated. Earnings Before Interest, Tax, Depreciation & Amortisation. Aggregate of all 3 months of the quarter. Negative if loss-making (which is normal at this stage).' },
   // Cash Position
-  { key: 'cashBalance', label: 'Cash Balance', section: 'cash', isCurrency: true, dataKey: 'cashBalance' },
-  { key: 'cashBurn', label: 'Cash Burn (excl. funding)', section: 'cash', isCurrency: true, dataKey: 'monthlyNetBurn' },
+  { key: 'cashBalance', label: 'Cash Balance', section: 'cash', isCurrency: true, dataKey: 'cashBalance',
+    helpText: 'Total cash + cash equivalents in your bank account at the END of the quarter (last reported month-end).' },
+  { key: 'cashBurn', label: 'Cash Burn (excl. funding)', section: 'cash', isCurrency: true, dataKey: 'monthlyNetBurn',
+    helpText: 'Net cash outflow for the quarter (3-month aggregate). Should be a NEGATIVE figure — only positive if cash receipts exceeded operating expenses. EXCLUDES external funding inflows (e.g. fundraising, debt drawdowns, grants).' },
   // Team & Diversity
-  { key: 'headcountMale', label: 'Headcount - Male (FTE)', section: 'team', isCurrency: false, dataKey: 'headcountMale' },
-  { key: 'headcountFemale', label: 'Headcount - Female (FTE)', section: 'team', isCurrency: false, dataKey: 'headcountFemale' },
-  { key: 'headcountEthnicMinority', label: 'Headcount - Ethnic Minority (FTE)', section: 'team', isCurrency: false, dataKey: 'headcountEthnicMinority' },
+  { key: 'headcountMale', label: 'Headcount - Male (FTE)', section: 'team', isCurrency: false, dataKey: 'headcountMale',
+    helpText: 'Number of male full-time-equivalent employees at quarter-end. Convert part-time employees to FTE proportionally (e.g. 0.5 FTE for half-time).' },
+  { key: 'headcountFemale', label: 'Headcount - Female (FTE)', section: 'team', isCurrency: false, dataKey: 'headcountFemale',
+    helpText: 'Number of female full-time-equivalent employees at quarter-end. Convert part-time employees to FTE proportionally.' },
+  { key: 'headcountEthnicMinority', label: 'Headcount - Ethnic Minority (FTE)', section: 'team', isCurrency: false, dataKey: 'headcountEthnicMinority',
+    helpText: 'Number of full-time-equivalent employees identifying as ethnic minority at quarter-end. This is a self-disclosed diversity metric — count only those who voluntarily disclose.' },
 ];
 
 function getCurrencySymbol(cur: Currency): string {
@@ -169,6 +184,8 @@ export function FounderForm() {
 
   // Track which cells were auto-populated vs edited by founder
   const [editedCells, setEditedCells] = useState<Set<string>>(new Set());
+  // Original values per cell — used to flag amended PRIOR-quarter values in red
+  const [originalValues, setOriginalValues] = useState<CellValues>({});
 
   // Initialize cells with last known values on first render
   const initDone = useMemo(() => {
@@ -184,6 +201,7 @@ export function FounderForm() {
     }
     if (Object.keys(cellValues).length === 0 && Object.keys(initial).length > 0) {
       setCellValues(initial);
+      setOriginalValues(initial);   // remember the baseline so we can detect amendments
     }
     return true;
   }, []);
@@ -239,7 +257,7 @@ export function FounderForm() {
   function renderSectionHeader(section: (typeof SECTIONS)[number]) {
     return (
       <tr key={`section-${section.id}`}>
-        <td colSpan={5} className={`px-3 py-2.5 text-[12px] font-semibold uppercase tracking-wider border-b ${section.color}`}>
+        <td colSpan={1 + quarter.quarters.length} className={`px-3 py-2.5 text-[12px] font-semibold uppercase tracking-wider border-b ${section.color}`}>
           {section.label}
         </td>
       </tr>
@@ -252,37 +270,55 @@ export function FounderForm() {
 
     return (
       <tr key={row.key} className={isEven ? 'bg-white' : 'bg-slate-50/60'}>
-        {/* Metric name (sticky) */}
-        <td className="sticky left-0 z-10 px-3 py-2 text-[13px] font-medium text-slate-700 border-b border-slate-100 bg-inherit whitespace-nowrap min-w-[180px]">
-          <span className={isCalc ? 'italic text-slate-500' : ''}>{row.label}</span>
-          {isCalc && <span className="ml-1.5 text-[10px] text-slate-400 font-normal">(auto)</span>}
+        {/* Metric name + help tooltip (sticky) */}
+        <td className="sticky left-0 z-10 px-3 py-2 text-[13px] font-medium text-slate-700 border-b border-slate-100 bg-inherit whitespace-nowrap min-w-[200px]">
+          <span className="inline-flex items-center gap-1.5">
+            <span className={isCalc ? 'italic text-slate-500' : ''}>{row.label}</span>
+            {isCalc && <span className="text-[10px] text-slate-400 font-normal">(auto)</span>}
+            {row.helpText && (
+              <span className="group/help relative inline-flex">
+                <HelpCircle className="w-3.5 h-3.5 text-slate-300 hover:text-indigo-500 cursor-help" />
+                <span className="invisible group-hover/help:visible absolute left-0 top-5 z-30 bg-slate-800 text-white text-[11px] font-normal rounded-lg shadow-xl px-3 py-2 w-[280px] leading-relaxed pointer-events-none normal-case tracking-normal">
+                  {row.helpText}
+                </span>
+              </span>
+            )}
+          </span>
         </td>
 
-        {/* Q1, Q2, Q3, Q4 */}
+        {/* Quarter columns — previous quarter + current quarter */}
         {quarter.quarters.map((q) => {
           const key = cellKey(row.key, q.key);
           const val = getCellValue(row.key, q.key);
           const isEmpty = !val || val.trim() === '';
           const isAutoPopulated = !isEmpty && !editedCells.has(key);
+          const original = originalValues[key];
+          // For previous quarter, flag any amendment (value differs from baseline) in RED
+          const isAmendedPrior = q.isPrevious && original !== undefined && val !== original && editedCells.has(key);
 
           return (
-            <td key={q.key} className="px-1 py-1 border-b border-slate-100 min-w-[110px] relative">
+            <td key={q.key} className="px-1 py-1 border-b border-slate-100 min-w-[140px] relative">
               <input
                 type="text"
                 inputMode="decimal"
                 value={val}
                 onChange={(e) => setCellValue(row.key, q.key, e.target.value)}
                 placeholder={row.isCurrency ? `${sym}0` : '0'}
-                className={`w-full border rounded px-2 py-1.5 text-right font-mono text-[13px] placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-300 transition-shadow min-h-[44px] ${
-                  isEmpty
-                    ? 'border-amber-300 bg-amber-50/40 text-slate-800'
+                className={`w-full border rounded px-2 py-1.5 text-right font-mono text-[13px] placeholder:text-slate-300 focus:outline-none focus:ring-2 transition-shadow min-h-[44px] ${
+                  isAmendedPrior
+                    ? 'border-red-400 bg-red-50/50 text-red-700 font-semibold focus:ring-red-200 focus:border-red-400'
+                    : isEmpty
+                    ? 'border-amber-300 bg-amber-50/40 text-slate-800 focus:ring-indigo-300 focus:border-indigo-300'
                     : isAutoPopulated
-                    ? 'border-slate-200 bg-white text-slate-500'
-                    : 'border-slate-200 bg-white text-slate-800'
+                    ? 'border-slate-200 bg-white text-slate-500 focus:ring-indigo-300 focus:border-indigo-300'
+                    : 'border-slate-200 bg-white text-slate-800 focus:ring-indigo-300 focus:border-indigo-300'
                 }`}
               />
-              {isAutoPopulated && (
+              {isAutoPopulated && !isAmendedPrior && (
                 <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-blue-400" title="Auto-populated from last known data" />
+              )}
+              {isAmendedPrior && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500" title={`Amended from previous submission (was ${original})`} />
               )}
             </td>
           );
@@ -424,6 +460,12 @@ export function FounderForm() {
             Hi <span className="font-semibold">{ceoName}</span>, please provide your quarterly data for{' '}
             <span className="font-semibold">{company.name}</span> for the latest completed quarter.
             Fields are pre-populated with last known values — update as needed.
+            <br />
+            <span className="text-[13px] text-slate-500">
+              Data for the previous quarter is also attached based on your last submission.
+              You may amend the previous quarter's data if there has been a material change —
+              <span className="text-red-600 font-medium"> any changes will be highlighted in red</span> for our team.
+            </span>
           </p>
           <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100">
             <div>
@@ -480,6 +522,7 @@ export function FounderForm() {
           <div className="flex items-center gap-4 mt-2.5 text-[11px] text-slate-400">
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-400" /> Auto-populated</span>
             <span className="flex items-center gap-1"><span className="w-3 h-2.5 rounded border border-amber-300 bg-amber-50/40" /> Empty — needs input</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-2.5 rounded border border-red-400 bg-red-50/50" /> Amended (previous quarter)</span>
           </div>
         </div>
 
@@ -493,8 +536,9 @@ export function FounderForm() {
                     Metric
                   </th>
                   {quarter.quarters.map((q) => (
-                    <th key={q.key} className="px-2 py-2.5 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider min-w-[110px]">
+                    <th key={q.key} className="px-2 py-2.5 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider min-w-[140px]">
                       <div className="text-[12px]">{q.label}</div>
+                      {q.hint && <div className="text-[10px] font-normal text-slate-400 normal-case tracking-normal mt-0.5">{q.hint}</div>}
                     </th>
                   ))}
                   {/* Status column removed — empty cells highlighted instead */}
