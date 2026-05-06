@@ -44,9 +44,10 @@ const navSections: NavSection[] = [
     label: 'Workspace',
     m1: true,
     items: [
-      { path: '/', label: 'Intelligence Hub', icon: Sparkles, m1: true },
+      // In M1: Command Center is the landing (no Intelligence Hub yet, no Action Matrix)
+      { path: '/', label: 'Intelligence Hub', icon: Sparkles },
       { path: '/portfolio', label: 'Command Center', icon: Building2, m1: true },
-      { path: '/matrix', label: 'Action Matrix', icon: Grid3X3, m1: true },
+      { path: '/matrix', label: 'Action Matrix', icon: Grid3X3 },
     ],
   },
   {

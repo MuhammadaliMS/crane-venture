@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { CheckCircle, AlertCircle, RefreshCw, Plus, Users, Database, Building2, Shield, RotateCcw, X, Search } from 'lucide-react';
 import { teamMembers, companies } from './mock-data';
 import { useWorkflow } from './WorkflowContext';
+import { useMilestone } from './Layout';
 
 type ConnectorStatus = 'Connected' | 'Disconnected' | 'Expired';
 type Connector = { name: string; status: ConnectorStatus; lastSync: string; records: number; desc: string };
@@ -9,26 +10,34 @@ type Connector = { name: string; status: ConnectorStatus; lastSync: string; reco
 export function Settings() {
   const [activeTab, setActiveTab] = useState('sources');
   const { resetAll } = useWorkflow();
+  const { milestone } = useMilestone();
+  const isM1 = milestone === 'm1';
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showAddCompany, setShowAddCompany] = useState(false);
   const [showImportAttio, setShowImportAttio] = useState(false);
   const [showInviteMember, setShowInviteMember] = useState(false);
 
-  const tabs = [
-    { id: 'sources',    label: 'Data Sources',        icon: Database },
-    { id: 'team',       label: 'Team',                icon: Users },
+  // M1: only Data Sources + Team. Full MVP: also Companies + Conflict Resolution.
+  const allTabs = [
+    { id: 'sources',    label: 'Data Sources',        icon: Database,   m1: true },
+    { id: 'team',       label: 'Team',                icon: Users,      m1: true },
     { id: 'companies',  label: 'Companies',           icon: Building2 },
     { id: 'conflict',   label: 'Conflict Resolution', icon: Shield },
   ];
+  const tabs = isM1 ? allTabs.filter(t => t.m1) : allTabs;
+  // If the active tab isn't valid for the current milestone, fall back to the first available tab
+  const safeActiveTab = tabs.some(t => t.id === activeTab) ? activeTab : tabs[0].id;
 
-  // Reduced connectors — AlphaSense, Specter, Fund Accounting removed
-  const [connectors, setConnectors] = useState<Connector[]>([
-    { name: 'Attio',   status: 'Connected',    lastSync: '2 hours ago',  records: 58,  desc: 'CRM — companies, founders, interactions' },
+  // Connectors: M1 only Attio (rest are Full MVP only)
+  const allConnectors: (Connector & { m1?: boolean })[] = [
+    { name: 'Attio',   status: 'Connected',    lastSync: '2 hours ago',  records: 58,  desc: 'CRM — companies, founders, interactions', m1: true },
     { name: 'Gmail',   status: 'Connected',    lastSync: '30 min ago',   records: 156, desc: 'Founder updates, investor communications' },
     { name: 'Granola', status: 'Expired',      lastSync: '8 days ago',   records: 89,  desc: 'Meeting transcripts, call notes' },
     { name: 'Dropbox', status: 'Connected',    lastSync: '6 hours ago',  records: 342, desc: 'Documents — IC papers, board decks, financials' },
     { name: 'Notion',  status: 'Disconnected', lastSync: 'Never',        records: 0,   desc: 'Wiki — portfolio database, meeting notes' },
-  ]);
+  ];
+  const [connectors, setConnectors] = useState<Connector[]>(allConnectors);
+  const visibleConnectors = isM1 ? connectors.filter(c => allConnectors.find(a => a.name === c.name)?.m1) : connectors;
 
   const updateConnectorStatus = (name: string, status: ConnectorStatus) => {
     setConnectors(prev => prev.map(c => c.name === name ? { ...c, status, lastSync: status === 'Connected' ? 'just now' : c.lastSync } : c));
@@ -45,7 +54,7 @@ export function Settings() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] transition-colors ${
-                activeTab === tab.id ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                safeActiveTab === tab.id ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
               <tab.icon className="w-4 h-4" />
@@ -56,14 +65,14 @@ export function Settings() {
 
         <div className="flex-1 min-w-0">
           {/* ─── DATA SOURCES ─── */}
-          {activeTab === 'sources' && (
+          {safeActiveTab === 'sources' && (
             <div className="space-y-4">
               <h2 className="text-[18px] font-semibold text-slate-900">Data Sources</h2>
               <p className="text-[14px] text-slate-500">
                 Manage connections to your data sources. Disconnect sources you no longer need; expired connections must be re-authorized.
               </p>
               <div className="grid grid-cols-2 gap-3">
-                {connectors.map(c => {
+                {visibleConnectors.map(c => {
                   const isConnected = c.status === 'Connected';
                   const isExpired = c.status === 'Expired';
                   const isDisconnected = c.status === 'Disconnected';
@@ -129,19 +138,21 @@ export function Settings() {
           )}
 
           {/* ─── TEAM ─── */}
-          {activeTab === 'team' && (
+          {safeActiveTab === 'team' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-[18px] font-semibold text-slate-900">Team</h2>
                   <p className="text-[13px] text-slate-500">{teamMembers.length} team members · all are Admins for V1</p>
                 </div>
-                <button
-                  onClick={() => setShowInviteMember(true)}
-                  className="text-[12px] px-3 py-2 bg-indigo-500 text-white hover:bg-indigo-600 transition-colors rounded-lg flex items-center gap-1"
-                >
-                  <Plus className="w-3 h-3" /> Invite Member
-                </button>
+                {!isM1 && (
+                  <button
+                    onClick={() => setShowInviteMember(true)}
+                    className="text-[12px] px-3 py-2 bg-indigo-500 text-white hover:bg-indigo-600 transition-colors rounded-lg flex items-center gap-1"
+                  >
+                    <Plus className="w-3 h-3" /> Invite Member
+                  </button>
+                )}
               </div>
               <div className="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
                 {teamMembers.map(member => (
@@ -160,7 +171,7 @@ export function Settings() {
           )}
 
           {/* ─── COMPANIES ─── */}
-          {activeTab === 'companies' && (
+          {safeActiveTab === 'companies' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -201,7 +212,7 @@ export function Settings() {
           )}
 
           {/* ─── CONFLICT RESOLUTION ─── */}
-          {activeTab === 'conflict' && (
+          {safeActiveTab === 'conflict' && (
             <div className="space-y-4">
               <h2 className="text-[18px] font-semibold text-slate-900">Conflict Resolution</h2>
               <p className="text-[13px] text-slate-500">

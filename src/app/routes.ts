@@ -5,6 +5,7 @@ import { ActionMatrix } from './components/ActionMatrix';
 import { CompanyDetail } from './components/CompanyDetail';
 import { QuarterlyReview } from './components/PortfolioReview';
 import { IntelligenceHub } from './components/IntelligenceHub';
+import { Landing } from './components/Landing';
 import { Settings } from './components/Settings';
 import { FounderForm } from './components/FounderForm';
 import { FounderData } from './components/FounderData';
@@ -23,7 +24,8 @@ export const router = createBrowserRouter([
     path: '/',
     Component: Layout,
     children: [
-      { index: true, Component: IntelligenceHub },
+      { index: true, Component: Landing },
+      { path: 'intelligence', Component: IntelligenceHub },
       { path: 'portfolio', Component: PortfolioCommandCenter },
       { path: 'matrix', Component: ActionMatrix },
       { path: 'company/:id', Component: CompanyDetail },
