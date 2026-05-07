@@ -11,7 +11,7 @@ import { FlagIcon } from './FlagIcon';
 import { generateAssetMetrixXLSX, generateFundSummaryCSV, downloadCSV } from './ExportUtils';
 import LPReportPreview from './LPReportPreview';
 import { useFundFilter, useMilestone } from './Layout';
-import { aggregateQuarter } from './quarterlyAggregation';
+import { aggregateQuarter, quarterDateRange, getCompanyFyEndMonth, monthIndexToName } from './quarterlyAggregation';
 import { validateFieldValue, type FieldKey } from './fieldValidation';
 
 // ── Shared data ───────────────────────────────────────────────────────
@@ -725,6 +725,8 @@ export function QuarterlyReview() {
   // Inline founder submission edits (per company → per metric → numeric value)
   const [editingFounderId, setEditingFounderId] = useState<string | null>(null);
   const [founderEdits, setFounderEdits] = useState<Record<string, Record<string, number>>>({});
+  // VC's accept/reject decision per (companyId, metric) for previous-quarter amendments
+  const [priorAmendmentDecisions, setPriorAmendmentDecisions] = useState<Record<string, Record<string, 'accepted' | 'rejected'>>>({});
   const [founderDrafts, setFounderDrafts] = useState<Record<string, string>>({});
   const [founderEditError, setFounderEditError] = useState<string | null>(null);
 
@@ -1021,7 +1023,18 @@ export function QuarterlyReview() {
                   <div className={`rounded-xl border p-4 ${fCfg.bg} ${fCfg.border}`}>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-[12px] font-medium text-slate-700">Founder Submission — Q1 2026</p>
+                        {(() => {
+                          const fyEnd = getCompanyFyEndMonth(qCurrent.id);
+                          const range = quarterDateRange(1, fyEnd, 2026);
+                          return (
+                            <>
+                              <p className="text-[12px] font-medium text-slate-700">Founder Submission — Q1 2026</p>
+                              <span className="text-[10px] text-slate-500 bg-white/70 px-1.5 py-0.5 rounded border border-slate-200" title={`This company's financial year ends in ${monthIndexToName(fyEnd)}`}>
+                                {range} · FY ends {monthIndexToName(fyEnd)}
+                              </span>
+                            </>
+                          );
+                        })()}
                         <span className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md border ${fCfg.bg} ${fCfg.text} ${fCfg.border}`}>
                           <span className="w-1.5 h-1.5 rounded-full" style={{ background: fCfg.dot }} />
                           {fCfg.label}
@@ -1093,8 +1106,15 @@ export function QuarterlyReview() {
                         <table className="w-full text-[11px]">
                           <thead className="sticky top-0 z-10">
                             <tr className="bg-white/90 backdrop-blur border-b border-slate-100/50">
-                              <th className="text-left px-2.5 py-2 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.06em] w-[260px]">Metric</th>
-                              <th className="text-right px-2.5 py-2 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.06em]">{currentQuarterLabel}</th>
+                              <th className="text-left px-2.5 py-2 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.06em] w-[200px]">Metric</th>
+                              <th className="text-right px-2.5 py-2 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.06em]">
+                                <div>Q4 2025</div>
+                                <div className="text-[9px] font-normal text-slate-300 normal-case tracking-normal">Previous · {(() => { const fy = getCompanyFyEndMonth(qCurrent.id); return quarterDateRange(4, fy, 2025); })()}</div>
+                              </th>
+                              <th className="text-right px-2.5 py-2 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.06em]">
+                                <div>Q1 2026</div>
+                                <div className="text-[9px] font-normal text-slate-300 normal-case tracking-normal">Current · {(() => { const fy = getCompanyFyEndMonth(qCurrent.id); return quarterDateRange(1, fy, 2026); })()}</div>
+                              </th>
                             </tr>
                           </thead>
                           <tbody>
@@ -1111,17 +1131,42 @@ export function QuarterlyReview() {
                                 { label: 'Headcount — Female (FTE)', key: 'headcountFemale', isCurrency: false, section: 'Team & Diversity' },
                                 { label: 'Headcount — Ethnic Minority (FTE)', key: 'headcountEthnicMinority', isCurrency: false, section: 'Team & Diversity' },
                               ];
-                              // Show only the quarter being reviewed (latest sent quarter — Q4 2025/26 in mock data)
-                              const reviewQuarterMonths = ['2026-01','2026-02','2026-03'];
-                              const data = reviewQuarterMonths.map(m => qCurrent.monthlyFinancials.find((f: any) => f.month === m)).filter(Boolean) as any[];
+                              // Current quarter (Q1 2026): Apr-Jun mock
+                              const currentQuarterMonths = ['2026-01','2026-02','2026-03'];
+                              const dataCurr = currentQuarterMonths.map(m => qCurrent.monthlyFinancials.find((f: any) => f.month === m)).filter(Boolean) as any[];
+                              // Previous quarter (Q4 2025): Jan-Mar mock
+                              const prevQuarterMonths = ['2025-10','2025-11','2025-12'];
+                              const dataPrev = prevQuarterMonths.map(m => qCurrent.monthlyFinancials.find((f: any) => f.month === m)).filter(Boolean) as any[];
 
-                              const valueFor = (key: string) => {
-                                // Override with saved edit if present
+                              // Mock: deterministically flag certain (company, metric) pairs as having an amendment to prior quarter
+                              const hasAmendment = (key: string): { original: number; amended: number } | null => {
+                                // Skip if VC already accepted/rejected
+                                if (priorAmendmentDecisions[qCurrent.id]?.[key]) return null;
+                                if (key === 'ebitda') return null; // calc, no amendment
+                                const hash = (qCurrent.id + key).split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+                                if (hash % 5 !== 0) return null; // ~20% of cells get an amendment
+                                const aggKey = key === 'monthlyNetBurn' ? 'cashBurn' : key;
+                                const baseVal = aggregateQuarter(dataPrev, aggKey as any);
+                                if (baseVal == null) return null;
+                                const drift = (hash % 7) / 100 + 0.05; // 5-12% delta
+                                const amended = key.startsWith('headcount')
+                                  ? Math.max(0, Math.round(baseVal * (1 + drift)))
+                                  : Math.round(baseVal * (1 + drift));
+                                return { original: baseVal, amended };
+                              };
+
+                              const valueForCurrent = (key: string) => {
                                 const savedEdit = founderEdits[qCurrent.id]?.[key];
                                 if (savedEdit != null) return savedEdit;
-                                if (data.length === 0) return null;
+                                if (dataCurr.length === 0) return null;
                                 const aggKey = key === 'monthlyNetBurn' ? 'cashBurn' : key;
-                                return aggregateQuarter(data, aggKey as any);
+                                return aggregateQuarter(dataCurr, aggKey as any);
+                              };
+
+                              const valueForPrev = (key: string) => {
+                                if (dataPrev.length === 0) return null;
+                                const aggKey = key === 'monthlyNetBurn' ? 'cashBurn' : key;
+                                return aggregateQuarter(dataPrev, aggKey as any);
                               };
 
                               const formatVal = (val: number | null, metric: typeof allMetrics[number]) => {
@@ -1135,20 +1180,64 @@ export function QuarterlyReview() {
                               return allMetrics.map(metric => {
                                 const showSection = metric.section !== lastSection;
                                 lastSection = metric.section;
-                                const val = valueFor(metric.key);
+                                const valCurr = valueForCurrent(metric.key);
+                                const valPrev = valueForPrev(metric.key);
                                 const draftValue = founderDrafts[metric.key];
-                                const inputValue = draftValue !== undefined ? draftValue : (val != null ? String(val) : '');
+                                const inputValue = draftValue !== undefined ? draftValue : (valCurr != null ? String(valCurr) : '');
+                                const amendment = hasAmendment(metric.key);
+                                const decision = priorAmendmentDecisions[qCurrent.id]?.[metric.key];
                                 return (
                                   <React.Fragment key={metric.key}>
                                     {showSection && (
                                       <tr key={`section-${metric.section}`}>
-                                        <td colSpan={2} className="px-2.5 pt-2 pb-1 text-[10px] font-semibold text-slate-500 uppercase tracking-[0.08em] bg-slate-50/30 border-t border-slate-100/50">
+                                        <td colSpan={3} className="px-2.5 pt-2 pb-1 text-[10px] font-semibold text-slate-500 uppercase tracking-[0.08em] bg-slate-50/30 border-t border-slate-100/50">
                                           {metric.section}
                                         </td>
                                       </tr>
                                     )}
                                     <tr className="hover:bg-white/40 border-t border-slate-50/50">
                                       <td className="px-2.5 py-1.5 text-slate-600">{metric.label}{metric.isCalc && <span className="ml-1 text-[9px] text-slate-400">(auto)</span>}</td>
+                                      {/* Previous quarter — with amendment indicator */}
+                                      <td className="px-2.5 py-1.5 text-right font-mono-num text-slate-500">
+                                        {amendment ? (
+                                          <div className="flex flex-col items-end gap-1">
+                                            <div className="flex items-center gap-2">
+                                              <span className="line-through text-slate-400 text-[10px]">{formatVal(amendment.original, metric)}</span>
+                                              <span className="text-red-600 font-semibold">{formatVal(amendment.amended, metric)}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                              <span className="text-[9px] text-red-500 mr-1" title="Founder amended this value in their latest submission">amended</span>
+                                              <button
+                                                onClick={() => setPriorAmendmentDecisions(prev => ({
+                                                  ...prev,
+                                                  [qCurrent.id]: { ...(prev[qCurrent.id] || {}), [metric.key]: 'accepted' }
+                                                }))}
+                                                className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors"
+                                                title="Accept this amendment"
+                                              >
+                                                <Check className="w-2.5 h-2.5" /> Accept
+                                              </button>
+                                              <button
+                                                onClick={() => setPriorAmendmentDecisions(prev => ({
+                                                  ...prev,
+                                                  [qCurrent.id]: { ...(prev[qCurrent.id] || {}), [metric.key]: 'rejected' }
+                                                }))}
+                                                className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+                                                title="Reject — keep the original value"
+                                              >
+                                                ✕ Reject
+                                              </button>
+                                            </div>
+                                          </div>
+                                        ) : decision === 'accepted' ? (
+                                          <span className="text-emerald-600">{formatVal(valPrev, metric) ?? '—'} <span className="text-[9px] text-emerald-500 ml-1">accepted</span></span>
+                                        ) : decision === 'rejected' ? (
+                                          <span className="text-slate-500">{formatVal(valPrev, metric) ?? '—'} <span className="text-[9px] text-slate-400 ml-1">rejected</span></span>
+                                        ) : (
+                                          valPrev != null ? formatVal(valPrev, metric) : <span className="text-slate-300">—</span>
+                                        )}
+                                      </td>
+                                      {/* Current quarter — editable as before */}
                                       <td className="px-2.5 py-1.5 text-right font-mono-num text-slate-700">
                                         {isEditing && !metric.isCalc ? (
                                           <input
@@ -1159,7 +1248,7 @@ export function QuarterlyReview() {
                                             className="w-[140px] text-right text-[11px] font-mono-num border border-slate-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300"
                                           />
                                         ) : (
-                                          val != null ? formatVal(val, metric) : <span className="text-slate-300">—</span>
+                                          valCurr != null ? formatVal(valCurr, metric) : <span className="text-slate-300">—</span>
                                         )}
                                       </td>
                                     </tr>

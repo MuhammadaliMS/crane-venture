@@ -2,7 +2,7 @@ import { useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { Download, ChevronDown, ChevronUp, Flag as FlagIcon, Pencil, AlertCircle, Undo2, CheckCircle2 } from 'lucide-react';
 import { validateFieldValue, type FieldKey } from './fieldValidation';
-import { aggregateQuarter } from './quarterlyAggregation';
+import { aggregateQuarter, getCompanyFyEndMonth, monthIndexToName } from './quarterlyAggregation';
 
 // Quarter → months mapping (FY 2025/26, Mar year-end as default)
 const QUARTER_MONTHS: Record<string, string[]> = {
@@ -196,7 +196,17 @@ export function PortfolioCommandCenter() {
             className="text-[12px] border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-200"
             title="Quarter view — values aggregate using Bonnie's rules"
           >
-            {Object.keys(QUARTER_MONTHS).map(q => <option key={q} value={q}>{q}</option>)}
+            {Object.entries(QUARTER_MONTHS).map(([q, months]) => {
+              // Render label as "Q1 2025/26 · Apr–Jun 2025"
+              const first = months[0];
+              const last = months[months.length - 1];
+              const monthName = (iso: string) => ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(iso.slice(5, 7), 10) - 1];
+              const yr = (iso: string) => iso.slice(0, 4);
+              const range = yr(first) === yr(last)
+                ? `${monthName(first)}–${monthName(last)} ${yr(first)}`
+                : `${monthName(first)} ${yr(first)} – ${monthName(last)} ${yr(last)}`;
+              return <option key={q} value={q}>{q} · {range}</option>;
+            })}
           </select>
           <select
             value={ownerFilter}
@@ -259,6 +269,7 @@ export function PortfolioCommandCenter() {
                   { key: 'cashBurn', label: 'Cash Burn', align: 'right' as const, w: '' },
                   { key: 'headcount', label: 'Headcount', align: 'right' as const, w: '' },
                   { key: 'leadPartner', label: 'Lead Partner', align: 'left' as const, w: '' },
+                  { key: 'fyEnd', label: 'FY End', align: 'left' as const, w: 'w-[80px]' },
                 ].map(col => (
                   <th
                     key={col.key}
@@ -511,6 +522,10 @@ export function PortfolioCommandCenter() {
                     {/* Lead Partner */}
                     <td className="px-3 py-1.5 text-[11px] text-slate-500">
                       {company.owners[0] || '—'}
+                    </td>
+                    {/* FY End — per-company financial year end month */}
+                    <td className="px-3 py-1.5 text-[11px] text-slate-500" title="Company financial year-end month">
+                      {monthIndexToName(getCompanyFyEndMonth(company.id)).slice(0, 3)}
                     </td>
                   </tr>
                 );

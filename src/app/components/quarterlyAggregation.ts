@@ -128,3 +128,51 @@ export function calendarMonthsForQuarter(year: number, quarter: 1 | 2 | 3 | 4): 
     return `${year}-${String(m).padStart(2, '0')}`;
   });
 }
+
+// ── Display helpers for the per-company financial year ────────────
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// Map a company-FY quarter (1-4) to the calendar month range it represents,
+// formatted as e.g. "Apr–Jun 2025" or "Dec 2025 – Feb 2026".
+// fyEndMonth: 1-12 (e.g. March = 3 means FY ends March, starts April).
+// fyEndYear: calendar year that the FY ends in (e.g. 2026 for FY 2025/26).
+export function quarterDateRange(quarter: 1 | 2 | 3 | 4, fyEndMonth: number, fyEndYear: number): string {
+  const fyStartMonth = (fyEndMonth % 12) + 1;
+  const fyStartYear  = fyStartMonth > fyEndMonth ? fyEndYear - 1 : fyEndYear;
+  // First and last month of this quarter within FY (1-based offsets from FY start)
+  const firstOffset = (quarter - 1) * 3;
+  const lastOffset  = firstOffset + 2;
+  const calc = (offset: number) => {
+    let m = fyStartMonth + offset;
+    let y = fyStartYear;
+    while (m > 12) { m -= 12; y += 1; }
+    return { m, y };
+  };
+  const { m: m1, y: y1 } = calc(firstOffset);
+  const { m: m2, y: y2 } = calc(lastOffset);
+  const lbl1 = MONTH_NAMES[m1 - 1];
+  const lbl2 = MONTH_NAMES[m2 - 1];
+  if (y1 === y2) return `${lbl1}–${lbl2} ${y1}`;
+  return `${lbl1} ${y1} – ${lbl2} ${y2}`;
+}
+
+// Convert a month name ("January".."December") to its 1-12 index.
+export function monthNameToIndex(name: string): number {
+  const long = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const idx = long.indexOf(name);
+  return idx >= 0 ? idx + 1 : 3; // default March
+}
+
+export function monthIndexToName(idx: number): string {
+  const long = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  return long[(idx - 1 + 12) % 12];
+}
+
+// Mock: deterministically assigns each company a financial year-end month
+// (in production this is set on the company record by the founder form).
+// Returns a number 1-12.
+export function getCompanyFyEndMonth(companyId: string): number {
+  const ends = [3, 12, 6, 9, 3, 12]; // mix of Mar / Dec / Jun / Sep
+  const hash = companyId.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  return ends[hash % ends.length];
+}

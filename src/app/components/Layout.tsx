@@ -237,11 +237,6 @@ export function Layout() {
                           style={{ background: c.logoColor }}
                         />
                         <span className="truncate">{c.name}</span>
-                        {c.flagCount > 0 && (
-                          <span className="ml-auto text-[10px] text-red-400 font-medium">
-                            {c.flagCount}
-                          </span>
-                        )}
                       </button>
                     );
                   })}

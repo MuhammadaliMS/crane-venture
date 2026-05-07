@@ -16,7 +16,7 @@ import { useWorkflow } from './WorkflowContext';
 import { LogNoteModal, NewTodoModal, ScheduleCheckInModal } from './ActionModals';
 import { FlagActionDropdown } from './FlagActionDropdown';
 import { useMilestone } from './Layout';
-import { aggregateQuarter } from './quarterlyAggregation';
+import { aggregateQuarter, getCompanyFyEndMonth, monthIndexToName, quarterDateRange } from './quarterlyAggregation';
 
 export function CompanyDetail() {
   const { id } = useParams();
@@ -138,6 +138,9 @@ export function CompanyDetail() {
               <div className="flex items-center gap-2 mt-3 flex-wrap">
                 <span className="bg-white/10 text-white/80 text-[12px] px-2.5 py-1 rounded-md">{company.stage}</span>
                 <span className="bg-white/10 text-white/80 text-[12px] px-2.5 py-1 rounded-md">{company.sector}</span>
+                <span className="bg-white/10 text-white/80 text-[12px] px-2.5 py-1 rounded-md" title="Company financial year-end">
+                  FY ends {monthIndexToName(getCompanyFyEndMonth(company.id))}
+                </span>
                 {isExited && (
                   <span className="bg-white/10 text-white/60 text-[12px] px-2.5 py-1 rounded-md">{company.lifecycle}</span>
                 )}
