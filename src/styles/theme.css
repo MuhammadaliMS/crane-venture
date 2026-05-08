@@ -302,17 +302,20 @@
 }
 
 @layer utilities {
-  /* Editorial display face — Instrument Serif. Use sparingly: hero h1,
-     pull-quotes, key numbers. Italic variant adds personality. */
+  /* Editorial display face — Source Serif 4. Emulates crane.vc's Poynter
+     Oldstyle Text. Bookish, transitional serif — less flashy than Instrument
+     Serif, more authoritative for a venture firm. */
   .font-display {
-    font-family: 'Instrument Serif', 'Times New Roman', serif;
-    font-weight: 400;
-    letter-spacing: -0.01em;
+    font-family: 'Source Serif 4', 'Source Serif Pro', 'Times New Roman', serif;
+    font-weight: 500;
+    font-optical-sizing: auto;
+    letter-spacing: -0.012em;
   }
   .font-display-italic {
-    font-family: 'Instrument Serif', 'Times New Roman', serif;
+    font-family: 'Source Serif 4', 'Source Serif Pro', 'Times New Roman', serif;
     font-weight: 400;
     font-style: italic;
+    font-optical-sizing: auto;
     letter-spacing: -0.005em;
   }
 
