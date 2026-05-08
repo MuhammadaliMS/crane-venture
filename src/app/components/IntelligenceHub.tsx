@@ -89,18 +89,20 @@ export function IntelligenceHub() {
     setSources([]);
   };
 
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
   return (
-    <div className="max-w-[820px] mx-auto pt-12 pb-16">
-      {/* Hero — only when no response */}
+    <div className="max-w-[760px] mx-auto pt-16 pb-16">
+      {/* Hero — editorial, restrained. Date · greeting · serif question */}
       {!response && !streaming && (
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 mb-4 shadow-lg shadow-indigo-500/30">
-            <Sparkles className="w-7 h-7 text-white" />
-          </div>
-          <h1 className="text-[28px] font-semibold tracking-tight text-slate-900">
+        <div className="mb-10">
+          <p className="text-[12px] font-mono-num uppercase tracking-[0.14em] text-muted-foreground mb-4">
+            {today}
+          </p>
+          <h1 className="font-display text-[44px] leading-[1.05] text-foreground mb-3">
             {greeting}, {currentUser.name.split(' ')[0]}
           </h1>
-          <p className="text-[15px] text-slate-500 mt-2">
+          <p className="text-[16px] leading-snug text-muted-foreground max-w-md">
             Ask anything about your portfolio — companies, metrics, recent updates, concerns.
           </p>
         </div>
@@ -108,104 +110,110 @@ export function IntelligenceHub() {
 
       {/* Search bar */}
       <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+        <label htmlFor="briefing-query" className="sr-only">Ask the portfolio</label>
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
         <input
+          id="briefing-query"
           type="text"
           value={query}
           onChange={e => setQuery(e.target.value)}
-          placeholder="What do you want to know about the portfolio?"
-          className="w-full pl-12 pr-32 py-4 text-[15px] border border-slate-200 rounded-2xl bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 focus:shadow-md transition-all"
+          placeholder="Type a question, or pick one below"
+          className="w-full pl-11 pr-28 py-3.5 text-[15px] border border-border rounded-md bg-card focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-colors"
           onKeyDown={e => { if (e.key === 'Enter') submit(query); }}
         />
         <button
           onClick={() => submit(query)}
           disabled={!query.trim() || streaming}
-          className={`absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-medium transition-all ${
+          aria-label="Submit question"
+          className={`absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center gap-1.5 px-3.5 h-9 rounded-md text-[13px] font-medium transition-colors ${
             !query.trim() || streaming
-              ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-              : 'bg-indigo-500 text-white hover:bg-indigo-600 shadow-sm'
+              ? 'bg-muted text-muted-foreground cursor-not-allowed'
+              : 'bg-primary text-primary-foreground hover:bg-[var(--primary-muted)]'
           }`}
         >
           Ask <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </div>
 
-      {/* Suggested questions chips */}
+      {/* Suggested questions — left-aligned list, not chip soup */}
       {!response && !streaming && (
-        <div className="mt-8">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-slate-400 mb-3 text-center">Try asking</p>
-          <div className="flex flex-wrap gap-2 justify-center">
+        <div className="mt-10">
+          <p className="text-[11px] font-medium tracking-wide text-muted-foreground/80 mb-2">Suggested</p>
+          <ul className="divide-y divide-border border-y border-border">
             {SUGGESTED.map(s => (
-              <button
-                key={s}
-                onClick={() => submit(s)}
-                className="text-[13px] px-3 py-1.5 rounded-full bg-white border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 transition-colors text-slate-600"
-              >
-                {s}
-              </button>
+              <li key={s}>
+                <button
+                  onClick={() => submit(s)}
+                  className="w-full text-left text-[14px] py-3 px-1 text-foreground hover:text-primary transition-colors flex items-center gap-3 group"
+                >
+                  <span className="text-muted-foreground group-hover:text-primary transition-colors">→</span>
+                  <span>{s}</span>
+                </button>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       )}
 
       {/* Response */}
       {(response || streaming) && (
         <div className="mt-6">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-[11px] font-medium text-indigo-600 uppercase tracking-wider flex items-center gap-1.5">
-                <Sparkles className="w-3 h-3" />
-                {streaming ? 'Generating answer…' : 'Answer'}
+          <article className="bg-card rounded-md border border-border p-6">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-[11px] font-medium tracking-wide text-muted-foreground flex items-center gap-1.5">
+                <Sparkles className="w-3 h-3" aria-hidden="true" />
+                {streaming ? 'Drafting' : 'Answer'}
               </p>
               {!streaming && (
-                <button onClick={reset} className="text-[12px] text-slate-400 hover:text-slate-600 transition-colors">New question</button>
+                <button onClick={reset} className="text-[12px] text-muted-foreground hover:text-foreground transition-colors">New question</button>
               )}
             </div>
-            <p className="text-[15px] text-slate-800 leading-relaxed">
+            <p className="text-[16px] text-foreground leading-relaxed">
               {response}
-              {streaming && <span className="inline-block w-1.5 h-4 bg-indigo-500 ml-1 animate-pulse align-middle" />}
+              {streaming && <span className="inline-block w-[2px] h-[1.1em] bg-primary ml-1 animate-pulse align-middle" aria-hidden="true" />}
             </p>
 
             {/* Sources */}
             {!streaming && sources.length > 0 && (
-              <div className="mt-5 pt-4 border-t border-slate-100">
-                <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-2">Sources</p>
-                <div className="flex flex-wrap gap-2">
+              <div className="mt-6 pt-4 border-t border-border">
+                <p className="text-[11px] font-medium tracking-wide text-muted-foreground mb-2">Sources</p>
+                <div className="flex flex-wrap gap-1.5">
                   {sources.map((s, i) => {
                     const Icon = s.type === 'company' ? Building2 : s.type === 'doc' ? FileText : Mic;
                     return (
                       <button
                         key={i}
                         onClick={() => s.companyId && navigate(`/company/${s.companyId}`)}
-                        className="inline-flex items-center gap-1.5 text-[12px] bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 rounded-full px-3 py-1 text-slate-700 hover:text-indigo-700 transition-colors"
+                        className="inline-flex items-center gap-1.5 text-[12px] bg-muted hover:bg-accent border border-border rounded-md px-2.5 py-1 text-foreground transition-colors"
                       >
-                        <Icon className="w-3 h-3" />
+                        <Icon className="w-3 h-3" aria-hidden="true" />
                         <span className="font-medium">{s.label}</span>
-                        <span className="text-slate-400">· {s.detail}</span>
+                        <span className="text-muted-foreground">· {s.detail}</span>
                       </button>
                     );
                   })}
                 </div>
               </div>
             )}
-          </div>
+          </article>
 
           {/* Recent history */}
           {history.length > 1 && !streaming && (
             <div className="mt-8">
-              <p className="text-[11px] font-medium uppercase tracking-wider text-slate-400 mb-2">Recent</p>
-              <div className="space-y-1">
+              <p className="text-[11px] font-medium tracking-wide text-muted-foreground mb-2">Recent</p>
+              <ul className="space-y-0">
                 {history.slice(0, -1).reverse().slice(0, 5).map((h, i) => (
-                  <button
-                    key={i}
-                    onClick={() => submit(h.q)}
-                    className="w-full text-left p-2.5 rounded-lg hover:bg-slate-50 transition-colors text-[13px] text-slate-600 hover:text-slate-900 flex items-center gap-2"
-                  >
-                    <Search className="w-3 h-3 text-slate-300 flex-shrink-0" />
-                    <span className="truncate">{h.q}</span>
-                  </button>
+                  <li key={i}>
+                    <button
+                      onClick={() => submit(h.q)}
+                      className="w-full text-left p-2 rounded-md hover:bg-muted transition-colors text-[13px] text-muted-foreground hover:text-foreground flex items-center gap-2"
+                    >
+                      <Search className="w-3 h-3 text-muted-foreground/70 flex-shrink-0" aria-hidden="true" />
+                      <span className="truncate">{h.q}</span>
+                    </button>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </div>
           )}
         </div>

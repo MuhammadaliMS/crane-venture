@@ -1,50 +1,74 @@
 @custom-variant dark (&:is(.dark *));
 
+/* ─────────────────────────────────────────────────────────────────────────
+   Crane palette — editorial venture firm.
+   Warm paper background. Deep ink primary. No indigo→violet gradient.
+   Sidebar lives on the same warm family as the body — light + light, broken
+   only by a hairline border and a quiet shift in tone.
+   ───────────────────────────────────────────────────────────────────────── */
+
 :root {
   --font-size: 16px;
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --card: #ffffff;
-  --card-foreground: #0f172a;
-  --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  --primary: #6366f1;
-  --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #0f172a;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --accent: #eef2ff;
-  --accent-foreground: #312e81;
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --border: #e2e8f0;
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
-  --shadow-card-hover: 0 8px 25px rgba(0, 0, 0, 0.06), 0 4px 10px rgba(0, 0, 0, 0.03);
-  --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.08);
+
+  /* Surfaces — tuned to match crane.vc cream + ink */
+  --background: #F5EFE3;            /* crane.vc cream */
+  --foreground: #0E1733;            /* crane.vc deep navy */
+  --card: #FAF6EC;                  /* card sits one notch lighter than body */
+  --card-foreground: #0E1733;
+  --popover: #FAF6EC;
+  --popover-foreground: #0E1733;
+
+  /* Brand */
+  --primary: #0E1733;               /* deep navy — crane.vc heading colour */
+  --primary-foreground: #F5EFE3;
+  --primary-muted: #1F2A4F;         /* hover */
+
+  /* Secondary surfaces (warm cream tones) */
+  --secondary: #ECE5D4;
+  --secondary-foreground: #0E1733;
+  --muted: #ECE5D4;
+  --muted-foreground: #6B6960;      /* warm gray, not slate */
+  --accent: #E5DCC4;                /* parchment */
+  --accent-foreground: #0E1733;
+
+  --destructive: #9C2D24;           /* deep brick — quiet, not alarming */
+  --destructive-foreground: #F5EFE3;
+  --success: #4F6B5F;               /* muted sage */
+  --warning: #8E5C2C;               /* warm amber, dialled down */
+
+  --border: #DDD3BD;                /* warm hairline */
+  --shadow-card: 0 1px 2px rgba(14, 23, 51, 0.04), 0 1px 1px rgba(14, 23, 51, 0.02);
+  --shadow-card-hover: 0 8px 24px rgba(14, 23, 51, 0.06), 0 4px 8px rgba(14, 23, 51, 0.03);
+  --shadow-lg: 0 10px 40px rgba(14, 23, 51, 0.08);
+
   --input: transparent;
-  --input-background: #f1f5f9;
-  --switch-background: #cbd5e1;
+  --input-background: #EFE7D2;
+  --switch-background: #C5BCA4;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: #6366f1;
-  --chart-1: #6366f1;
-  --chart-2: #10b981;
-  --chart-3: #f59e0b;
-  --chart-4: #8b5cf6;
-  --chart-5: #ec4899;
-  --radius: 0.75rem;
-  --sidebar: #0f0f12;
-  --sidebar-foreground: #e2e8f0;
-  --sidebar-primary: #818cf8;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(255, 255, 255, 0.08);
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-ring: #6366f1;
-  --sidebar-muted: #94a3b8;
+  --ring: #0E1733;
 
-  /* Emil Kowalski easing curves */
+  /* Charts — single hue (ink) with tonal variants + 1 warm accent */
+  --chart-1: #0E1733;               /* ink/navy */
+  --chart-2: #4F6B5F;               /* sage */
+  --chart-3: #8E5C2C;               /* warm amber */
+  --chart-4: #7C4A30;               /* terracotta */
+  --chart-5: #324466;               /* dusty navy */
+
+  --radius: 0.5rem;                 /* less rounded — more editorial */
+
+  /* Sidebar — warm cream, NOT dark. Breaks the AI dashboard two-tone. */
+  --sidebar: #EDE5D1;               /* one shade warmer than body */
+  --sidebar-foreground: #0E1733;
+  --sidebar-primary: #0E1733;
+  --sidebar-primary-foreground: #F5EFE3;
+  --sidebar-accent: rgba(14, 23, 51, 0.05);
+  --sidebar-accent-foreground: #0E1733;
+  --sidebar-border: #D6CCB1;
+  --sidebar-ring: #0E1733;
+  --sidebar-muted: #6B6960;
+
+  /* Motion */
   --ease-out-expo: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
   --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -54,38 +78,38 @@
 }
 
 .dark {
-  --background: #0a0a0b;
-  --foreground: #f1f5f9;
-  --card: #141416;
-  --card-foreground: #f1f5f9;
-  --popover: #141416;
-  --popover-foreground: #f1f5f9;
-  --primary: #818cf8;
-  --primary-foreground: #0f0f12;
-  --secondary: #1e293b;
-  --secondary-foreground: #f1f5f9;
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
-  --accent: #1e1b4b;
-  --accent-foreground: #c7d2fe;
-  --destructive: #f87171;
-  --destructive-foreground: #0f0f12;
-  --border: #1e293b;
-  --input: #1e293b;
-  --ring: #818cf8;
-  --chart-1: #818cf8;
-  --chart-2: #34d399;
-  --chart-3: #fbbf24;
-  --chart-4: #a78bfa;
-  --chart-5: #f472b6;
-  --sidebar: #0f0f12;
-  --sidebar-foreground: #e2e8f0;
-  --sidebar-primary: #818cf8;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(255, 255, 255, 0.08);
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-ring: #818cf8;
+  --background: #11100E;            /* warm dark, not blue-black */
+  --foreground: #F2EEE3;
+  --card: #1A1815;
+  --card-foreground: #F2EEE3;
+  --popover: #1A1815;
+  --popover-foreground: #F2EEE3;
+  --primary: #C8B68A;               /* warm bone — flips ink for dark */
+  --primary-foreground: #14110E;
+  --secondary: #1F1C18;
+  --secondary-foreground: #F2EEE3;
+  --muted: #1F1C18;
+  --muted-foreground: #9A938A;
+  --accent: #2A241C;
+  --accent-foreground: #E8DEC2;
+  --destructive: #C77265;
+  --destructive-foreground: #14110E;
+  --border: #2A241C;
+  --input: #1F1C18;
+  --ring: #C8B68A;
+  --chart-1: #C8B68A;
+  --chart-2: #8AA89A;
+  --chart-3: #D49968;
+  --chart-4: #B8856B;
+  --chart-5: #7A8FA0;
+  --sidebar: #161310;
+  --sidebar-foreground: #E8DEC2;
+  --sidebar-primary: #C8B68A;
+  --sidebar-primary-foreground: #14110E;
+  --sidebar-accent: rgba(232, 222, 194, 0.06);
+  --sidebar-accent-foreground: #F2EEE3;
+  --sidebar-border: rgba(232, 222, 194, 0.08);
+  --sidebar-ring: #C8B68A;
 }
 
 @theme inline {
@@ -141,10 +165,11 @@
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   :focus-visible {
-    outline: 2px solid #6366f1;
+    outline: 2px solid var(--ring);
     outline-offset: 2px;
     border-radius: 4px;
   }
@@ -174,45 +199,55 @@
     cursor: pointer;
   }
 
+  /* WCAG 2.5.5 — 36 px desktop, 44 px on touch (mobile) */
   button,
   [role="button"],
   a,
   select {
-    min-height: 32px;
+    min-height: 36px;
+  }
+  @media (pointer: coarse) {
+    button,
+    [role="button"],
+    a,
+    select {
+      min-height: 44px;
+    }
   }
 
   button,
   a,
   select,
   input {
-    transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+    transition-property: color, background-color, border-color, box-shadow, opacity;
     transition-duration: 150ms;
     transition-timing-function: var(--ease-out-expo);
   }
 
-  button:not(:disabled):active,
-  [role="button"]:not(:disabled):active {
-    transform: scale(0.97);
-  }
-
   ::selection {
-    background-color: #6366f1;
-    color: white;
+    background-color: var(--primary);
+    color: var(--primary-foreground);
   }
 
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
+  }
+  @media (pointer: fine) {
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background-color: rgba(0, 0, 0, 0.12);
+    background-color: rgba(20, 17, 14, 0.14);
     border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(0, 0, 0, 0.2);
+    background-color: rgba(20, 17, 14, 0.24);
   }
 
   html {
@@ -220,17 +255,17 @@
   }
 
   h1 {
-    font-size: 1.75rem;
-    font-weight: 600;
-    line-height: 1.3;
-    letter-spacing: -0.025em;
+    font-size: 1.875rem;
+    font-weight: 500;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
   }
 
   h2 {
     font-size: 1.25rem;
-    font-weight: 600;
-    line-height: 1.4;
-    letter-spacing: -0.015em;
+    font-weight: 500;
+    line-height: 1.35;
+    letter-spacing: -0.012em;
   }
 
   h3 {
@@ -265,22 +300,39 @@
 }
 
 @layer utilities {
+  /* Editorial display face — Instrument Serif. Use sparingly: hero h1,
+     pull-quotes, key numbers. Italic variant adds personality. */
+  .font-display {
+    font-family: 'Instrument Serif', 'Times New Roman', serif;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+  .font-display-italic {
+    font-family: 'Instrument Serif', 'Times New Roman', serif;
+    font-weight: 400;
+    font-style: italic;
+    letter-spacing: -0.005em;
+  }
+
   .font-mono-num {
     font-family: 'JetBrains Mono', 'SF Mono', monospace;
     font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1, 'cv11' 1;
   }
 
   .card-elevated {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 0.75rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
-    transition: box-shadow var(--duration-normal) var(--ease-out-expo), border-color var(--duration-normal) var(--ease-out-expo), transform var(--duration-normal) var(--ease-out-expo);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
+    transition: box-shadow var(--duration-normal) var(--ease-out-expo),
+                border-color var(--duration-normal) var(--ease-out-expo),
+                transform var(--duration-normal) var(--ease-out-expo);
   }
   .card-elevated:hover {
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06), 0 4px 10px rgba(0, 0, 0, 0.03);
-    border-color: #cbd5e1;
-    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-hover);
+    border-color: color-mix(in oklab, var(--border), var(--foreground) 8%);
+    transform: translateY(-1px);
   }
 
   /* Stagger animation keyframes */
@@ -323,10 +375,13 @@
   .stagger-scale > *:nth-child(5) { animation-delay: 200ms; }
   .stagger-scale > *:nth-child(6) { animation-delay: 250ms; }
 
-  .text-gradient {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  /* Replaces .text-gradient — single ink, no rainbow */
+  .text-display-ink {
+    color: var(--primary);
+  }
+
+  /* A subtle hairline divider for editorial layouts */
+  .hairline {
+    border-color: var(--border);
   }
 }

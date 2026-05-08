@@ -120,31 +120,27 @@ function getSubmission(companyId: string, quarter: string): QuarterSubmission {
   return submissionData[companyId]?.[quarter] ?? getMockSubmission(companyId, quarter);
 }
 
-// ── Status helpers ───────────────────────────────────────────────────────
+// ── Status helpers — quiet single-tone treatment, status conveyed by dot ────
 const STATUS_CONFIG: Record<SubmissionStatus, {
-  label: string; dotColor: string; bg: string; text: string; border: string;
+  label: string; dotClass: string; tone: 'on' | 'off';
 }> = {
-  submitted: { label: 'Submitted', dotColor: '#10b981', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
-  partial:   { label: 'Partial',   dotColor: '#f59e0b', bg: 'bg-amber-50',   text: 'text-amber-700',   border: 'border-amber-200'   },
-  sent:      { label: 'Awaiting',  dotColor: '#6366f1', bg: 'bg-indigo-50',  text: 'text-indigo-700',  border: 'border-indigo-200'  },
-  not_sent:  { label: 'Not sent',  dotColor: '#94a3b8', bg: 'bg-slate-50',   text: 'text-slate-400',   border: 'border-slate-200'   },
+  submitted: { label: 'Submitted', dotClass: 'bg-[#5C7A6E]', tone: 'on'  }, // sage
+  partial:   { label: 'Partial',   dotClass: 'bg-[#B8763A]', tone: 'on'  }, // amber
+  sent:      { label: 'Awaiting',  dotClass: 'bg-foreground/40', tone: 'on'  },
+  not_sent:  { label: 'Not sent',  dotClass: 'bg-muted-foreground/30', tone: 'off' },
 };
 
 function StatusBadge({ status, compact }: { status: SubmissionStatus; compact?: boolean }) {
   const cfg = STATUS_CONFIG[status];
-  if (compact) {
-    return (
-      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
-        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: cfg.dotColor }} />
-        {cfg.label}
-      </span>
-    );
-  }
+  const isOff = cfg.tone === 'off';
+  const sizing = compact ? 'text-[11px] px-2 py-0.5' : 'text-[12px] px-2.5 py-1';
   return (
-    <div className={`flex items-center justify-center gap-1 px-2.5 py-1 rounded-lg border ${cfg.bg} ${cfg.border}`}>
-      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: cfg.dotColor }} />
-      <span className={`text-[11px] font-medium ${cfg.text} whitespace-nowrap`}>{cfg.label}</span>
-    </div>
+    <span className={`inline-flex items-center gap-1.5 rounded-sm ${sizing} ${
+      isOff ? 'text-muted-foreground/70' : 'text-foreground/85'
+    }`}>
+      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${cfg.dotClass}`} />
+      {cfg.label}
+    </span>
   );
 }
 
@@ -186,13 +182,13 @@ export function FounderData() {
       {/* ── Header ────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[22px] font-semibold text-slate-800 tracking-tight">Founder Data</h1>
-          <p className="text-[13px] text-slate-500 mt-0.5">
+          <h1 className="font-display text-[34px] leading-tight text-foreground">Founder Data</h1>
+          <p className="text-[13px] text-muted-foreground mt-0.5">
             Track quarterly data submissions from portfolio founders
           </p>
         </div>
         <button
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white text-[13px] rounded-lg hover:bg-indigo-600 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-white text-[13px] rounded-lg hover:bg-[var(--primary-muted)] transition-colors"
         >
           <Send className="w-3.5 h-3.5" />
           Send {activeQuarter} Forms
@@ -200,29 +196,29 @@ export function FounderData() {
       </div>
 
       {/* ── Quarter tabs + stats ───────────────────────────────────── */}
-      <div className="bg-white border border-slate-200/70 rounded-xl overflow-hidden">
+      <div className="bg-white border border-border/70 rounded-xl overflow-hidden">
         {/* Tab bar */}
-        <div className="flex items-center border-b border-slate-100 px-4">
+        <div className="flex items-center border-b border-border/60 px-4">
           {QUARTERS.map(q => (
             <button
               key={q}
               onClick={() => setActiveQuarter(q)}
               className={`px-4 py-3 text-[13px] font-medium border-b-2 transition-colors -mb-px ${
                 activeQuarter === q
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-700'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
             >
               {q}
               {q === CURRENT_QUARTER && (
-                <span className="ml-1.5 text-[10px] px-1.5 py-0.5 bg-indigo-100 text-indigo-600 rounded-full">Current</span>
+                <span className="ml-1.5 text-[10px] px-1.5 py-0.5 bg-primary/15 text-primary rounded-full">Current</span>
               )}
             </button>
           ))}
         </div>
 
         {/* Stats strip */}
-        <div className="grid grid-cols-4 divide-x divide-slate-100">
+        <div className="grid grid-cols-4 divide-x divide-border/60">
           {(['submitted', 'partial', 'sent', 'not_sent'] as SubmissionStatus[]).map(s => {
             const cfg = STATUS_CONFIG[s];
             const count = quarterStats[s] || 0;
@@ -234,8 +230,8 @@ export function FounderData() {
                   <Icon className={`w-4 h-4 ${cfg.text}`} />
                 </div>
                 <div>
-                  <p className="text-[20px] font-semibold text-slate-800 leading-tight">{count}</p>
-                  <p className="text-[11px] text-slate-500">{cfg.label}</p>
+                  <p className="text-[20px] font-semibold text-foreground leading-tight">{count}</p>
+                  <p className="text-[11px] text-muted-foreground">{cfg.label}</p>
                 </div>
               </div>
             );
@@ -244,19 +240,19 @@ export function FounderData() {
       </div>
 
       {/* ── Matrix table ──────────────────────────────────────────── */}
-      <div className="bg-white border border-slate-200/70 rounded-xl overflow-hidden">
+      <div className="bg-white border border-border/70 rounded-xl overflow-hidden">
         {/* Table header */}
-        <div className="grid gap-0 border-b border-slate-100"
+        <div className="grid gap-0 border-b border-border/60"
           style={{ gridTemplateColumns: '2fr repeat(4, 1fr) 120px' }}>
-          <div className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">Company</div>
+          <div className="px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">Company</div>
           {QUARTERS.map(q => (
             <div key={q} className={`px-3 py-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-center ${
-              q === activeQuarter ? 'text-indigo-500' : 'text-slate-400'
+              q === activeQuarter ? 'text-primary' : 'text-muted-foreground/70'
             }`}>
               {q}
             </div>
           ))}
-          <div className="px-3 py-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400 text-right">Actions</div>
+          <div className="px-3 py-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70 text-right">Actions</div>
         </div>
 
         {/* Rows */}
@@ -266,33 +262,30 @@ export function FounderData() {
           const isCopied = copiedId === company.id;
 
           return (
-            <div key={company.id} className={`border-b border-slate-100 last:border-0 ${isExpanded ? 'bg-slate-50/60' : ''}`}>
+            <div key={company.id} className={`border-b border-border/60 last:border-0 ${isExpanded ? 'bg-muted/60' : ''}`}>
               {/* Main row */}
               <div
-                className={`grid items-center cursor-pointer hover:bg-slate-50/60 transition-colors ${isExpanded ? 'bg-slate-50/60' : ''}`}
+                className={`grid items-center cursor-pointer hover:bg-muted/60 transition-colors ${isExpanded ? 'bg-muted/60' : ''}`}
                 style={{ gridTemplateColumns: '2fr repeat(4, 1fr) 120px' }}
                 onClick={() => setExpandedId(isExpanded ? null : company.id)}
               >
                 {/* Company */}
                 <div className="flex items-center gap-3 px-4 py-3">
-                  <div
-                    className="w-7 h-7 rounded-md flex items-center justify-center text-white text-[11px] font-semibold flex-shrink-0"
-                    style={{ background: company.logoColor }}
-                  >
+                  <div className="w-7 h-7 rounded-md bg-muted text-muted-foreground flex items-center justify-center text-[11px] font-medium flex-shrink-0">
                     {company.name[0]}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[13px] text-slate-700 font-medium truncate">{company.name}</p>
-                    <p className="text-[11px] text-slate-400">{company.stage} · {company.fund}</p>
+                    <p className="text-[13px] text-foreground font-medium truncate">{company.name}</p>
+                    <p className="text-[11px] text-muted-foreground/70">{company.stage} · {company.fund}</p>
                   </div>
-                  <ChevronDown className={`w-3.5 h-3.5 text-slate-300 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                 </div>
 
                 {/* Quarter cells */}
                 {QUARTERS.map(q => {
                   const sub = getSubmission(company.id, q);
                   return (
-                    <div key={q} className={`px-3 py-3 flex justify-center ${q === activeQuarter ? 'bg-indigo-50/30' : ''}`}
+                    <div key={q} className={`px-3 py-3 flex justify-center ${q === activeQuarter ? 'bg-accent/30' : ''}`}
                       onClick={e => e.stopPropagation()}>
                       <StatusBadge status={sub.status} compact />
                     </div>
@@ -304,17 +297,17 @@ export function FounderData() {
                   {currentSub.status === 'sent' || currentSub.status === 'partial' || currentSub.status === 'submitted' ? (
                     <button
                       onClick={() => {}}
-                      className="inline-flex items-center gap-1.5 text-[11px] font-medium px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 transition-colors"
+                      className="inline-flex items-center gap-1.5 text-[12px] font-medium px-2.5 h-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                     >
                       <RefreshCw className="w-3 h-3" /> Resend
                     </button>
                   ) : (
                     <button
                       onClick={() => {}}
-                      title="Sends a personalised invite to the founder via email"
-                      className="inline-flex items-center gap-1.5 text-[11px] font-medium px-3 py-1.5 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 transition-colors"
+                      title="Send a personalised invite to the founder"
+                      className="inline-flex items-center gap-1.5 text-[12px] font-medium px-2.5 h-8 rounded-md text-foreground hover:bg-muted transition-colors"
                     >
-                      <Send className="w-3 h-3" /> Send personally
+                      <Send className="w-3 h-3" /> Send
                     </button>
                   )}
                 </div>
@@ -355,20 +348,20 @@ export function FounderData() {
                 };
 
                 return (
-                  <div className="px-4 pb-4 pt-0 border-t border-slate-100">
+                  <div className="px-4 pb-4 pt-0 border-t border-border/60">
                     <div className="ml-10 space-y-3">
                       {/* Status bar */}
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="text-[12px] font-semibold text-indigo-700">{activeQuarter}</span>
+                          <span className="text-[12px] font-semibold text-primary">{activeQuarter}</span>
                           <StatusBadge status={sub.status} compact />
                           {sub.submittedAt && (
-                            <span className="text-[11px] text-slate-400">
+                            <span className="text-[11px] text-muted-foreground/70">
                               Submitted {new Date(sub.submittedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                             </span>
                           )}
                           {sub.sentAt && !sub.submittedAt && (
-                            <span className="text-[11px] text-slate-400">
+                            <span className="text-[11px] text-muted-foreground/70">
                               Sent {new Date(sub.sentAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                             </span>
                           )}
@@ -381,12 +374,12 @@ export function FounderData() {
                         <div className="flex items-center gap-2">
                           {/* "View submission" removed — form is private to founders, only data shown */}
                           {sub.status === 'not_sent' && (
-                            <button className="flex items-center gap-1 text-[11px] px-3 py-1.5 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors">
+                            <button className="flex items-center gap-1 text-[11px] px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-[var(--primary-muted)] transition-colors">
                               <Send className="w-3 h-3" /> Send form
                             </button>
                           )}
                           {sub.status === 'sent' && (
-                            <button className="flex items-center gap-1 text-[11px] px-3 py-1.5 bg-indigo-50 text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors">
+                            <button className="flex items-center gap-1 text-[11px] px-3 py-1.5 bg-accent text-primary border border-primary/25 rounded-lg hover:bg-primary/15 transition-colors">
                               <RefreshCw className="w-3 h-3" /> Resend
                             </button>
                           )}
@@ -395,28 +388,28 @@ export function FounderData() {
 
                       {/* Founder note */}
                       {sub.founderNote && (
-                        <div className="bg-white rounded-lg border border-slate-100 p-2.5">
-                          <p className="text-[10px] text-slate-400 mb-0.5 uppercase tracking-[0.06em]">Founder note</p>
-                          <p className="text-[12px] text-slate-600 italic">"{sub.founderNote}"</p>
+                        <div className="bg-white rounded-lg border border-border/60 p-2.5">
+                          <p className="text-[10px] text-muted-foreground/70 mb-0.5 uppercase tracking-[0.06em]">Founder note</p>
+                          <p className="text-[12px] text-foreground/80 italic">"{sub.founderNote}"</p>
                         </div>
                       )}
 
                       {/* Not sent / awaiting state */}
                       {sub.status === 'not_sent' && (
-                        <p className="text-[12px] text-slate-400 py-2">No form has been sent for {activeQuarter}.</p>
+                        <p className="text-[12px] text-muted-foreground/70 py-2">No form has been sent for {activeQuarter}.</p>
                       )}
                       {sub.status === 'sent' && (
-                        <p className="text-[12px] text-slate-400 py-2">Form sent — awaiting founder response.</p>
+                        <p className="text-[12px] text-muted-foreground/70 py-2">Form sent — awaiting founder response.</p>
                       )}
 
                       {/* Quarterly values — 9 metrics matching founder form, one quarter column */}
                       {(sub.status === 'submitted' || sub.status === 'partial') && (
-                        <div className="overflow-hidden rounded-lg border border-slate-100">
+                        <div className="overflow-hidden rounded-lg border border-border/60">
                           <table className="w-full text-[11px]">
                             <thead>
-                              <tr className="bg-slate-50 border-b border-slate-100">
-                                <th className="text-left px-2.5 py-2 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.06em] w-[260px]">Metric</th>
-                                <th className="text-right px-2.5 py-2 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.06em]">{activeQuarter}</th>
+                              <tr className="bg-muted/60 border-b border-border/60">
+                                <th className="text-left px-2.5 py-2 text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-[0.06em] w-[260px]">Metric</th>
+                                <th className="text-right px-2.5 py-2 text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-[0.06em]">{activeQuarter}</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -430,24 +423,24 @@ export function FounderData() {
                                     <React.Fragment key={metric.key}>
                                       {showSection && (
                                         <tr key={`section-${metric.section}`}>
-                                          <td colSpan={2} className="px-2.5 pt-2.5 pb-1 text-[10px] font-semibold text-slate-500 uppercase tracking-[0.08em] bg-slate-50/50 border-t border-slate-100">
+                                          <td colSpan={2} className="px-2.5 pt-2.5 pb-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.08em] bg-muted/50 border-t border-border/60">
                                             {metric.section}
                                           </td>
                                         </tr>
                                       )}
-                                      <tr className="hover:bg-slate-50/40 border-t border-slate-50">
-                                        <td className="px-2.5 py-1.5 text-slate-600">
+                                      <tr className="hover:bg-muted/40 border-t border-border/50">
+                                        <td className="px-2.5 py-1.5 text-foreground/80">
                                           {metric.label}
-                                          {metric.isCalc && <span className="ml-1 text-[9px] text-slate-400">(auto)</span>}
+                                          {metric.isCalc && <span className="ml-1 text-[9px] text-muted-foreground/70">(auto)</span>}
                                         </td>
-                                        <td className="px-2.5 py-1.5 text-right font-mono-num text-slate-700">
+                                        <td className="px-2.5 py-1.5 text-right font-mono-num text-foreground">
                                           {val != null
                                             ? metric.isCurrency
                                               ? formatCurrency(val as number, company.currency)
                                               : metric.isPercentage
                                                 ? val + '%'
                                                 : (val as number).toString()
-                                            : <span className="text-slate-300">—</span>}
+                                            : <span className="text-muted-foreground/50">—</span>}
                                         </td>
                                       </tr>
                                     </React.Fragment>
@@ -468,7 +461,7 @@ export function FounderData() {
       </div>
 
       {/* ── Footer note ───────────────────────────────────────────── */}
-      <p className="text-[12px] text-slate-400 text-center pb-4">
+      <p className="text-[12px] text-muted-foreground/70 text-center pb-4">
         Founder forms are pre-populated with last known values. Founders confirm, edit, or flag fields — no login required.
       </p>
     </div>

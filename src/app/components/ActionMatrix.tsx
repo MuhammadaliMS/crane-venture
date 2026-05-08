@@ -24,7 +24,7 @@ const actionColors: Record<string, { bg: string; text: string; dot: string }> = 
   'Lean In': { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500' },
   'Anticipate': { bg: 'bg-blue-50', text: 'text-blue-600', dot: 'bg-blue-500' },
   'Watch': { bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-500' },
-  'De-prioritise': { bg: 'bg-slate-50', text: 'text-slate-500', dot: 'bg-slate-400' },
+  'De-prioritise': { bg: 'bg-muted/60', text: 'text-muted-foreground', dot: 'bg-muted-foreground/40' },
 };
 
 const columnBorder: Record<HealthStatus, string> = {
@@ -66,8 +66,8 @@ export function ActionMatrix() {
       {/* Header */}
       <div className="flex items-end justify-between gap-6">
         <div>
-          <h1 className="text-[22px] font-semibold tracking-tight text-slate-800">Action Matrix</h1>
-          <p className="mt-0.5 text-[13px] text-slate-400">
+          <h1 className="font-display text-[34px] leading-tight text-foreground">Action Matrix</h1>
+          <p className="mt-1 text-[13px] text-muted-foreground">
             {totalCompanies} active &middot; {totalFlags} flags &middot; {avgRunway}mo avg runway
           </p>
         </div>
@@ -77,7 +77,7 @@ export function ActionMatrix() {
             <button
               onClick={() => setSelectedAction(null)}
               className={`text-[11px] px-2.5 py-1 rounded-md font-medium transition-all ${
-                selectedAction === null ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-100'
+                selectedAction === null ? 'bg-foreground text-white' : 'text-muted-foreground hover:bg-muted'
               }`}
             >
               All
@@ -90,7 +90,7 @@ export function ActionMatrix() {
                   key={a}
                   onClick={() => setSelectedAction(isActive ? null : a)}
                   className={`text-[11px] px-2.5 py-1 rounded-md font-medium transition-all flex items-center gap-1.5 ${
-                    isActive ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-100'
+                    isActive ? 'bg-foreground text-white' : 'text-muted-foreground hover:bg-muted'
                   }`}
                 >
                   <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-white' : colors.dot}`} />
@@ -103,21 +103,21 @@ export function ActionMatrix() {
           <div className="relative ml-2">
             <button
               onClick={() => setFundDropdownOpen(!fundDropdownOpen)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-[12px] text-slate-600 hover:bg-slate-50"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-white text-[12px] text-foreground/80 hover:bg-muted/60"
             >
               {selectedFundLabel}
-              <ChevronDown className="w-3 h-3 text-slate-400" />
+              <ChevronDown className="w-3 h-3 text-muted-foreground/70" />
             </button>
             {fundDropdownOpen && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setFundDropdownOpen(false)} />
-                <div className="absolute right-0 top-full mt-1 z-20 bg-white border border-slate-200 rounded-lg shadow-lg py-1 min-w-[130px] animate-slide-down-fade">
+                <div className="absolute right-0 top-full mt-1 z-20 bg-white border border-border rounded-lg shadow-lg py-1 min-w-[130px] animate-slide-down-fade">
                   {fundOptions.map(f => (
                     <button
                       key={f.value}
                       onClick={() => { setLocalFundFilter(f.value); setFundDropdownOpen(false); }}
                       className={`w-full text-left px-3 py-1.5 text-[12px] transition-colors ${
-                        localFundFilter === f.value ? 'bg-slate-50 text-slate-900 font-medium' : 'text-slate-500 hover:bg-slate-50'
+                        localFundFilter === f.value ? 'bg-muted/60 text-foreground font-medium' : 'text-muted-foreground hover:bg-muted/60'
                       }`}
                     >
                       {f.label}
@@ -133,27 +133,27 @@ export function ActionMatrix() {
       {/* Matrix Grid */}
       <div className="flex-1 min-h-0">
         <div
-          className="grid h-full gap-px bg-slate-200/50 rounded-xl overflow-hidden border border-slate-200/80"
+          className="grid h-full gap-px bg-secondary/50 rounded-xl overflow-hidden border border-border/80"
           style={{
             gridTemplateColumns: '100px repeat(3, 1fr)',
             gridTemplateRows: '36px repeat(3, 1fr)',
           }}
         >
           {/* Corner */}
-          <div className="bg-slate-50 flex items-center justify-center">
-            <span className="text-[9px] uppercase tracking-wider text-slate-400 font-medium">Health →</span>
+          <div className="bg-muted/60 flex items-center justify-center">
+            <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-medium">Health →</span>
           </div>
 
           {/* Column headers */}
           {healthOrder.map(h => {
             const count = activeCompanies.filter(c => c.health === h).length;
             return (
-              <div key={h} className="bg-slate-50 flex items-center justify-center gap-2 px-3">
+              <div key={h} className="bg-muted/60 flex items-center justify-center gap-2 px-3">
                 <span className={`w-2 h-2 rounded-full ${
                   h === 'On Track' ? 'bg-emerald-500' : h === 'At Risk' ? 'bg-amber-400' : 'bg-red-500'
                 }`} />
-                <span className="text-[12px] font-medium text-slate-600">{h}</span>
-                <span className="text-[10px] text-slate-400 font-mono-num">{count}</span>
+                <span className="text-[12px] font-medium text-foreground/80">{h}</span>
+                <span className="text-[10px] text-muted-foreground/70 font-mono-num">{count}</span>
               </div>
             );
           })}
@@ -162,8 +162,8 @@ export function ActionMatrix() {
           {upsideOrder.map(u => (
             <React.Fragment key={u}>
               {/* Row header */}
-              <div className="bg-slate-50 flex items-center px-3">
-                <span className="text-[11px] text-slate-500 leading-tight">{u}</span>
+              <div className="bg-muted/60 flex items-center px-3">
+                <span className="text-[11px] text-muted-foreground leading-tight">{u}</span>
               </div>
 
               {/* Cells */}
@@ -189,12 +189,13 @@ export function ActionMatrix() {
                     <div className="mt-2 space-y-1.5 overflow-y-auto max-h-[calc(100%-28px)] stagger-children">
                       {cellCompanies.length > 0 ? cellCompanies.map(company => {
                         const runwayPct = Math.min(company.runway / 24, 1) * 100;
-                        const runwayColor = company.runway <= 6 ? '#ef4444' : company.runway <= 9 ? '#f59e0b' : '#10b981';
+                        // Single ink track — length carries the signal, no traffic-light colours.
+                        const runwayColor = 'rgba(14, 23, 51, 0.55)';
                         return (
                           <div
                             key={company.id}
                             onClick={() => navigate(`/company/${company.id}`)}
-                            className="flex items-center gap-2 rounded-md bg-slate-50/80 hover:bg-slate-100 px-2 py-1.5 cursor-pointer transition-all hover:-translate-y-px hover:shadow-sm group"
+                            className="flex items-center gap-2 rounded-md bg-muted/80 hover:bg-muted px-2 py-1.5 cursor-pointer transition-all hover:-translate-y-px hover:shadow-sm group"
                           >
                             <div
                               className="w-5 h-5 rounded-md flex items-center justify-center text-white text-[9px] font-bold shrink-0"
@@ -204,28 +205,28 @@ export function ActionMatrix() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1">
-                                <span className="text-[11px] font-medium text-slate-700 truncate group-hover:text-indigo-600 transition-colors">
+                                <span className="text-[11px] font-medium text-foreground truncate group-hover:text-primary transition-colors">
                                   {company.name}
                                 </span>
                                 {company.flagCount > 0 && (
-                                  <span className="flex items-center gap-0.5 text-[9px] text-red-500 font-semibold shrink-0">
+                                  <span className="flex items-center gap-0.5 text-[9px] text-foreground/60 font-semibold shrink-0">
                                     <FlagIcon className="w-2.5 h-2.5" />{company.flagCount}
                                   </span>
                                 )}
                               </div>
                               {/* Inline runway bar */}
                               <div className="flex items-center gap-1.5 mt-0.5">
-                                <div className="w-[32px] h-[3px] rounded-full bg-slate-200 overflow-hidden">
+                                <div className="w-[32px] h-[3px] rounded-full bg-secondary overflow-hidden">
                                   <div className="h-full rounded-full" style={{ width: `${runwayPct}%`, background: runwayColor }} />
                                 </div>
-                                <span className="text-[9px] font-mono-num text-slate-400 tabular-nums">{company.runway}mo</span>
+                                <span className="text-[9px] font-mono-num text-muted-foreground/70 tabular-nums">{company.runway}mo</span>
                               </div>
                             </div>
                           </div>
                         );
                       }) : (
                         <div className="py-3 flex items-center justify-center">
-                          <span className="text-[10px] text-slate-300 italic">Empty</span>
+                          <span className="text-[10px] text-muted-foreground/50 italic">Empty</span>
                         </div>
                       )}
                     </div>

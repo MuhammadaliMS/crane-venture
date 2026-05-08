@@ -101,7 +101,7 @@ export function CompanyDetail() {
   // Last updated staleness
   const lastUpdateDate = new Date(company.lastUpdate);
   const daysSinceUpdate = Math.floor((Date.now() - lastUpdateDate.getTime()) / (1000 * 60 * 60 * 24));
-  const stalenessColor = daysSinceUpdate > 30 ? 'text-red-400' : daysSinceUpdate > 14 ? 'text-amber-400' : 'text-slate-400';
+  const stalenessColor = daysSinceUpdate > 30 ? 'text-red-400' : daysSinceUpdate > 14 ? 'text-amber-400' : 'text-muted-foreground/70';
   const stalenessLabel = daysSinceUpdate > 30 ? 'Stale' : daysSinceUpdate > 14 ? 'Aging' : '';
 
   // Computed ARR
@@ -113,36 +113,33 @@ export function CompanyDetail() {
       {/* Back link */}
       <button
         onClick={() => navigate(-1)}
-        className="flex items-center gap-1.5 text-[14px] text-slate-400 hover:text-white mb-3 transition-colors"
+        className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground mb-4 transition-colors"
       >
-        <ArrowLeft className="w-4 h-4" /> Portfolio
+        <ArrowLeft className="w-3.5 h-3.5" /> Portfolio
       </button>
 
-      {/* ===== ZONE 1: Dark Gradient Hero Header ===== */}
-      <div className="bg-gradient-to-r from-[#0f0f12] to-[#1a1a2e] text-white rounded-xl p-6 mb-6 animate-fade-in-up">
-        <div className="flex items-start justify-between">
+      {/* ===== ZONE 1: Editorial header — solid ink, no gradient ===== */}
+      <div className="bg-foreground text-background rounded-md p-7 mb-6 animate-fade-in-up">
+        <div className="flex items-start justify-between gap-6">
           {/* Left: Avatar + Info */}
-          <div className="flex items-start gap-4">
-            <div
-              className="w-12 h-12 rounded-full flex items-center justify-center text-white text-[20px] font-semibold shrink-0"
-              style={{ background: company.logoColor }}
-            >
+          <div className="flex items-start gap-4 min-w-0">
+            <div className="w-12 h-12 rounded-md bg-background/12 text-background flex items-center justify-center text-[18px] font-medium shrink-0 mt-1 border border-background/15">
               {company.name[0]}
             </div>
-            <div>
-              <h1 className="text-[24px] font-semibold tracking-tight text-white leading-tight">
+            <div className="min-w-0">
+              <h1 className="font-display text-[40px] tracking-tight text-background leading-[1.05]">
                 {company.name}
               </h1>
-              <p className="text-[14px] text-slate-300 mt-0.5 max-w-xl">{company.description}</p>
+              <p className="text-[14px] text-background/60 mt-1.5 max-w-xl leading-relaxed">{company.description}</p>
               {/* Badges */}
               <div className="flex items-center gap-2 mt-3 flex-wrap">
-                <span className="bg-white/10 text-white/80 text-[12px] px-2.5 py-1 rounded-md">{company.stage}</span>
-                <span className="bg-white/10 text-white/80 text-[12px] px-2.5 py-1 rounded-md">{company.sector}</span>
-                <span className="bg-white/10 text-white/80 text-[12px] px-2.5 py-1 rounded-md" title="Company financial year-end">
+                <span className="bg-background/10 text-background/85 text-[11px] px-2.5 py-1 rounded-sm">{company.stage}</span>
+                <span className="bg-background/10 text-background/85 text-[11px] px-2.5 py-1 rounded-sm">{company.sector}</span>
+                <span className="bg-background/10 text-background/85 text-[11px] px-2.5 py-1 rounded-sm" title="Company financial year-end">
                   FY ends {monthIndexToName(getCompanyFyEndMonth(company.id))}
                 </span>
                 {isExited && (
-                  <span className="bg-white/10 text-white/60 text-[12px] px-2.5 py-1 rounded-md">{company.lifecycle}</span>
+                  <span className="bg-background/10 text-background/65 text-[11px] px-2.5 py-1 rounded-sm">{company.lifecycle}</span>
                 )}
               </div>
             </div>
@@ -168,18 +165,15 @@ export function CompanyDetail() {
                   className="w-3 h-3 rounded-full"
                   style={{ background: getRAGColor(company.rag) }}
                 />
-                <span className="text-[13px] text-slate-300">{company.rag}</span>
+                <span className="text-[13px] text-muted-foreground/50">{company.rag}</span>
               </div>
 
-              {/* Action Type Badge */}
-              <span
-                className="text-[11px] font-semibold px-2.5 py-1 rounded-md"
-                style={{
-                  background: getActionColor(company.action) + '22',
-                  color: getActionColor(company.action),
-                  border: `1px solid ${getActionColor(company.action)}44`,
-                }}
-              >
+              {/* Action Type Badge — neutral on dark hero, dot conveys color */}
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-sm bg-background/10 text-background/85 border border-background/15">
+                <span
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{ background: getActionColor(company.action) }}
+                />
                 {company.action}
               </span>
             </div>
@@ -232,15 +226,15 @@ export function CompanyDetail() {
           { label: 'Headcount — EM', value: String(hcE), source: 'Founder Form', when: 'M3 of Q4' },
         ];
         return (
-          <div className="bg-white rounded-xl border border-slate-200/60 p-1 mb-6">
-            <div className="grid grid-cols-9 divide-x divide-slate-200 stagger-children">
+          <div className="bg-white rounded-xl border border-border/60 p-1 mb-6">
+            <div className="grid grid-cols-9 divide-x divide-border stagger-children">
               {metrics.map(m => (
                 <div key={m.label} className="px-3 py-3 text-center group/m relative">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400 leading-tight">{m.label}</p>
-                  <p className={`text-[16px] font-mono-num font-bold mt-1 ${m.red ? 'text-red-600' : 'text-slate-700'}`}>{m.value}</p>
-                  <span className="invisible group-hover/m:visible absolute z-30 bottom-full left-1/2 -translate-x-1/2 mb-1 bg-slate-800 text-white text-[10px] font-normal rounded-lg shadow-lg px-3 py-2 whitespace-nowrap text-left pointer-events-none">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70 leading-tight">{m.label}</p>
+                  <p className={`text-[16px] font-mono-num font-bold mt-1 ${m.red ? 'text-red-600' : 'text-foreground'}`}>{m.value}</p>
+                  <span className="invisible group-hover/m:visible absolute z-30 bottom-full left-1/2 -translate-x-1/2 mb-1 bg-foreground text-white text-[10px] font-normal rounded-lg shadow-lg px-3 py-2 whitespace-nowrap text-left pointer-events-none">
                     <div>Source: <span className="font-medium text-white">{m.source}</span></div>
-                    <div className="text-slate-300">{m.when}</div>
+                    <div className="text-muted-foreground/50">{m.when}</div>
                   </span>
                 </div>
               ))}
@@ -287,14 +281,14 @@ export function CompanyDetail() {
       {/* ===== ZONE 4: Tabs + Content ===== */}
       {/* AI search bar removed — global Intelligence Hub on landing page handles this */}
 
-      <div className="border-b border-slate-200 mb-6 flex gap-0">
+      <div className="border-b border-border mb-6 flex gap-0">
         {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`px-4 py-2.5 text-[14px] font-medium border-b-2 transition-colors ${
               activeTab === tab.id
-                ? 'border-indigo-500 text-foreground'
+                ? 'border-primary text-foreground'
                 : 'border-transparent text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -313,36 +307,36 @@ export function CompanyDetail() {
           <div className={`space-y-4 ${isM1 ? '' : 'col-span-3'}`}>
 
             {/* Company Details */}
-            <div className="bg-white rounded-xl border border-slate-200/60 p-5">
-              <h3 className="text-[13px] font-semibold uppercase tracking-wider text-slate-400 mb-3">Company Details</h3>
+            <div className="bg-white rounded-xl border border-border/60 p-5">
+              <h3 className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-3">Company Details</h3>
               <div className="grid grid-cols-2 gap-3 text-[13px]">
-                <div><span className="text-slate-400">Legal Name:</span> <span className="ml-1 text-slate-700">{company.name} Ltd</span></div>
-                <div><span className="text-slate-400">Location:</span> <span className="ml-1 text-slate-700">{company.location}</span></div>
-                <div><span className="text-slate-400">Industry:</span> <span className="ml-1 text-slate-700">{company.sector}</span></div>
-                <div><span className="text-slate-400">Website:</span> <span className="ml-1 text-indigo-600">{company.website}</span></div>
-                <div><span className="text-slate-400">Management:</span> <span className="ml-1 text-slate-700">{company.managementTeam}</span></div>
-                <div><span className="text-slate-400">Crane Lead:</span> <span className="ml-1 text-slate-700">{company.owners.join(', ')}</span></div>
-                <div><span className="text-slate-400">Currency:</span> <span className="ml-1 text-slate-700">{company.currency}</span></div>
-                <div><span className="text-slate-400">Region:</span> <span className="ml-1 text-slate-700">{company.region}</span></div>
+                <div><span className="text-muted-foreground/70">Legal Name:</span> <span className="ml-1 text-foreground">{company.name} Ltd</span></div>
+                <div><span className="text-muted-foreground/70">Location:</span> <span className="ml-1 text-foreground">{company.location}</span></div>
+                <div><span className="text-muted-foreground/70">Industry:</span> <span className="ml-1 text-foreground">{company.sector}</span></div>
+                <div><span className="text-muted-foreground/70">Website:</span> <span className="ml-1 text-primary">{company.website}</span></div>
+                <div><span className="text-muted-foreground/70">Management:</span> <span className="ml-1 text-foreground">{company.managementTeam}</span></div>
+                <div><span className="text-muted-foreground/70">Crane Lead:</span> <span className="ml-1 text-foreground">{company.owners.join(', ')}</span></div>
+                <div><span className="text-muted-foreground/70">Currency:</span> <span className="ml-1 text-foreground">{company.currency}</span></div>
+                <div><span className="text-muted-foreground/70">Region:</span> <span className="ml-1 text-foreground">{company.region}</span></div>
               </div>
             </div>
 
             {/* Description */}
-            <div className="bg-white rounded-xl border border-slate-200/60 p-5">
-              <h3 className="text-[13px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Description</h3>
-              <p className="text-[13px] leading-relaxed text-slate-600">{company.description}</p>
+            <div className="bg-white rounded-xl border border-border/60 p-5">
+              <h3 className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">Description</h3>
+              <p className="text-[13px] leading-relaxed text-foreground/80">{company.description}</p>
             </div>
 
             {/* Recent Progress */}
-            {!isM1 && <div className="bg-white rounded-xl border border-slate-200/60 p-5">
-              <h3 className="text-[13px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Recent Progress</h3>
-              <p className="text-[13px] leading-relaxed text-slate-600">{company.recentProgress}</p>
+            {!isM1 && <div className="bg-white rounded-xl border border-border/60 p-5">
+              <h3 className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">Recent Progress</h3>
+              <p className="text-[13px] leading-relaxed text-foreground/80">{company.recentProgress}</p>
             </div>}
 
             {/* Summary */}
-            {!isM1 && <div className="bg-white rounded-xl border border-slate-200/60 p-5">
-              <h3 className="text-[13px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Summary</h3>
-              <p className="text-[13px] leading-relaxed text-slate-600">{company.summary}</p>
+            {!isM1 && <div className="bg-white rounded-xl border border-border/60 p-5">
+              <h3 className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">Summary</h3>
+              <p className="text-[13px] leading-relaxed text-foreground/80">{company.summary}</p>
             </div>}
 
             {/* Key Concerns */}
@@ -351,7 +345,7 @@ export function CompanyDetail() {
                 <h3 className="text-[13px] font-semibold text-amber-600 uppercase tracking-wider mb-2">Key Concerns</h3>
                 <ul className="space-y-1.5">
                   {company.keyConcerns.map((c, i) => (
-                    <li key={i} className="text-[13px] text-slate-600 flex gap-2">
+                    <li key={i} className="text-[13px] text-foreground/80 flex gap-2">
                       <span className="text-amber-500 font-mono-num shrink-0">{i + 1}.</span> {c}
                     </li>
                   ))}
@@ -361,12 +355,12 @@ export function CompanyDetail() {
 
             {/* Action Points */}
             {!isM1 && company.actionPoints.length > 0 && (
-              <div className="bg-white rounded-xl border border-indigo-200/60 p-5">
-                <h3 className="text-[13px] font-semibold text-indigo-600 uppercase tracking-wider mb-2">Action Points</h3>
+              <div className="bg-white rounded-xl border border-primary/25/60 p-5">
+                <h3 className="text-[13px] font-semibold text-primary uppercase tracking-wider mb-2">Action Points</h3>
                 <ul className="space-y-1.5">
                   {company.actionPoints.map((a, i) => (
-                    <li key={i} className="text-[13px] text-slate-600 flex gap-2">
-                      <span className="text-indigo-500 font-mono-num shrink-0">{i + 1}.</span> {a}
+                    <li key={i} className="text-[13px] text-foreground/80 flex gap-2">
+                      <span className="text-primary font-mono-num shrink-0">{i + 1}.</span> {a}
                     </li>
                   ))}
                 </ul>
@@ -375,13 +369,13 @@ export function CompanyDetail() {
 
             {/* Exit Data */}
             {company.exitData && (
-              <div className="bg-white rounded-xl border border-slate-200/60 p-5">
-                <h3 className="text-[13px] font-semibold uppercase tracking-wider text-slate-400 mb-3">Exit Data</h3>
+              <div className="bg-white rounded-xl border border-border/60 p-5">
+                <h3 className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-3">Exit Data</h3>
                 <div className="grid grid-cols-2 gap-3 text-[13px]">
-                  <div><span className="text-slate-400">Exit Date:</span> <span className="ml-1 text-slate-700">{company.exitData.exitDate}</span></div>
-                  <div><span className="text-slate-400">Exit MoIC:</span> <span className="ml-1 font-mono-num font-semibold text-slate-700">{company.exitData.exitMoIC.toFixed(1)}x</span></div>
+                  <div><span className="text-muted-foreground/70">Exit Date:</span> <span className="ml-1 text-foreground">{company.exitData.exitDate}</span></div>
+                  <div><span className="text-muted-foreground/70">Exit MoIC:</span> <span className="ml-1 font-mono-num font-semibold text-foreground">{company.exitData.exitMoIC.toFixed(1)}x</span></div>
                   {company.exitData.exitIRR && (
-                    <div><span className="text-slate-400">Exit IRR:</span> <span className="ml-1 font-mono-num font-semibold text-slate-700">{company.exitData.exitIRR}%</span></div>
+                    <div><span className="text-muted-foreground/70">Exit IRR:</span> <span className="ml-1 font-mono-num font-semibold text-foreground">{company.exitData.exitIRR}%</span></div>
                   )}
                 </div>
               </div>
@@ -390,28 +384,29 @@ export function CompanyDetail() {
 
           {/* Right column: Activity Timeline only (flags, todos, investment removed — descoped) */}
           {!isM1 && <div className="col-span-2 space-y-4">
-            <div className="bg-white rounded-xl border border-slate-200/60 p-5">
-              <h3 className="text-[13px] font-semibold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
-                <Activity className="w-3.5 h-3.5" /> Activity Timeline
+            <div className="bg-card rounded-md border border-border/70 p-5">
+              <h3 className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground/70 mb-3 flex items-center gap-2">
+                <Activity className="w-3 h-3" strokeWidth={1.6} /> Activity Timeline
               </h3>
-              <div className="space-y-2">
+              <div className="relative pl-4 space-y-3 before:absolute before:left-1 before:top-1 before:bottom-1 before:w-px before:bg-border">
                 {companyActivity.length > 0 ? companyActivity.map(event => (
-                  <div key={event.id} className="border border-slate-100 rounded-lg p-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded ${
-                        event.severity === 'high' ? 'bg-red-100 text-red-700' :
-                        event.severity === 'medium' ? 'bg-amber-100 text-amber-700' :
-                        'bg-gray-100 text-gray-600'
-                      }`}>{event.type}</span>
-                      <span className="text-[11px] text-slate-400">
+                  <div key={event.id} className="relative">
+                    <span className={`absolute -left-3.5 top-1 w-1.5 h-1.5 rounded-full ${
+                      event.severity === 'high' ? 'bg-destructive' :
+                      event.severity === 'medium' ? 'bg-[#B8763A]' :
+                      'bg-muted-foreground/40'
+                    }`} />
+                    <div className="flex items-baseline gap-2 mb-0.5">
+                      <span className="text-[11px] font-medium text-foreground">{event.type}</span>
+                      <span className="text-[11px] text-muted-foreground/70 font-mono-num">
                         {new Date(event.timestamp).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                       </span>
                     </div>
-                    <p className="text-[12px] text-slate-700">{event.title}</p>
-                    <p className="text-[11px] text-slate-400">{event.description}</p>
+                    <p className="text-[13px] text-foreground leading-snug">{event.title}</p>
+                    <p className="text-[12px] text-muted-foreground mt-0.5 leading-snug">{event.description}</p>
                   </div>
                 )) : (
-                  <p className="text-[12px] text-slate-400 text-center py-8">No recent activity</p>
+                  <p className="text-[12px] text-muted-foreground/70 text-center py-8">No recent activity</p>
                 )}
               </div>
             </div>
@@ -426,39 +421,39 @@ export function CompanyDetail() {
 
           {/* Latest Financials Summary */}
           {latestFin && (
-            <div className="bg-white rounded-xl border border-slate-200/60 p-5">
-              <h3 className="text-[13px] font-semibold uppercase tracking-wider text-slate-400 mb-4">Latest Financials</h3>
+            <div className="bg-white rounded-xl border border-border/60 p-5">
+              <h3 className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-4">Latest Financials</h3>
               <div className="grid grid-cols-4 gap-4">
-                <div className="bg-slate-50 rounded-lg p-3">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Revenue</p>
-                  <p className="text-[18px] font-mono-num font-bold text-slate-700 mt-1">{formatCurrency(latestFin.revenue || 0, company.currency)}</p>
+                <div className="bg-muted/60 rounded-lg p-3">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">Revenue</p>
+                  <p className="text-[18px] font-mono-num font-bold text-foreground mt-1">{formatCurrency(latestFin.revenue || 0, company.currency)}</p>
                 </div>
-                <div className="bg-slate-50 rounded-lg p-3">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">COGS</p>
-                  <p className="text-[18px] font-mono-num font-bold text-slate-700 mt-1">{formatCurrency(latestFin.cogs || 0, company.currency)}</p>
+                <div className="bg-muted/60 rounded-lg p-3">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">COGS</p>
+                  <p className="text-[18px] font-mono-num font-bold text-foreground mt-1">{formatCurrency(latestFin.cogs || 0, company.currency)}</p>
                 </div>
-                <div className="bg-slate-50 rounded-lg p-3">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Gross Profit</p>
-                  <p className="text-[18px] font-mono-num font-bold text-slate-700 mt-1">{formatCurrency(latestFin.grossProfit || 0, company.currency)}</p>
+                <div className="bg-muted/60 rounded-lg p-3">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">Gross Profit</p>
+                  <p className="text-[18px] font-mono-num font-bold text-foreground mt-1">{formatCurrency(latestFin.grossProfit || 0, company.currency)}</p>
                 </div>
-                <div className="bg-slate-50 rounded-lg p-3">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Gross Margin</p>
-                  <p className="text-[18px] font-mono-num font-bold text-slate-700 mt-1">{latestFin.grossMargin || 0}%</p>
+                <div className="bg-muted/60 rounded-lg p-3">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">Gross Margin</p>
+                  <p className="text-[18px] font-mono-num font-bold text-foreground mt-1">{latestFin.grossMargin || 0}%</p>
                 </div>
-                <div className="bg-slate-50 rounded-lg p-3">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">EBITDA</p>
-                  <p className="text-[18px] font-mono-num font-bold text-slate-700 mt-1">{formatCurrency(latestFin.ebitda || 0, company.currency)}</p>
+                <div className="bg-muted/60 rounded-lg p-3">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">EBITDA</p>
+                  <p className="text-[18px] font-mono-num font-bold text-foreground mt-1">{formatCurrency(latestFin.ebitda || 0, company.currency)}</p>
                 </div>
-                <div className="bg-slate-50 rounded-lg p-3">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">EBITDA Margin</p>
-                  <p className="text-[18px] font-mono-num font-bold text-slate-700 mt-1">{latestFin.ebitdaMargin || 0}%</p>
+                <div className="bg-muted/60 rounded-lg p-3">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">EBITDA Margin</p>
+                  <p className="text-[18px] font-mono-num font-bold text-foreground mt-1">{latestFin.ebitdaMargin || 0}%</p>
                 </div>
-                <div className="bg-slate-50 rounded-lg p-3">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Cash Balance</p>
-                  <p className="text-[18px] font-mono-num font-bold text-slate-700 mt-1">{formatCurrency(latestFin.cashBalance || 0, company.currency)}</p>
+                <div className="bg-muted/60 rounded-lg p-3">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">Cash Balance</p>
+                  <p className="text-[18px] font-mono-num font-bold text-foreground mt-1">{formatCurrency(latestFin.cashBalance || 0, company.currency)}</p>
                 </div>
-                <div className="bg-slate-50 rounded-lg p-3">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Monthly Burn</p>
+                <div className="bg-muted/60 rounded-lg p-3">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">Monthly Burn</p>
                   <p className="text-[18px] font-mono-num font-bold text-red-600 mt-1">{formatCurrency(latestFin.monthlyNetBurn || 0, company.currency)}</p>
                 </div>
               </div>
@@ -476,8 +471,8 @@ export function CompanyDetail() {
               { key: 'cashBurn', label: 'Cash Burn (Monthly)', pyKey: 'cashBurnPY' },
               { key: 'cashBalance', label: 'Cash Balance', pyKey: 'cashBalancePY' },
             ].map(chart => (
-              <div key={chart.key} className="bg-white rounded-xl border border-slate-200/60 p-5">
-                <h3 className="text-[13px] font-medium text-slate-700 mb-2">{chart.label}</h3>
+              <div key={chart.key} className="bg-white rounded-xl border border-border/60 p-5">
+                <h3 className="text-[13px] font-medium text-foreground mb-2">{chart.label}</h3>
                 <ResponsiveContainer width="100%" height={180}>
                   <BarChart data={chartMonths}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -493,8 +488,8 @@ export function CompanyDetail() {
             ))}
 
             {/* Headcount */}
-            <div className="bg-white rounded-xl border border-slate-200/60 p-5">
-              <h3 className="text-[13px] font-medium text-slate-700 mb-2">Headcount (FTE)</h3>
+            <div className="bg-white rounded-xl border border-border/60 p-5">
+              <h3 className="text-[13px] font-medium text-foreground mb-2">Headcount (FTE)</h3>
               <ResponsiveContainer width="100%" height={180}>
                 <BarChart data={chartMonths}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -508,90 +503,90 @@ export function CompanyDetail() {
           </div>
 
           {/* Diversity Metrics Section */}
-          <div className="bg-white rounded-xl border border-slate-200/60 p-5">
-            <h3 className="text-[13px] font-semibold uppercase tracking-wider text-slate-400 mb-4">Diversity Metrics</h3>
+          <div className="bg-white rounded-xl border border-border/60 p-5">
+            <h3 className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-4">Diversity Metrics</h3>
             {latestFin && (
               <div className="grid grid-cols-3 gap-4 mb-6">
                 {/* FTE breakdown */}
-                <div className="bg-slate-50 rounded-lg p-4">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400 mb-3">FTE Headcount</p>
+                <div className="bg-muted/60 rounded-lg p-4">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70 mb-3">FTE Headcount</p>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-[12px]">
-                      <span className="text-slate-400">Male</span>
-                      <span className="font-mono-num font-medium text-slate-700">{latestFin.headcountMale || Math.round((latestFin.malePctFTE || 0) / 100 * (latestFin.headcountFTE || 0))}</span>
+                      <span className="text-muted-foreground/70">Male</span>
+                      <span className="font-mono-num font-medium text-foreground">{latestFin.headcountMale || Math.round((latestFin.malePctFTE || 0) / 100 * (latestFin.headcountFTE || 0))}</span>
                     </div>
-                    <div className="w-full bg-slate-200 rounded-full h-1.5">
-                      <div className="bg-indigo-500 h-1.5 rounded-full" style={{ width: `${latestFin.malePctFTE || 0}%` }} />
+                    <div className="w-full bg-secondary rounded-full h-1.5">
+                      <div className="bg-primary h-1.5 rounded-full" style={{ width: `${latestFin.malePctFTE || 0}%` }} />
                     </div>
                     <div className="flex items-center justify-between text-[12px]">
-                      <span className="text-slate-400">Female</span>
-                      <span className="font-mono-num font-medium text-slate-700">{latestFin.headcountFemale || Math.round((latestFin.femalePctFTE || 0) / 100 * (latestFin.headcountFTE || 0))}</span>
+                      <span className="text-muted-foreground/70">Female</span>
+                      <span className="font-mono-num font-medium text-foreground">{latestFin.headcountFemale || Math.round((latestFin.femalePctFTE || 0) / 100 * (latestFin.headcountFTE || 0))}</span>
                     </div>
-                    <div className="w-full bg-slate-200 rounded-full h-1.5">
+                    <div className="w-full bg-secondary rounded-full h-1.5">
                       <div className="bg-rose-500 h-1.5 rounded-full" style={{ width: `${latestFin.femalePctFTE || 0}%` }} />
                     </div>
                     <div className="flex items-center justify-between text-[12px]">
-                      <span className="text-slate-400">Ethnic Minority</span>
-                      <span className="font-mono-num font-medium text-slate-700">{latestFin.headcountEthnicMinority || Math.round((latestFin.ethnicMinorityPctFTE || 0) / 100 * (latestFin.headcountFTE || 0))}</span>
+                      <span className="text-muted-foreground/70">Ethnic Minority</span>
+                      <span className="font-mono-num font-medium text-foreground">{latestFin.headcountEthnicMinority || Math.round((latestFin.ethnicMinorityPctFTE || 0) / 100 * (latestFin.headcountFTE || 0))}</span>
                     </div>
-                    <div className="w-full bg-slate-200 rounded-full h-1.5">
+                    <div className="w-full bg-secondary rounded-full h-1.5">
                       <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: `${latestFin.ethnicMinorityPctFTE || 0}%` }} />
                     </div>
                   </div>
                 </div>
                 {/* Board breakdown */}
-                <div className="bg-slate-50 rounded-lg p-4">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400 mb-3">Board</p>
+                <div className="bg-muted/60 rounded-lg p-4">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70 mb-3">Board</p>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-[12px]">
-                      <span className="text-slate-400">Male</span>
-                      <span className="font-mono-num font-medium text-slate-700">{latestFin.boardMale || Math.round((latestFin.malePctBoard || 0) / 100 * (latestFin.boardHeadcount || 0))}</span>
+                      <span className="text-muted-foreground/70">Male</span>
+                      <span className="font-mono-num font-medium text-foreground">{latestFin.boardMale || Math.round((latestFin.malePctBoard || 0) / 100 * (latestFin.boardHeadcount || 0))}</span>
                     </div>
-                    <div className="w-full bg-slate-200 rounded-full h-1.5">
-                      <div className="bg-indigo-500 h-1.5 rounded-full" style={{ width: `${latestFin.malePctBoard || 0}%` }} />
+                    <div className="w-full bg-secondary rounded-full h-1.5">
+                      <div className="bg-primary h-1.5 rounded-full" style={{ width: `${latestFin.malePctBoard || 0}%` }} />
                     </div>
                     <div className="flex items-center justify-between text-[12px]">
-                      <span className="text-slate-400">Female</span>
-                      <span className="font-mono-num font-medium text-slate-700">{latestFin.boardFemale || Math.round((latestFin.femalePctBoard || 0) / 100 * (latestFin.boardHeadcount || 0))}</span>
+                      <span className="text-muted-foreground/70">Female</span>
+                      <span className="font-mono-num font-medium text-foreground">{latestFin.boardFemale || Math.round((latestFin.femalePctBoard || 0) / 100 * (latestFin.boardHeadcount || 0))}</span>
                     </div>
-                    <div className="w-full bg-slate-200 rounded-full h-1.5">
+                    <div className="w-full bg-secondary rounded-full h-1.5">
                       <div className="bg-rose-500 h-1.5 rounded-full" style={{ width: `${latestFin.femalePctBoard || 0}%` }} />
                     </div>
                     <div className="flex items-center justify-between text-[12px]">
-                      <span className="text-slate-400">Ethnic Minority</span>
-                      <span className="font-mono-num font-medium text-slate-700">{latestFin.boardEthnicMinority || Math.round((latestFin.ethnicMinorityPctBoard || 0) / 100 * (latestFin.boardHeadcount || 0))}</span>
+                      <span className="text-muted-foreground/70">Ethnic Minority</span>
+                      <span className="font-mono-num font-medium text-foreground">{latestFin.boardEthnicMinority || Math.round((latestFin.ethnicMinorityPctBoard || 0) / 100 * (latestFin.boardHeadcount || 0))}</span>
                     </div>
-                    <div className="w-full bg-slate-200 rounded-full h-1.5">
+                    <div className="w-full bg-secondary rounded-full h-1.5">
                       <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: `${latestFin.ethnicMinorityPctBoard || 0}%` }} />
                     </div>
                   </div>
                 </div>
                 {/* Percentage summary */}
-                <div className="bg-slate-50 rounded-lg p-4">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400 mb-3">Percentages</p>
+                <div className="bg-muted/60 rounded-lg p-4">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70 mb-3">Percentages</p>
                   <div className="space-y-3 text-[12px]">
                     <div>
-                      <div className="flex items-center justify-between text-slate-400">
+                      <div className="flex items-center justify-between text-muted-foreground/70">
                         <span>Female FTE</span>
-                        <span className="font-mono-num font-medium text-slate-700">{latestFin.femalePctFTE || 0}%</span>
+                        <span className="font-mono-num font-medium text-foreground">{latestFin.femalePctFTE || 0}%</span>
                       </div>
                     </div>
                     <div>
-                      <div className="flex items-center justify-between text-slate-400">
+                      <div className="flex items-center justify-between text-muted-foreground/70">
                         <span>Female Board</span>
-                        <span className="font-mono-num font-medium text-slate-700">{latestFin.femalePctBoard || 0}%</span>
+                        <span className="font-mono-num font-medium text-foreground">{latestFin.femalePctBoard || 0}%</span>
                       </div>
                     </div>
                     <div>
-                      <div className="flex items-center justify-between text-slate-400">
+                      <div className="flex items-center justify-between text-muted-foreground/70">
                         <span>Ethnic Min. FTE</span>
-                        <span className="font-mono-num font-medium text-slate-700">{latestFin.ethnicMinorityPctFTE || 0}%</span>
+                        <span className="font-mono-num font-medium text-foreground">{latestFin.ethnicMinorityPctFTE || 0}%</span>
                       </div>
                     </div>
                     <div>
-                      <div className="flex items-center justify-between text-slate-400">
+                      <div className="flex items-center justify-between text-muted-foreground/70">
                         <span>Ethnic Min. Board</span>
-                        <span className="font-mono-num font-medium text-slate-700">{latestFin.ethnicMinorityPctBoard || 0}%</span>
+                        <span className="font-mono-num font-medium text-foreground">{latestFin.ethnicMinorityPctBoard || 0}%</span>
                       </div>
                     </div>
                   </div>
@@ -602,8 +597,8 @@ export function CompanyDetail() {
             {/* Diversity trend charts */}
             <div className="grid grid-cols-2 gap-4">
               {/* Gender Split FTE */}
-              <div className="bg-white rounded-xl border border-slate-200/60 p-5">
-                <h3 className="text-[13px] font-medium text-slate-700 mb-2">Gender Split (FTE)</h3>
+              <div className="bg-white rounded-xl border border-border/60 p-5">
+                <h3 className="text-[13px] font-medium text-foreground mb-2">Gender Split (FTE)</h3>
                 <ResponsiveContainer width="100%" height={160}>
                   <BarChart data={chartMonths}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -617,8 +612,8 @@ export function CompanyDetail() {
                 </ResponsiveContainer>
               </div>
               {/* Gender Split Board */}
-              <div className="bg-white rounded-xl border border-slate-200/60 p-5">
-                <h3 className="text-[13px] font-medium text-slate-700 mb-2">Gender Split (Board)</h3>
+              <div className="bg-white rounded-xl border border-border/60 p-5">
+                <h3 className="text-[13px] font-medium text-foreground mb-2">Gender Split (Board)</h3>
                 <ResponsiveContainer width="100%" height={160}>
                   <BarChart data={chartMonths}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -632,8 +627,8 @@ export function CompanyDetail() {
                 </ResponsiveContainer>
               </div>
               {/* Ethnic Minority FTE */}
-              <div className="bg-white rounded-xl border border-slate-200/60 p-5">
-                <h3 className="text-[13px] font-medium text-slate-700 mb-2">Ethnic Minority (FTE)</h3>
+              <div className="bg-white rounded-xl border border-border/60 p-5">
+                <h3 className="text-[13px] font-medium text-foreground mb-2">Ethnic Minority (FTE)</h3>
                 <ResponsiveContainer width="100%" height={160}>
                   <BarChart data={chartMonths.map(m => ({ ...m, nonMinority: 100 - m.ethnicMinorityPct }))}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -647,8 +642,8 @@ export function CompanyDetail() {
                 </ResponsiveContainer>
               </div>
               {/* Ethnic Minority Board */}
-              <div className="bg-white rounded-xl border border-slate-200/60 p-5">
-                <h3 className="text-[13px] font-medium text-slate-700 mb-2">Ethnic Minority (Board)</h3>
+              <div className="bg-white rounded-xl border border-border/60 p-5">
+                <h3 className="text-[13px] font-medium text-foreground mb-2">Ethnic Minority (Board)</h3>
                 <ResponsiveContainer width="100%" height={160}>
                   <BarChart data={chartMonths.map(m => ({ ...m, nonMinorityBoard: 100 - m.ethnicMinorityPctBoard }))}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -670,18 +665,18 @@ export function CompanyDetail() {
       {activeTab === 'documents' && (
         <div className="space-y-4">
           <div className="flex items-center gap-2">
-            <input type="text" placeholder="Search documents..." className="text-[13px] border border-slate-200 rounded-lg px-3 py-2 w-64 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300" />
+            <input type="text" placeholder="Search documents..." className="text-[13px] border border-border rounded-lg px-3 py-2 w-64 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40" />
           </div>
-          <div className="bg-white rounded-xl border border-slate-200/60 divide-y divide-slate-100">
+          <div className="bg-white rounded-xl border border-border/60 divide-y divide-border/60">
             {mockDocuments.map((doc, i) => (
-              <div key={i} className="p-4 flex items-center gap-3 hover:bg-slate-50/50 cursor-pointer transition-colors">
-                <FileText className="w-4 h-4 text-slate-400 shrink-0" />
+              <div key={i} className="p-4 flex items-center gap-3 hover:bg-muted/50 cursor-pointer transition-colors">
+                <FileText className="w-4 h-4 text-muted-foreground/70 shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-medium text-slate-700">{doc.name}</p>
-                  <p className="text-[11px] text-slate-400">{doc.type}</p>
+                  <p className="text-[13px] font-medium text-foreground">{doc.name}</p>
+                  <p className="text-[11px] text-muted-foreground/70">{doc.type}</p>
                 </div>
-                <span className="text-[11px] px-2 py-0.5 bg-slate-100 rounded-md text-slate-600">{doc.source}</span>
-                <span className="text-[11px] text-slate-400">
+                <span className="text-[11px] px-2 py-0.5 bg-muted rounded-md text-foreground/80">{doc.source}</span>
+                <span className="text-[11px] text-muted-foreground/70">
                   {new Date(doc.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </span>
               </div>
@@ -693,8 +688,8 @@ export function CompanyDetail() {
       {/* ============ Market Context Tab ============ */}
       {activeTab === 'market' && (
         <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-slate-200/60 p-5">
-            <h3 className="text-[13px] font-semibold uppercase tracking-wider text-slate-400 mb-3">Sector Overview -- {company.sector}</h3>
+          <div className="bg-white rounded-xl border border-border/60 p-5">
+            <h3 className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-3">Sector Overview -- {company.sector}</h3>
             <div className="grid grid-cols-4 gap-3">
               {[
                 { label: 'Funding (90d)', value: '\u00a3245M', trend: '+18% vs prev' },
@@ -702,32 +697,32 @@ export function CompanyDetail() {
                 { label: 'Avg Deal Size', value: '\u00a37.2M', trend: '+12% vs prev' },
                 { label: 'Hiring Trend', value: '+8%', trend: 'Sector avg' },
               ].map(m => (
-                <div key={m.label} className="bg-slate-50 rounded-lg p-3">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">{m.label}</p>
-                  <p className="text-[18px] font-mono-num font-bold text-slate-700 mt-0.5">{m.value}</p>
-                  <p className="text-[11px] text-slate-400">{m.trend}</p>
+                <div key={m.label} className="bg-muted/60 rounded-lg p-3">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">{m.label}</p>
+                  <p className="text-[18px] font-mono-num font-bold text-foreground mt-0.5">{m.value}</p>
+                  <p className="text-[11px] text-muted-foreground/70">{m.trend}</p>
                 </div>
               ))}
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-slate-200/60 p-5">
-            <h3 className="text-[13px] font-semibold uppercase tracking-wider text-slate-400 mb-3">Competitor Watch</h3>
+          <div className="bg-white rounded-xl border border-border/60 p-5">
+            <h3 className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-3">Competitor Watch</h3>
             <div className="space-y-2">
               {[
                 { name: 'CompetitorA', funding: '\u00a312M', headcount: 45, traffic: '+22%', status: 'Raised Series A' },
                 { name: 'CompetitorB', funding: '\u00a35M', headcount: 18, traffic: '+8%', status: 'Expanding team' },
                 { name: 'CompetitorC', funding: '\u00a33M', headcount: 12, traffic: '-5%', status: 'Quiet period' },
               ].map(comp => (
-                <div key={comp.name} className="border border-slate-100 rounded-lg p-3 flex items-center gap-4">
-                  <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-[12px] font-medium text-slate-700">{comp.name[0]}</div>
+                <div key={comp.name} className="border border-border/60 rounded-lg p-3 flex items-center gap-4">
+                  <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center text-[12px] font-medium text-foreground">{comp.name[0]}</div>
                   <div className="flex-1">
-                    <p className="text-[13px] font-medium text-slate-700">{comp.name}</p>
-                    <p className="text-[11px] text-slate-400">{comp.status}</p>
+                    <p className="text-[13px] font-medium text-foreground">{comp.name}</p>
+                    <p className="text-[11px] text-muted-foreground/70">{comp.status}</p>
                   </div>
-                  <div className="text-[11px] text-right space-y-0.5 text-slate-400">
-                    <p>Funding: <span className="font-mono-num text-slate-700">{comp.funding}</span></p>
-                    <p>Headcount: <span className="font-mono-num text-slate-700">{comp.headcount}</span></p>
-                    <p>Traffic: <span className="font-mono-num text-slate-700">{comp.traffic}</span></p>
+                  <div className="text-[11px] text-right space-y-0.5 text-muted-foreground/70">
+                    <p>Funding: <span className="font-mono-num text-foreground">{comp.funding}</span></p>
+                    <p>Headcount: <span className="font-mono-num text-foreground">{comp.headcount}</span></p>
+                    <p>Traffic: <span className="font-mono-num text-foreground">{comp.traffic}</span></p>
                   </div>
                 </div>
               ))}
@@ -739,23 +734,23 @@ export function CompanyDetail() {
       {/* ============ Notes & Actions Tab ============ */}
       {activeTab === 'notes' && (
         <div className="grid grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl border border-slate-200/60 p-5">
+          <div className="bg-white rounded-xl border border-border/60 p-5">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[13px] font-semibold uppercase tracking-wider text-slate-400">Notes</h3>
-              <button onClick={() => setShowLogNote(true)} className="text-[12px] px-3 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors flex items-center gap-1">
+              <h3 className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground/70">Notes</h3>
+              <button onClick={() => setShowLogNote(true)} className="text-[12px] px-3 py-2 bg-primary text-white rounded-lg hover:bg-[var(--primary-muted)] transition-colors flex items-center gap-1">
                 <Plus className="w-3 h-3" /> New Note
               </button>
             </div>
             <div className="space-y-2">
               {companyNotes.map((note) => (
-                <div key={note.id} className="border border-slate-100 rounded-lg p-3">
+                <div key={note.id} className="border border-border/60 rounded-lg p-3">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="w-5 h-5 rounded-full bg-indigo-500 text-white flex items-center justify-center text-[10px]">{note.author[0]}</span>
-                    <span className="text-[12px] font-medium text-slate-700">{note.author}</span>
-                    <span className="text-[10px] text-slate-400">{new Date(note.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
-                    <span className="text-[10px] px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded ml-auto">{note.tag}</span>
+                    <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-[10px]">{note.author[0]}</span>
+                    <span className="text-[12px] font-medium text-foreground">{note.author}</span>
+                    <span className="text-[10px] text-muted-foreground/70">{new Date(note.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 bg-accent text-primary rounded ml-auto">{note.tag}</span>
                   </div>
-                  <p className="text-[12px] text-slate-400 whitespace-pre-line">{note.content}</p>
+                  <p className="text-[12px] text-muted-foreground/70 whitespace-pre-line">{note.content}</p>
                 </div>
               ))}
               {[
@@ -763,33 +758,33 @@ export function CompanyDetail() {
                 { author: 'Scott', date: '2026-02-20', content: 'Discussed competitive landscape. Main threat is from larger players entering the space.', tag: 'Founder Check-in' },
                 { author: 'Anna', date: '2026-01-15', content: 'Board went well. Agreed to extend runway planning horizon to 18 months.', tag: 'Board Prep' },
               ].map((note, i) => (
-                <div key={`seed-${i}`} className="border border-slate-100 rounded-lg p-3">
+                <div key={`seed-${i}`} className="border border-border/60 rounded-lg p-3">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="w-5 h-5 rounded-full bg-indigo-500 text-white flex items-center justify-center text-[10px]">{note.author[0]}</span>
-                    <span className="text-[12px] font-medium text-slate-700">{note.author}</span>
-                    <span className="text-[10px] text-slate-400">{new Date(note.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
-                    <span className="text-[10px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded ml-auto">{note.tag}</span>
+                    <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-[10px]">{note.author[0]}</span>
+                    <span className="text-[12px] font-medium text-foreground">{note.author}</span>
+                    <span className="text-[10px] text-muted-foreground/70">{new Date(note.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 bg-muted text-foreground/80 rounded ml-auto">{note.tag}</span>
                   </div>
-                  <p className="text-[12px] text-slate-400">{note.content}</p>
+                  <p className="text-[12px] text-muted-foreground/70">{note.content}</p>
                 </div>
               ))}
               {companyNotes.length === 0 && (
-                <p className="text-[12px] text-slate-400 text-center py-4">
+                <p className="text-[12px] text-muted-foreground/70 text-center py-4">
                   No notes yet. Click "Log Note" to start recording.
                 </p>
               )}
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-slate-200/60 p-5">
-            <h3 className="text-[13px] font-semibold uppercase tracking-wider text-slate-400 mb-4">Pending Actions</h3>
+          <div className="bg-white rounded-xl border border-border/60 p-5">
+            <h3 className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-4">Pending Actions</h3>
             <div className="space-y-2">
               {companyTodos.map(todo => (
                 <div key={todo.id} className={`border rounded-lg p-3 ${
-                  new Date(todo.dueDate) < new Date() ? 'border-red-200 bg-red-50/30' : 'border-slate-100'
+                  new Date(todo.dueDate) < new Date() ? 'border-red-200 bg-red-50/30' : 'border-border/60'
                 }`}>
-                  <p className="text-[12px] text-slate-700">{todo.title}</p>
+                  <p className="text-[12px] text-foreground">{todo.title}</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className={`text-[10px] ${new Date(todo.dueDate) < new Date() ? 'text-red-600 font-medium' : 'text-slate-400'}`}>
+                    <span className={`text-[10px] ${new Date(todo.dueDate) < new Date() ? 'text-red-600 font-medium' : 'text-muted-foreground/70'}`}>
                       Due: {new Date(todo.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                     </span>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded ${
@@ -804,11 +799,11 @@ export function CompanyDetail() {
                 </div>
               ))}
               {companyTodos.length === 0 && (
-                <p className="text-[12px] text-slate-400 text-center py-4">No pending actions</p>
+                <p className="text-[12px] text-muted-foreground/70 text-center py-4">No pending actions</p>
               )}
             </div>
             <button onClick={() => setShowNewTodo(true)}
-              className="w-full mt-3 text-[12px] text-center py-2 border border-dashed border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-slate-400 hover:text-slate-700 flex items-center justify-center gap-1">
+              className="w-full mt-3 text-[12px] text-center py-2 border border-dashed border-border rounded-lg hover:bg-muted/60 transition-colors text-muted-foreground/70 hover:text-foreground flex items-center justify-center gap-1">
               <Plus className="w-3 h-3" /> Add Action Item
             </button>
           </div>
@@ -819,42 +814,42 @@ export function CompanyDetail() {
       {activeTab === 'fundraising' && (
         <div className="space-y-4">
           <div className="grid grid-cols-4 gap-3">
-            <div className="bg-white rounded-xl border border-slate-200/60 p-5">
-              <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Equity Fundraising</p>
-              <p className="text-[15px] font-medium text-slate-700 mt-1">{company.equityFundraisingStatus}</p>
+            <div className="bg-white rounded-xl border border-border/60 p-5">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">Equity Fundraising</p>
+              <p className="text-[15px] font-medium text-foreground mt-1">{company.equityFundraisingStatus}</p>
             </div>
-            <div className="bg-white rounded-xl border border-slate-200/60 p-5">
-              <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Debt Fundraising</p>
-              <p className="text-[15px] font-medium text-slate-700 mt-1">{company.debtFundraisingStatus}</p>
+            <div className="bg-white rounded-xl border border-border/60 p-5">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">Debt Fundraising</p>
+              <p className="text-[15px] font-medium text-foreground mt-1">{company.debtFundraisingStatus}</p>
             </div>
-            <div className="bg-white rounded-xl border border-slate-200/60 p-5">
-              <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Current Runway</p>
-              <p className="text-[15px] font-mono-num font-medium text-slate-700 mt-1">{company.runway} months</p>
+            <div className="bg-white rounded-xl border border-border/60 p-5">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">Current Runway</p>
+              <p className="text-[15px] font-mono-num font-medium text-foreground mt-1">{company.runway} months</p>
             </div>
-            <div className="bg-white rounded-xl border border-slate-200/60 p-5">
-              <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Crane Follow-on</p>
-              <p className="text-[15px] font-medium text-slate-700 mt-1">Under Review</p>
+            <div className="bg-white rounded-xl border border-border/60 p-5">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">Crane Follow-on</p>
+              <p className="text-[15px] font-medium text-foreground mt-1">Under Review</p>
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-slate-200/60 p-5">
-            <h3 className="text-[13px] font-semibold uppercase tracking-wider text-slate-400 mb-3">Fundraising Timeline</h3>
+          <div className="bg-white rounded-xl border border-border/60 p-5">
+            <h3 className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-3">Fundraising Timeline</h3>
             <div className="space-y-3">
               <div className="flex items-center gap-3 text-[13px]">
                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                <span className="text-slate-400 w-24">{new Date(company.investmentDate).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}</span>
-                <span className="text-slate-700">{company.stage} round closed -- {company.checkSize} from Crane</span>
+                <span className="text-muted-foreground/70 w-24">{new Date(company.investmentDate).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}</span>
+                <span className="text-foreground">{company.stage} round closed -- {company.checkSize} from Crane</span>
               </div>
               {!isExited && (
                 <>
                   <div className="flex items-center gap-3 text-[13px]">
-                    <div className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
-                    <span className="text-slate-400 w-24">Feb 2026</span>
-                    <span className="text-slate-700">{company.equityFundraisingStatus}</span>
+                    <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+                    <span className="text-muted-foreground/70 w-24">Feb 2026</span>
+                    <span className="text-foreground">{company.equityFundraisingStatus}</span>
                   </div>
                   <div className="flex items-center gap-3 text-[13px]">
-                    <div className="w-2.5 h-2.5 rounded-full bg-slate-300" />
-                    <span className="text-slate-400 w-24">Q3 2026</span>
-                    <span className="text-slate-400">Expected raise window</span>
+                    <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/50" />
+                    <span className="text-muted-foreground/70 w-24">Q3 2026</span>
+                    <span className="text-muted-foreground/70">Expected raise window</span>
                   </div>
                 </>
               )}

@@ -21,18 +21,20 @@ import { generateAssetMetrixXLSX } from './ExportUtils';
 
 // Inline runway bar — thin colored bar showing months relative to 24mo max
 function RunwayBar({ months, isExited }: { months: number; isExited: boolean }) {
-  if (isExited) return <span className="text-[11px] text-slate-400">—</span>;
+  if (isExited) return <span className="text-[11px] text-muted-foreground/70">—</span>;
   const pct = Math.min(months / 24, 1) * 100;
-  const color = months <= 6 ? '#ef4444' : months <= 9 ? '#f59e0b' : months <= 14 ? '#3b82f6' : '#10b981';
+  // Single ink track — runway length carries the signal, not colour. A small dot at the head signals critical only.
+  const critical = months <= 6;
   return (
     <div className="flex items-center gap-2 justify-end">
-      <span className={`font-mono-num text-[12px] font-semibold tabular-nums ${
-        months <= 6 ? 'text-red-600' : months <= 9 ? 'text-amber-600' : 'text-slate-600'
-      }`}>
+      {critical && (
+        <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full bg-foreground/70" title="Runway under 6 months" />
+      )}
+      <span className="font-mono-num text-[12px] font-semibold tabular-nums text-foreground/80">
         {months}mo
       </span>
-      <div className="w-[48px] h-[4px] rounded-full bg-slate-100 overflow-hidden">
-        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
+      <div className="w-[48px] h-[4px] rounded-full bg-muted overflow-hidden">
+        <div className="h-full rounded-full transition-all bg-foreground/70" style={{ width: `${pct}%` }} />
       </div>
     </div>
   );
@@ -170,8 +172,8 @@ export function PortfolioCommandCenter() {
   const SortIcon = ({ field }: { field: string }) => {
     if (sortField !== field) return <ChevronDown className="w-3 h-3 opacity-0 group-hover:opacity-30 transition-opacity duration-150" />;
     return sortDir === 'asc'
-      ? <ChevronUp className="w-3 h-3 text-indigo-500" />
-      : <ChevronDown className="w-3 h-3 text-indigo-500" />;
+      ? <ChevronUp className="w-3 h-3 text-primary" />
+      : <ChevronDown className="w-3 h-3 text-primary" />;
   };
 
   // RAG distribution bar widths
@@ -184,8 +186,8 @@ export function PortfolioCommandCenter() {
       {/* Header row */}
       <div className="flex items-end justify-between gap-6">
         <div>
-          <h1 className="text-[22px] font-semibold tracking-tight text-slate-800">Command Center</h1>
-          <p className="mt-0.5 text-[13px] text-slate-400">
+          <h1 className="font-display text-[34px] leading-tight text-foreground">Command Center</h1>
+          <p className="mt-1 text-[13px] text-muted-foreground">
             {activeCompanies.length} active companies
           </p>
         </div>
@@ -193,7 +195,7 @@ export function PortfolioCommandCenter() {
           <select
             value={quarterFilter}
             onChange={e => setQuarterFilter(e.target.value)}
-            className="text-[12px] border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            className="text-[12px] border border-border rounded-lg px-3 py-1.5 bg-white text-foreground/80 focus:outline-none focus:ring-2 focus:ring-primary/20"
             title="Quarter view — values aggregate using Bonnie's rules"
           >
             {Object.entries(QUARTER_MONTHS).map(([q, months]) => {
@@ -211,14 +213,14 @@ export function PortfolioCommandCenter() {
           <select
             value={ownerFilter}
             onChange={e => setOwnerFilter(e.target.value)}
-            className="text-[12px] border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            className="text-[12px] border border-border rounded-lg px-3 py-1.5 bg-white text-foreground/80 focus:outline-none focus:ring-2 focus:ring-primary/20"
           >
             <option value="all">All Lead Partners</option>
             {Array.from(new Set(companies.flatMap(c => c.owners))).map(o => <option key={o} value={o}>{o}</option>)}
           </select>
           <button
             onClick={() => generateAssetMetrixXLSX(funds[0], companies)}
-            className="text-[12px] flex items-center gap-1.5 text-slate-500 hover:text-slate-700 border border-slate-200 rounded-lg px-3 py-1.5 bg-white hover:bg-slate-50 transition-colors"
+            className="text-[12px] flex items-center gap-1.5 text-muted-foreground hover:text-foreground border border-border rounded-lg px-3 py-1.5 bg-white hover:bg-muted/60 transition-colors"
           >
             <Download className="w-3.5 h-3.5" /> Export
           </button>
@@ -253,11 +255,11 @@ export function PortfolioCommandCenter() {
       )}
 
       {/* TABLE */}
-      <div className="bg-white rounded-xl border border-slate-200/80 overflow-hidden">
+      <div className="bg-white rounded-xl border border-border/80 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-slate-50/90 border-b border-slate-200">
+              <tr className="bg-muted/90 border-b border-border">
                 {[
                   { key: 'name', label: 'Company', align: 'left' as const, w: 'min-w-[180px]' },
                   { key: 'rag', label: 'RAG', align: 'center' as const, w: 'w-[52px]' },
@@ -278,7 +280,7 @@ export function PortfolioCommandCenter() {
                     }`}
                     onClick={() => handleSort(col.key)}
                   >
-                    <span className="inline-flex items-center gap-0.5 text-[10px] uppercase tracking-wider font-medium text-slate-400">
+                    <span className="inline-flex items-center gap-0.5 text-[10px] uppercase tracking-wider font-medium text-muted-foreground/70">
                       {col.label}
                       <SortIcon field={col.key} />
                     </span>
@@ -298,26 +300,22 @@ export function PortfolioCommandCenter() {
                 return (
                   <tr
                     key={company.id}
-                    className={`border-b border-slate-100/80 last:border-0 hover:bg-slate-50/80 transition-[background-color,box-shadow] h-[42px] ${
+                    className={`border-b border-border/80 last:border-0 hover:bg-muted/80 transition-[background-color,box-shadow] h-[44px] ${
                       isExited ? 'opacity-50' : ''
                     }`}
-                    style={{ borderLeft: `3px solid ${ragColor}` }}
                   >
                     {/* Company — only this cell navigates */}
                     <td className="px-3 py-1.5">
                       <div
-                        className="flex items-center gap-2 cursor-pointer hover:text-indigo-600 transition-colors"
+                        className="flex items-center gap-2.5 cursor-pointer group/co"
                         onClick={() => navigate(`/company/${company.id}`)}
                       >
-                        <div
-                          className="w-7 h-7 rounded-md flex items-center justify-center text-white text-[11px] font-semibold shrink-0"
-                          style={{ background: company.logoColor }}
-                        >
+                        <div className="w-7 h-7 rounded-md bg-muted text-muted-foreground flex items-center justify-center text-[11px] font-medium shrink-0 group-hover/co:bg-foreground group-hover/co:text-background transition-colors">
                           {company.name[0]}
                         </div>
                         <div className="min-w-0">
-                          <span className="text-[13px] font-medium text-slate-700 truncate block hover:text-indigo-600">{company.name}</span>
-                          <span className="text-[10px] text-slate-400">{company.stage} · {company.sector}</span>
+                          <span className="text-[13px] font-medium text-foreground truncate block group-hover/co:text-primary transition-colors">{company.name}</span>
+                          <span className="text-[10px] text-muted-foreground/70">{company.stage} · {company.sector}</span>
                         </div>
                       </div>
                     </td>
@@ -350,10 +348,10 @@ export function PortfolioCommandCenter() {
                       const editableFields: { field: string; display: string; className?: string }[] = !isExited && data.length > 0 ? [
                         { field: 'arr', display: arr != null ? formatCurrency(arr, company.currency) : '—' },
                         { field: 'revenue', display: revenue != null ? formatCurrency(revenue, company.currency) : '—' },
-                        { field: 'ebitda', display: ebitda != null ? formatCurrency(ebitda, company.currency) : '—', className: (ebitda ?? 0) < 0 ? 'text-red-500' : '' },
+                        { field: 'ebitda', display: ebitda != null ? formatCurrency(ebitda, company.currency) : '—', className: '' },
                         { field: 'grossMargin', display: gm != null ? gm + '%' : '—' },
                         { field: 'cashBalance', display: cashBalance != null ? formatCurrency(cashBalance, company.currency) : '—' },
-                        { field: 'cashBurn', display: cashBurn != null ? formatCurrency(cashBurn, company.currency) : '—', className: 'text-red-500' },
+                        { field: 'cashBurn', display: cashBurn != null ? formatCurrency(cashBurn, company.currency) : '—', className: '' },
                       ] : [
                         // No data for this quarter (or exited) — show em-dashes
                         { field: 'arr', display: '—' },
@@ -373,7 +371,7 @@ export function PortfolioCommandCenter() {
                           <td
                             key={field}
                             className={`px-3 py-1.5 text-right font-mono-num text-[12px] tabular-nums relative group/cell transition-colors ${
-                              isEditing ? 'bg-indigo-50/50' : staged ? 'bg-amber-50/60 hover:bg-amber-50' : 'hover:bg-slate-50'
+                              isEditing ? 'bg-accent/50' : staged ? 'bg-amber-50/60 hover:bg-amber-50' : 'hover:bg-muted/60'
                             }`}
                           >
                             {isEditing ? (
@@ -383,7 +381,7 @@ export function PortfolioCommandCenter() {
                                   value={draftValue}
                                   onChange={e => { setDraftValue(e.target.value); setEditError(null); }}
                                   className={`w-full text-right text-[12px] font-mono-num border rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 ${
-                                    editError ? 'border-red-400 focus:ring-red-200' : 'border-indigo-300 focus:ring-indigo-200'
+                                    editError ? 'border-red-400 focus:ring-red-200' : 'border-primary/40 focus:ring-primary/20'
                                   }`}
                                   onFocus={() => { if (!draftValue) setDraftValue(staged || display.replace(/[£$€,\s]/g, '')); }}
                                   onBlur={() => { if (draftValue) tryStageEdit(company.id, field, draftValue, company.currency as any); }}
@@ -401,7 +399,7 @@ export function PortfolioCommandCenter() {
                                 )}
                               </div>
                             ) : (
-                              <span className={`inline-flex items-center justify-end gap-1 ${className || 'text-slate-600'}`}>
+                              <span className={`inline-flex items-center justify-end gap-1 ${className || 'text-foreground/80'}`}>
                                 {/* Undo button — only when this cell has a staged edit */}
                                 {staged && (
                                   <button
@@ -415,7 +413,7 @@ export function PortfolioCommandCenter() {
                                 {/* Pencil to enter edit mode */}
                                 <button
                                   onClick={() => { if (!isExited) { setEditingCell({ companyId: company.id, field }); setEditError(null); } }}
-                                  className="text-indigo-400 hover:text-indigo-600 opacity-0 group-hover/cell:opacity-100 transition-opacity"
+                                  className="text-primary/70 hover:text-primary opacity-0 group-hover/cell:opacity-100 transition-opacity"
                                   title="Edit this value"
                                 >
                                   <Pencil className="w-3 h-3" />
@@ -425,18 +423,18 @@ export function PortfolioCommandCenter() {
                                 </span>
 
                                 {/* Hover tooltip — previous value + source */}
-                                <span className="invisible group-hover/cell:visible absolute z-30 bottom-full right-2 mb-1 bg-slate-800 text-white text-[10px] font-normal rounded-lg shadow-lg px-3 py-2 whitespace-nowrap text-left pointer-events-none">
+                                <span className="invisible group-hover/cell:visible absolute z-30 bottom-full right-2 mb-1 bg-foreground text-white text-[10px] font-normal rounded-lg shadow-lg px-3 py-2 whitespace-nowrap text-left pointer-events-none">
                                   {staged ? (
                                     <>
                                       <div className="text-amber-300 font-medium mb-1">Pending change (not saved)</div>
                                       <div>Previous: <span className="font-mono-num">{display}</span></div>
                                       <div>New: <span className="font-mono-num text-amber-200">{staged}</span></div>
-                                      <div className="mt-1 pt-1 border-t border-white/10 text-slate-300">Source: {src.source} · {src.when}</div>
+                                      <div className="mt-1 pt-1 border-t border-white/10 text-muted-foreground/50">Source: {src.source} · {src.when}</div>
                                     </>
                                   ) : (
                                     <>
                                       <div>Source: <span className="font-medium text-white">{src.source}</span></div>
-                                      <div className="text-slate-300">{src.when}</div>
+                                      <div className="text-muted-foreground/50">{src.when}</div>
                                     </>
                                   )}
                                 </span>
@@ -461,7 +459,7 @@ export function PortfolioCommandCenter() {
                       return (
                         <td
                           className={`px-3 py-1.5 text-right font-mono-num text-[12px] tabular-nums relative group/cell transition-colors ${
-                            isEditing ? 'bg-indigo-50/50' : staged ? 'bg-amber-50/60 hover:bg-amber-50' : 'hover:bg-slate-50'
+                            isEditing ? 'bg-accent/50' : staged ? 'bg-amber-50/60 hover:bg-amber-50' : 'hover:bg-muted/60'
                           }`}
                         >
                           {isEditing ? (
@@ -472,7 +470,7 @@ export function PortfolioCommandCenter() {
                                 onChange={e => { setDraftValue(e.target.value); setEditError(null); }}
                                 onFocus={() => { if (!draftValue) setDraftValue(staged || String(headcountSum)); }}
                                 className={`w-full text-right text-[12px] font-mono-num border rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 ${
-                                  editError ? 'border-red-400 focus:ring-red-200' : 'border-indigo-300 focus:ring-indigo-200'
+                                  editError ? 'border-red-400 focus:ring-red-200' : 'border-primary/40 focus:ring-primary/20'
                                 }`}
                                 onBlur={() => { if (draftValue) tryStageEdit(company.id, 'headcount', draftValue, company.currency as any); }}
                                 onKeyDown={e => {
@@ -489,28 +487,28 @@ export function PortfolioCommandCenter() {
                               )}
                             </div>
                           ) : (
-                            <span className="inline-flex items-center justify-end gap-1 text-slate-600">
+                            <span className="inline-flex items-center justify-end gap-1 text-foreground/80">
                               {staged && (
                                 <button onClick={e => { e.stopPropagation(); discardEdit(company.id, 'headcount'); }} className="text-amber-500 hover:text-amber-600 transition-colors" title="Discard this edit">
                                   <Undo2 className="w-3 h-3" />
                                 </button>
                               )}
-                              <button onClick={() => { if (!isExited) { setEditingCell({ companyId: company.id, field: 'headcount' }); setEditError(null); } }} className="text-indigo-400 hover:text-indigo-600 opacity-0 group-hover/cell:opacity-100 transition-opacity" title="Edit this value">
+                              <button onClick={() => { if (!isExited) { setEditingCell({ companyId: company.id, field: 'headcount' }); setEditError(null); } }} className="text-primary/70 hover:text-primary opacity-0 group-hover/cell:opacity-100 transition-opacity" title="Edit this value">
                                 <Pencil className="w-3 h-3" />
                               </button>
                               <span className={staged ? 'text-amber-700 font-medium' : ''}>{staged || displayValue}</span>
-                              <span className="invisible group-hover/cell:visible absolute z-30 bottom-full right-2 mb-1 bg-slate-800 text-white text-[10px] font-normal rounded-lg shadow-lg px-3 py-2 whitespace-nowrap text-left pointer-events-none">
+                              <span className="invisible group-hover/cell:visible absolute z-30 bottom-full right-2 mb-1 bg-foreground text-white text-[10px] font-normal rounded-lg shadow-lg px-3 py-2 whitespace-nowrap text-left pointer-events-none">
                                 {staged ? (
                                   <>
                                     <div className="text-amber-300 font-medium mb-1">Pending change (not saved)</div>
                                     <div>Previous: <span className="font-mono-num">{displayValue}</span></div>
                                     <div>New: <span className="font-mono-num text-amber-200">{staged}</span></div>
-                                    <div className="mt-1 pt-1 border-t border-white/10 text-slate-300">Source: {hcSrc.source} · {hcSrc.when}</div>
+                                    <div className="mt-1 pt-1 border-t border-white/10 text-muted-foreground/50">Source: {hcSrc.source} · {hcSrc.when}</div>
                                   </>
                                 ) : (
                                   <>
                                     <div>Source: <span className="font-medium text-white">{hcSrc.source}</span></div>
-                                    <div className="text-slate-300">{hcSrc.when}</div>
+                                    <div className="text-muted-foreground/50">{hcSrc.when}</div>
                                   </>
                                 )}
                               </span>
@@ -520,11 +518,11 @@ export function PortfolioCommandCenter() {
                       );
                     })()}
                     {/* Lead Partner */}
-                    <td className="px-3 py-1.5 text-[11px] text-slate-500">
+                    <td className="px-3 py-1.5 text-[11px] text-muted-foreground">
                       {company.owners[0] || '—'}
                     </td>
                     {/* FY End — per-company financial year end month */}
-                    <td className="px-3 py-1.5 text-[11px] text-slate-500" title="Company financial year-end month">
+                    <td className="px-3 py-1.5 text-[11px] text-muted-foreground" title="Company financial year-end month">
                       {monthIndexToName(getCompanyFyEndMonth(company.id)).slice(0, 3)}
                     </td>
                   </tr>
@@ -535,7 +533,7 @@ export function PortfolioCommandCenter() {
         </div>
       </div>
 
-      <p className="text-[11px] text-slate-400 text-center">
+      <p className="text-[11px] text-muted-foreground/70 text-center">
         {filtered.length} of {companies.length} companies shown
       </p>
     </div>

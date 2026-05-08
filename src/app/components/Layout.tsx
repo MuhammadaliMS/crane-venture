@@ -100,37 +100,38 @@ export function Layout() {
     <MilestoneContext.Provider value={{ milestone, setMilestone }}>
     <FundFilterContext.Provider value={{ fundFilter, setFundFilter }}>
       <NotificationContext.Provider value={{ urgentFlags, overdueTodos, notificationCount }}>
-        <div className="flex h-screen overflow-hidden bg-[#f8fafc]" style={{ fontFamily: "'Inter', sans-serif" }}>
+        <div className="flex h-screen overflow-hidden bg-background">
 
-          {/* ─── Sidebar ─── always dark ─── */}
+          {/* ─── Sidebar ─── light, warm, editorial ─── */}
           <aside
-            className={`${collapsed ? 'w-[60px]' : 'w-60'} bg-[#0f0f12] flex flex-col transition-all duration-[280ms] shrink-0 select-none`}
+            aria-label="Primary"
+            className={`${collapsed ? 'w-[60px]' : 'w-60'} bg-sidebar text-sidebar-foreground border-r border-sidebar-border flex flex-col transition-[width] duration-[280ms] shrink-0 select-none`}
+            style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}
           >
-            {/* Logo */}
+            {/* Logo — wordmark stays as-is on warm cream */}
             <div className="h-14 flex items-center px-4 gap-2.5 shrink-0">
-              {/* Crane Venture wordmark — invert to show white on dark sidebar */}
               <img
                 src="/crane-logo.png"
                 alt="Crane Venture Partners"
                 className={`object-contain ${collapsed ? 'h-7 w-7' : 'h-7'}`}
-                style={{ filter: 'brightness(0) invert(1)' }}
               />
             </div>
 
-            {/* Milestone toggle */}
+            {/* Milestone toggle — quiet, ink hairline */}
             {!collapsed && (
-              <div className="mx-3 mb-1">
+              <div className="mx-3 mb-2">
                 <button
                   onClick={() => setMilestone(isM1 ? 'full' : 'm1')}
-                  className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[11px] font-medium transition-all ${
+                  aria-label={isM1 ? 'Switch to Full MVP' : 'Switch to Milestone 1'}
+                  className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[11px] font-medium transition-colors ${
                     isM1
-                      ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
-                      : 'bg-white/[0.04] text-slate-500 border border-white/[0.06] hover:bg-white/[0.07]'
+                      ? 'bg-foreground/[0.05] text-foreground border border-foreground/10'
+                      : 'text-muted-foreground border border-transparent hover:bg-foreground/[0.04]'
                   }`}
                 >
-                  {isM1 ? <ToggleRight className="w-4 h-4 text-indigo-400" /> : <ToggleLeft className="w-4 h-4" />}
+                  {isM1 ? <ToggleRight className="w-3.5 h-3.5" /> : <ToggleLeft className="w-3.5 h-3.5" />}
                   <span>{isM1 ? 'Milestone 1' : 'Full MVP'}</span>
-                  {isM1 && <span className="ml-auto text-[9px] bg-indigo-500/30 text-indigo-300 px-1.5 py-0.5 rounded-full">V1</span>}
+                  {isM1 && <span className="ml-auto font-display-italic text-[12px] text-muted-foreground">v1</span>}
                 </button>
               </div>
             )}
@@ -138,8 +139,9 @@ export function Layout() {
               <div className="mx-2 mb-1">
                 <button
                   onClick={() => setMilestone(isM1 ? 'full' : 'm1')}
-                  className={`w-full flex items-center justify-center p-2 rounded-lg transition-all ${
-                    isM1 ? 'bg-indigo-500/20 text-indigo-300' : 'bg-white/[0.04] text-slate-500 hover:bg-white/[0.07]'
+                  aria-label={isM1 ? 'Switch to Full MVP' : 'Switch to Milestone 1'}
+                  className={`w-full flex items-center justify-center p-2 rounded-md transition-colors ${
+                    isM1 ? 'bg-foreground/[0.06] text-foreground' : 'text-muted-foreground hover:bg-foreground/[0.04]'
                   }`}
                   title={isM1 ? 'Milestone 1 — click for Full MVP' : 'Full MVP — click for Milestone 1'}
                 >
@@ -152,21 +154,16 @@ export function Layout() {
             <nav className="flex-1 py-2 overflow-y-auto scrollbar-none">
               {filteredNavSections.map((section, sIdx) => (
                 <div key={sIdx}>
-                  {/* Section label */}
+                  {/* Section label — sentence case, tiny, quiet */}
                   {!collapsed && section.label && (
-                    <p className="text-[10px] uppercase tracking-widest font-medium text-slate-500 px-4 pt-4 pb-2">
+                    <p className="text-[11px] font-medium text-muted-foreground/70 px-4 pt-4 pb-1.5">
                       {section.label}
-                      {section.label === 'Research' && (
-                        <span className="ml-1.5 text-[9px] normal-case tracking-normal text-slate-600">
-                          (Phase 2)
-                        </span>
-                      )}
                     </p>
                   )}
 
                   {/* Collapsed divider */}
                   {collapsed && sIdx > 0 && section.label && (
-                    <div className="mx-3 my-2 border-t border-white/[0.06]" />
+                    <div className="mx-3 my-2 border-t border-sidebar-border" />
                   )}
 
                   {section.items.map(item => {
@@ -183,26 +180,31 @@ export function Layout() {
                       <button
                         key={item.path}
                         onClick={() => { if (!comingSoon) navigate(item.path); }}
-                        className={`w-full flex items-center gap-3 px-4 py-2 text-[13px] transition-all relative group
+                        aria-current={active ? 'page' : undefined}
+                        className={`w-full flex items-center gap-3 px-4 py-1.5 text-[13px] transition-colors relative group
                           ${comingSoon
-                            ? 'text-slate-600 cursor-default'
+                            ? 'text-muted-foreground/60 cursor-default'
                             : active
-                            ? 'text-white bg-white/[0.08] border-l-2 border-indigo-400 pl-[14px]'
-                            : 'text-slate-400 hover:bg-white/[0.06] hover:text-slate-200 border-l-2 border-transparent'
+                            ? 'text-foreground bg-foreground/[0.06] font-medium'
+                            : 'text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground'
                           }`}
                         title={collapsed ? item.label : undefined}
                       >
-                        <item.icon className="w-4 h-4 shrink-0" />
+                        {/* Active rule — thin ink mark on the left */}
+                        {active && !collapsed && (
+                          <span className="absolute left-0 top-1.5 bottom-1.5 w-[2px] bg-primary rounded-r" />
+                        )}
+                        <item.icon className="w-4 h-4 shrink-0" strokeWidth={1.6} />
                         {!collapsed && (
                           <>
                             <span className="truncate">{item.label}</span>
                             {comingSoon && (
-                              <span className="ml-auto text-[9px] text-slate-600 font-medium uppercase tracking-wider">
-                                Soon
+                              <span className="ml-auto font-display-italic text-[12px] text-muted-foreground/70">
+                                soon
                               </span>
                             )}
                             {!comingSoon && badge > 0 && (
-                              <span className="ml-auto text-[10px] bg-amber-500/20 text-amber-400 rounded-full px-1.5 py-0.5 min-w-[18px] text-center font-medium">
+                              <span className="ml-auto text-[11px] font-mono-num text-foreground/70 min-w-[18px] text-right">
                                 {badge}
                               </span>
                             )}
@@ -214,10 +216,10 @@ export function Layout() {
                 </div>
               ))}
 
-              {/* ─── My Companies quick list ─── */}
+              {/* ─── Active deals quick list ─── header + items share the same indent so the box lines up cleanly */}
               {!collapsed && (
-                <div className="mt-4 px-4">
-                  <p className="text-[10px] uppercase tracking-widest font-medium text-slate-500 mb-2">
+                <div className="mt-4 px-2.5">
+                  <p className="text-[11px] font-medium text-muted-foreground/70 mb-1.5 px-1.5">
                     My Companies
                   </p>
                   {myCompanies.map(c => {
@@ -226,23 +228,21 @@ export function Layout() {
                       <button
                         key={c.id}
                         onClick={() => navigate(`/company/${c.id}`)}
-                        className={`w-full flex items-center gap-2.5 py-1.5 text-[13px] transition-colors rounded-md px-1.5 -mx-1.5 ${
+                        aria-current={isActive ? 'page' : undefined}
+                        className={`w-full flex items-center gap-2.5 py-1 text-[13px] transition-colors rounded-md px-1.5 ${
                           isActive
-                            ? 'bg-white/[0.08] text-white font-medium'
-                            : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
+                            ? 'bg-foreground/[0.06] text-foreground font-medium'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04]'
                         }`}
                       >
-                        <div
-                          className="w-2 h-2 rounded-full shrink-0"
-                          style={{ background: c.logoColor }}
-                        />
+                        <span className="text-muted-foreground/60 text-[11px] font-mono w-3 shrink-0" aria-hidden="true">{c.name[0]}</span>
                         <span className="truncate">{c.name}</span>
                       </button>
                     );
                   })}
                   <button
                     onClick={() => navigate('/portfolio')}
-                    className="text-[12px] text-slate-500 hover:text-slate-300 mt-1.5 px-1.5 transition-colors"
+                    className="text-[12px] text-muted-foreground/80 hover:text-foreground mt-1.5 px-1.5 transition-colors"
                   >
                     See all &rarr;
                   </button>
@@ -251,16 +251,19 @@ export function Layout() {
             </nav>
 
             {/* ─── User + Sign out + Collapse toggle ─── */}
-            <div className="border-t border-white/[0.06] px-4 py-3">
+            <div className="border-t border-sidebar-border px-4 py-3">
               {/* User info */}
               <div className="flex items-center gap-2.5 mb-2">
-                <div className="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center text-[13px] shrink-0 font-medium">
+                <div
+                  className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[12px] shrink-0 font-medium"
+                  aria-hidden="true"
+                >
                   {currentUser.avatar}
                 </div>
                 {!collapsed && (
                   <div className="flex-1 min-w-0">
-                    <p className="text-[13px] truncate font-medium text-white">{currentUser.name}</p>
-                    <p className="text-[11px] text-slate-400">{currentUser.role}</p>
+                    <p className="text-[13px] truncate font-medium text-foreground">{currentUser.name}</p>
+                    <p className="text-[11px] text-muted-foreground">{currentUser.role}</p>
                   </div>
                 )}
               </div>
@@ -271,7 +274,8 @@ export function Layout() {
                   try { localStorage.removeItem('crane.signedIn'); } catch {}
                   navigate('/signin');
                 }}
-                className={`w-full flex items-center gap-2 text-slate-400 hover:text-white py-1.5 px-2 rounded-md hover:bg-white/[0.06] transition-colors text-[12px] mb-1 ${collapsed ? 'justify-center' : ''}`}
+                aria-label="Sign out"
+                className={`w-full flex items-center gap-2 text-muted-foreground hover:text-foreground py-1.5 px-2 rounded-md hover:bg-foreground/[0.04] transition-colors text-[12px] mb-1 ${collapsed ? 'justify-center' : ''}`}
                 title="Sign out"
               >
                 <LogOut className="w-3.5 h-3.5" />
@@ -281,7 +285,7 @@ export function Layout() {
               {/* Collapse button */}
               <button
                 onClick={() => setCollapsed(!collapsed)}
-                className="w-full flex items-center justify-center gap-2 text-slate-500 hover:text-slate-300 py-1.5 rounded-md hover:bg-white/[0.06] transition-colors text-[12px]"
+                className="w-full flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground py-1.5 rounded-md hover:bg-foreground/[0.04] transition-colors text-[12px]"
                 aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               >
                 {collapsed ? (
@@ -297,7 +301,7 @@ export function Layout() {
           </aside>
 
           {/* ─── Main content area ─── */}
-          <main className="flex-1 min-w-0 overflow-y-auto bg-[#f8fafc]">
+          <main className="flex-1 min-w-0 overflow-y-auto bg-background" id="main">
             <div className="p-6">
               <Outlet />
             </div>

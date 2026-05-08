@@ -29,11 +29,13 @@ interface RowDef {
   helpText: string; // shown in a tooltip on hover of the help icon
 }
 
+// Single neutral treatment — section identity comes from the label, not the color
+const SECTION_HEADER = 'bg-muted text-muted-foreground border-border';
 const SECTIONS = [
-  { id: 'revenue', label: 'Revenue & Growth', color: 'bg-blue-50 text-blue-800 border-blue-100' },
-  { id: 'profitability', label: 'Profitability & Margins', color: 'bg-green-50 text-green-800 border-green-100' },
-  { id: 'cash', label: 'Cash Position', color: 'bg-purple-50 text-purple-800 border-purple-100' },
-  { id: 'team', label: 'Team & Diversity', color: 'bg-amber-50 text-amber-800 border-amber-100' },
+  { id: 'revenue',       label: 'Revenue & Growth',       color: SECTION_HEADER },
+  { id: 'profitability', label: 'Profitability & Margins', color: SECTION_HEADER },
+  { id: 'cash',          label: 'Cash Position',           color: SECTION_HEADER },
+  { id: 'team',          label: 'Team & Diversity',        color: SECTION_HEADER },
 ] as const;
 
 const ROWS: RowDef[] = [
@@ -134,11 +136,10 @@ export function FounderForm() {
   // Company not found
   if (!company) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
-          <div className="text-4xl mb-4">&#128683;</div>
-          <h1 className="text-xl font-semibold text-slate-900 mb-2">Invalid Link</h1>
-          <p className="text-slate-500">This verification link is invalid or has expired. Please contact your Crane VC partner for a new link.</p>
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="bg-card rounded-md border border-border p-8 max-w-md w-full text-center">
+          <h1 className="font-display text-[26px] leading-tight text-foreground mb-2">Invalid link</h1>
+          <p className="text-[13px] text-muted-foreground leading-relaxed">This verification link is invalid or has expired. Please contact your Crane VC partner for a new link.</p>
         </div>
       </div>
     );
@@ -238,16 +239,19 @@ export function FounderForm() {
   // --- Success screen ---
   if (submitted) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
-            <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="bg-card rounded-md border border-border p-10 max-w-md w-full text-center">
+          <div className="w-10 h-10 rounded-full border border-border flex items-center justify-center mx-auto mb-5">
+            <Check className="w-4 h-4 text-foreground" strokeWidth={2} />
           </div>
-          <h1 className="text-xl font-semibold text-slate-900 mb-2">Data Submitted</h1>
-          <p className="text-slate-500 mb-4">
-            Thank you, {ceoName}. Your {quarter.label} data for {company.name} has been received and will be reviewed by the Crane team.
+          <h1 className="font-display text-[28px] leading-tight text-foreground mb-3">Submitted, with thanks.</h1>
+          <p className="text-[13px] text-muted-foreground mb-1 leading-relaxed">
+            {ceoName}, your {quarter.label} data for {company.name} has been received.
           </p>
-          <p className="text-sm text-slate-400">You can close this page.</p>
+          <p className="text-[13px] text-muted-foreground leading-relaxed">
+            The Crane team will review and follow up if anything needs clarification.
+          </p>
+          <p className="text-[12px] text-muted-foreground/70 mt-6">You can close this page.</p>
         </div>
       </div>
     );
@@ -269,16 +273,16 @@ export function FounderForm() {
     const isEven = rowIndex % 2 === 0;
 
     return (
-      <tr key={row.key} className={isEven ? 'bg-white' : 'bg-slate-50/60'}>
+      <tr key={row.key} className={isEven ? 'bg-card' : 'bg-muted/40'}>
         {/* Metric name + help tooltip (sticky) */}
-        <td className="sticky left-0 z-10 px-3 py-2 text-[13px] font-medium text-slate-700 border-b border-slate-100 bg-inherit whitespace-nowrap min-w-[200px]">
+        <td className="sticky left-0 z-10 px-3 py-2 text-[13px] font-medium text-foreground border-b border-border/60 bg-inherit whitespace-nowrap min-w-[200px]">
           <span className="inline-flex items-center gap-1.5">
-            <span className={isCalc ? 'italic text-slate-500' : ''}>{row.label}</span>
-            {isCalc && <span className="text-[10px] text-slate-400 font-normal">(auto)</span>}
+            <span className={isCalc ? 'italic text-muted-foreground' : ''}>{row.label}</span>
+            {isCalc && <span className="text-[10px] text-muted-foreground/70 font-normal">(auto)</span>}
             {row.helpText && (
               <span className="group/help relative inline-flex">
-                <HelpCircle className="w-3.5 h-3.5 text-slate-300 hover:text-indigo-500 cursor-help" />
-                <span className="invisible group-hover/help:visible absolute left-0 top-5 z-30 bg-slate-800 text-white text-[11px] font-normal rounded-lg shadow-xl px-3 py-2 w-[280px] leading-relaxed pointer-events-none normal-case tracking-normal">
+                <HelpCircle className="w-3.5 h-3.5 text-muted-foreground/50 hover:text-foreground cursor-help" strokeWidth={1.6} />
+                <span className="invisible group-hover/help:visible absolute left-0 top-5 z-30 bg-foreground text-background text-[11px] font-normal rounded-md px-3 py-2 w-[280px] leading-relaxed pointer-events-none normal-case tracking-normal shadow-[var(--shadow-card-hover)]">
                   {row.helpText}
                 </span>
               </span>
@@ -297,28 +301,28 @@ export function FounderForm() {
           const isAmendedPrior = q.isPrevious && original !== undefined && val !== original && editedCells.has(key);
 
           return (
-            <td key={q.key} className="px-1 py-1 border-b border-slate-100 min-w-[140px] relative">
+            <td key={q.key} className="px-1 py-1 border-b border-border/60 min-w-[140px] relative">
               <input
                 type="text"
                 inputMode="decimal"
                 value={val}
                 onChange={(e) => setCellValue(row.key, q.key, e.target.value)}
                 placeholder={row.isCurrency ? `${sym}0` : '0'}
-                className={`w-full border rounded px-2 py-1.5 text-right font-mono text-[13px] placeholder:text-slate-300 focus:outline-none focus:ring-2 transition-shadow min-h-[44px] ${
+                className={`w-full border rounded-sm px-2 py-1.5 text-right font-mono-num text-[13px] placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 transition-colors min-h-[36px] ${
                   isAmendedPrior
-                    ? 'border-red-400 bg-red-50/50 text-red-700 font-semibold focus:ring-red-200 focus:border-red-400'
+                    ? 'border-destructive/60 bg-destructive/[0.06] text-destructive font-semibold focus:ring-destructive/20 focus:border-destructive'
                     : isEmpty
-                    ? 'border-amber-300 bg-amber-50/40 text-slate-800 focus:ring-indigo-300 focus:border-indigo-300'
+                    ? 'border-[#B8763A]/40 bg-[#B8763A]/[0.04] text-foreground focus:ring-primary/20 focus:border-primary/40'
                     : isAutoPopulated
-                    ? 'border-slate-200 bg-white text-slate-500 focus:ring-indigo-300 focus:border-indigo-300'
-                    : 'border-slate-200 bg-white text-slate-800 focus:ring-indigo-300 focus:border-indigo-300'
+                    ? 'border-border bg-card text-muted-foreground focus:ring-primary/20 focus:border-primary/40'
+                    : 'border-border bg-card text-foreground focus:ring-primary/20 focus:border-primary/40'
                 }`}
               />
               {isAutoPopulated && !isAmendedPrior && (
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-blue-400" title="Auto-populated from last known data" />
+                <span className="absolute top-1.5 right-1.5 w-1 h-1 rounded-full bg-foreground/40" title="Auto-populated from last known data" />
               )}
               {isAmendedPrior && (
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500" title={`Amended from previous submission (was ${original})`} />
+                <span className="absolute top-1.5 right-1.5 w-1 h-1 rounded-full bg-destructive" title={`Amended from previous submission (was ${original})`} />
               )}
             </td>
           );
@@ -336,42 +340,43 @@ export function FounderForm() {
   // ── Auth gate (email + OTP) — render before form if not authed ──
   if (authStep !== 'authed') {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="w-full max-w-[440px]">
-          <div className="text-center mb-6">
-            <h1 className="text-[24px] font-bold tracking-tight text-indigo-600 mb-1">CRANE</h1>
-            <p className="text-[12px] text-slate-500 font-medium uppercase tracking-wider">Quarterly Data Collection</p>
-            <div className="mt-3">
-              <span className="text-lg font-semibold text-slate-900">{company.name}</span>
-              <span className="ml-2 px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-[11px] font-semibold">{quarter.label}</span>
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="w-full max-w-[400px]">
+          <div className="text-center mb-8">
+            <h1 className="font-display text-[40px] tracking-tight text-foreground mb-1 leading-none">Crane</h1>
+            <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-[0.2em]">Quarterly Data Collection</p>
+            <div className="mt-5 flex items-center justify-center gap-2">
+              <span className="font-display text-[20px] text-foreground leading-none">{company.name}</span>
+              <span className="text-[11px] text-muted-foreground font-mono-num uppercase tracking-wider">{quarter.label}</span>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
+          <div className="bg-card rounded-md border border-border p-7">
             {authStep === 'email' && (
-              <form onSubmit={sendOtp} className="space-y-4">
+              <form onSubmit={sendOtp} className="space-y-5">
                 <div>
-                  <h2 className="text-[16px] font-semibold text-slate-900">Verify your email</h2>
-                  <p className="text-[12px] text-slate-500 mt-1">
+                  <h2 className="font-display text-[24px] leading-tight text-foreground">Verify your email</h2>
+                  <p className="text-[13px] text-muted-foreground mt-1.5 leading-relaxed">
                     Enter your email to receive a 6-digit access code. The code is sent only to founders registered for {company.name}.
                   </p>
                 </div>
                 {authError && (
-                  <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                    <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-[12px] text-red-700">{authError}</p>
+                  <div className="flex items-start gap-2 bg-destructive/[0.06] border border-destructive/20 rounded-md px-3 py-2">
+                    <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+                    <p className="text-[12px] text-destructive">{authError}</p>
                   </div>
                 )}
                 <div>
-                  <label className="text-[12px] font-medium text-slate-700">Email</label>
-                  <div className="relative mt-1">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <label htmlFor="founder-email" className="text-[12px] font-medium text-foreground/80">Email</label>
+                  <div className="relative mt-1.5">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70" strokeWidth={1.6} />
                     <input
+                      id="founder-email"
                       type="email"
                       value={authEmail}
                       onChange={e => setAuthEmail(e.target.value)}
                       placeholder="founder@yourcompany.com"
-                      className="w-full pl-9 pr-3 py-2.5 text-[13px] border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300"
+                      className="w-full pl-9 pr-3 h-10 text-[13px] border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40"
                       autoFocus
                       autoComplete="email"
                     />
@@ -380,8 +385,8 @@ export function FounderForm() {
                 <button
                   type="submit"
                   disabled={otpSending}
-                  className={`w-full py-2.5 rounded-lg text-[13px] font-medium transition-colors ${
-                    otpSending ? 'bg-indigo-400 text-white cursor-wait' : 'bg-indigo-500 text-white hover:bg-indigo-600'
+                  className={`w-full h-11 rounded-md text-[13px] font-medium transition-colors ${
+                    otpSending ? 'bg-muted text-muted-foreground cursor-wait' : 'bg-foreground text-background hover:bg-foreground/90'
                   }`}
                 >
                   {otpSending ? 'Sending code…' : 'Send access code'}
@@ -390,42 +395,43 @@ export function FounderForm() {
             )}
 
             {authStep === 'otp' && (
-              <form onSubmit={verifyOtp} className="space-y-4">
+              <form onSubmit={verifyOtp} className="space-y-5">
                 <div>
-                  <h2 className="text-[16px] font-semibold text-slate-900">Enter access code</h2>
-                  <p className="text-[12px] text-slate-500 mt-1">
-                    We sent a 6-digit code to <span className="font-medium text-slate-700">{authEmail}</span>. Check your inbox.
+                  <h2 className="font-display text-[24px] leading-tight text-foreground">Enter access code</h2>
+                  <p className="text-[13px] text-muted-foreground mt-1.5 leading-relaxed">
+                    We sent a 6-digit code to <span className="font-medium text-foreground">{authEmail}</span>. Check your inbox.
                   </p>
                 </div>
                 {authError && (
-                  <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                    <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-[12px] text-red-700">{authError}</p>
+                  <div className="flex items-start gap-2 bg-destructive/[0.06] border border-destructive/20 rounded-md px-3 py-2">
+                    <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+                    <p className="text-[12px] text-destructive">{authError}</p>
                   </div>
                 )}
                 <div>
-                  <label className="text-[12px] font-medium text-slate-700">6-digit code</label>
+                  <label htmlFor="founder-otp" className="text-[12px] font-medium text-foreground/80">6-digit code</label>
                   <input
+                    id="founder-otp"
                     type="text"
                     inputMode="numeric"
                     maxLength={6}
                     value={authOtp}
                     onChange={e => setAuthOtp(e.target.value.replace(/\D/g, ''))}
                     placeholder="000000"
-                    className="w-full mt-1 px-3 py-2.5 text-[18px] font-mono tracking-[0.4em] text-center border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300"
+                    className="w-full mt-1.5 px-3 h-12 text-[20px] font-mono-num tracking-[0.4em] text-center border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40"
                     autoFocus
                   />
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-2.5 rounded-lg bg-indigo-500 text-white text-[13px] font-medium hover:bg-indigo-600 transition-colors"
+                  className="w-full h-11 rounded-md bg-foreground text-background text-[13px] font-medium hover:bg-foreground/90 transition-colors"
                 >
                   Verify and continue
                 </button>
                 <button
                   type="button"
                   onClick={() => { setAuthStep('email'); setAuthOtp(''); setAuthError(''); }}
-                  className="w-full text-[12px] text-slate-500 hover:text-slate-700 transition-colors"
+                  className="w-full text-[12px] text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Use a different email
                 </button>
@@ -433,8 +439,8 @@ export function FounderForm() {
             )}
           </div>
 
-          <p className="text-[11px] text-slate-400 text-center mt-4 flex items-center justify-center gap-1">
-            <Lock className="w-3 h-3" /> Secure access — your data is encrypted in transit.
+          <p className="text-[11px] text-muted-foreground/70 text-center mt-4 flex items-center justify-center gap-1.5">
+            <Lock className="w-3 h-3" strokeWidth={1.6} /> Secure access — your data is encrypted in transit.
           </p>
         </div>
       </div>
@@ -442,103 +448,102 @@ export function FounderForm() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-background">
       <div className="max-w-[900px] mx-auto px-4 py-8">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold tracking-tight text-indigo-600 mb-1">CRANE</h1>
-          <p className="text-sm text-slate-500 font-medium uppercase tracking-wider">Quarterly Data Collection</p>
-          <div className="mt-3 flex items-center justify-center gap-3">
-            <span className="text-lg font-semibold text-slate-900">{company.name}</span>
-            <span className="px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">{quarter.label}</span>
+        <div className="text-center mb-10">
+          <h1 className="font-display text-[44px] tracking-tight text-foreground mb-1 leading-none">Crane</h1>
+          <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-[0.2em]">Quarterly Data Collection</p>
+          <div className="mt-5 flex items-center justify-center gap-3">
+            <span className="font-display text-[22px] text-foreground leading-none">{company.name}</span>
+            <span className="text-[11px] text-muted-foreground font-mono-num uppercase tracking-wider">{quarter.label}</span>
           </div>
         </div>
 
         {/* Welcome + Financial Year End + Reporting Currency */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-6 shadow-sm space-y-4">
-          <p className="text-slate-700 leading-relaxed">
-            Hi <span className="font-semibold">{ceoName}</span>, please provide your quarterly data for{' '}
-            <span className="font-semibold">{company.name}</span> for the latest completed quarter.
+        <div className="bg-card rounded-md border border-border p-5 mb-5 space-y-4">
+          <p className="text-[14px] text-foreground leading-relaxed">
+            Hi <span className="font-medium">{ceoName}</span>, please provide your quarterly data for{' '}
+            <span className="font-medium">{company.name}</span> for the latest completed quarter.
             Fields are pre-populated with last known values — update as needed.
-            <br />
-            <span className="text-[13px] text-slate-500">
-              Data for the previous quarter is also attached based on your last submission.
-              You may amend the previous quarter's data if there has been a material change —
-              <span className="text-red-600 font-medium"> any changes will be highlighted in red</span> for our team.
-            </span>
           </p>
-          <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+          <p className="text-[13px] text-muted-foreground leading-relaxed">
+            Data for the previous quarter is also attached based on your last submission.
+            You may amend the previous quarter's data if there has been a material change —
+            <span className="text-destructive font-medium"> any changes will be highlighted in red</span> for our team.
+          </p>
+          <div className="grid grid-cols-2 gap-4 pt-3 border-t border-border/60">
             <div>
-              <label className="text-[12px] font-medium text-slate-600">Company Financial Year End</label>
+              <label className="text-[12px] font-medium text-foreground/80">Company Financial Year End</label>
               <select
                 value={fyEnd}
                 onChange={e => setFyEnd(e.target.value)}
-                className="mt-1 w-full text-[13px] border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                className="mt-1.5 w-full text-[13px] border border-border rounded-md px-3 h-9 bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40"
               >
                 {['January','February','March','April','May','June','July','August','September','October','November','December'].map(m => (
                   <option key={m} value={m}>{m}</option>
                 ))}
               </select>
-              <p className="text-[11px] text-slate-400 mt-1">Q1–Q4 align to your financial year</p>
+              <p className="text-[11px] text-muted-foreground/70 mt-1.5">Q1–Q4 align to your financial year</p>
             </div>
             <div>
-              <label className="text-[12px] font-medium text-slate-600">Reporting Currency</label>
+              <label className="text-[12px] font-medium text-foreground/80">Reporting Currency</label>
               <select
                 value={reportingCurrency}
                 onChange={e => setReportingCurrency(e.target.value)}
-                className="mt-1 w-full text-[13px] border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                className="mt-1.5 w-full text-[13px] border border-border rounded-md px-3 h-9 bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40"
               >
                 {REPORTING_CURRENCIES.map(c => (
                   <option key={c} value={c}>{c}</option>
                 ))}
               </select>
-              <p className="text-[11px] text-slate-400 mt-1">All numeric values are reported in this currency</p>
+              <p className="text-[11px] text-muted-foreground/70 mt-1.5">All numeric values are reported in this currency</p>
             </div>
           </div>
         </div>
 
         {/* Progress + autosave indicator */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-6 shadow-sm">
+        <div className="bg-card rounded-md border border-border p-4 mb-5">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-slate-700">
+            <span className="text-[13px] font-medium text-foreground font-mono-num">
               {filledCells} of {totalCells} cells filled
             </span>
             <div className="flex items-center gap-3">
               {saveStatus === 'saving' && (
-                <span className="text-xs text-slate-400 flex items-center gap-1"><Cloud className="w-3.5 h-3.5 animate-pulse" /> Saving...</span>
+                <span className="text-[11px] text-muted-foreground/70 flex items-center gap-1"><Cloud className="w-3 h-3 animate-pulse" /> Saving</span>
               )}
               {saveStatus === 'saved' && (
-                <span className="text-xs text-emerald-500 flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Data saved</span>
+                <span className="text-[11px] text-muted-foreground flex items-center gap-1"><Check className="w-3 h-3" /> Saved</span>
               )}
-              <span className="text-sm font-semibold text-indigo-600">{progressPct}%</span>
+              <span className="text-[13px] font-medium text-foreground font-mono-num">{progressPct}%</span>
             </div>
           </div>
-          <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+          <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
             <div
-              className="h-full bg-indigo-500 rounded-full transition-all duration-500 ease-out"
+              className="h-full bg-foreground rounded-full transition-all duration-500 ease-out"
               style={{ width: `${progressPct}%` }}
             />
           </div>
-          <div className="flex items-center gap-4 mt-2.5 text-[11px] text-slate-400">
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-400" /> Auto-populated</span>
-            <span className="flex items-center gap-1"><span className="w-3 h-2.5 rounded border border-amber-300 bg-amber-50/40" /> Empty — needs input</span>
-            <span className="flex items-center gap-1"><span className="w-3 h-2.5 rounded border border-red-400 bg-red-50/50" /> Amended (previous quarter)</span>
+          <div className="flex items-center gap-5 mt-3 text-[11px] text-muted-foreground">
+            <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-foreground/40" /> Auto-populated</span>
+            <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[#B8763A]" /> Empty — needs input</span>
+            <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-destructive" /> Amended (previous quarter)</span>
           </div>
         </div>
 
         {/* Spreadsheet Table */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm mb-6 overflow-hidden">
+        <div className="bg-card rounded-md border border-border mb-6 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse min-w-[750px]">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="sticky left-0 z-10 bg-slate-50 px-3 py-2.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider min-w-[180px]">
+                <tr className="bg-muted/60 border-b border-border">
+                  <th className="sticky left-0 z-10 bg-muted/60 px-3 py-2.5 text-left text-xs font-semibold text-foreground/80 uppercase tracking-wider min-w-[180px]">
                     Metric
                   </th>
                   {quarter.quarters.map((q) => (
-                    <th key={q.key} className="px-2 py-2.5 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider min-w-[140px]">
+                    <th key={q.key} className="px-2 py-2.5 text-center text-xs font-semibold text-foreground/80 uppercase tracking-wider min-w-[140px]">
                       <div className="text-[12px]">{q.label}</div>
-                      {q.hint && <div className="text-[10px] font-normal text-slate-400 normal-case tracking-normal mt-0.5">{q.hint}</div>}
+                      {q.hint && <div className="text-[10px] font-normal text-muted-foreground/70 normal-case tracking-normal mt-0.5">{q.hint}</div>}
                     </th>
                   ))}
                   {/* Status column removed — empty cells highlighted instead */}
@@ -562,14 +567,14 @@ export function FounderForm() {
         </div>
 
         {/* Additional Notes */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-6 shadow-sm">
-          <label className="block text-sm font-semibold text-slate-700 mb-2">Additional Notes (optional)</label>
+        <div className="bg-card rounded-md border border-border p-4 mb-6">
+          <label className="block text-[13px] font-medium text-foreground mb-2">Additional notes <span className="text-muted-foreground font-normal">(optional)</span></label>
           <textarea
             value={additionalNotes}
             onChange={(e) => setAdditionalNotes(e.target.value)}
             placeholder="Any context, corrections, or comments for the Crane team..."
             rows={4}
-            className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none bg-slate-50"
+            className="w-full px-3 py-2 rounded-md border border-border text-[13px] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 resize-none bg-card placeholder:text-muted-foreground/60"
           />
         </div>
 
@@ -577,28 +582,28 @@ export function FounderForm() {
         <button
           onClick={() => setSubmitted(true)}
           disabled={!canSubmit}
-          className={`w-full py-3.5 rounded-2xl text-sm font-semibold transition-all duration-200 ${
+          className={`w-full h-12 rounded-md text-[14px] font-medium transition-colors ${
             canSubmit
-              ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200 active:scale-[0.98]'
-              : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+              ? 'bg-foreground text-background hover:bg-foreground/90'
+              : 'bg-muted text-muted-foreground/70 cursor-not-allowed'
           }`}
         >
-          Submit Quarterly Data
+          Submit quarterly data
         </button>
-        <p className="text-xs text-center text-slate-400 mt-2">
+        <p className="text-[11px] text-center text-muted-foreground/70 mt-3">
           Partial submissions are welcome. You can fill in what you have now and update later.
         </p>
 
         {/* Footer */}
         <div className="flex items-center justify-center gap-2 mt-8 mb-4">
-          <Lock className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-xs text-slate-400">Your data is encrypted and transmitted securely.</span>
+          <Lock className="w-3.5 h-3.5 text-muted-foreground/70" />
+          <span className="text-xs text-muted-foreground/70">Your data is encrypted and transmitted securely.</span>
         </div>
         <div className="flex items-center justify-center gap-1.5 mb-8">
-          <Mail className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-xs text-slate-400">
+          <Mail className="w-3.5 h-3.5 text-muted-foreground/70" />
+          <span className="text-xs text-muted-foreground/70">
             Questions? Contact{' '}
-            <a href="mailto:anna@cranevc.com" className="text-indigo-500 hover:underline">anna@cranevc.com</a>
+            <a href="mailto:anna@cranevc.com" className="text-primary hover:underline">anna@cranevc.com</a>
           </span>
         </div>
       </div>

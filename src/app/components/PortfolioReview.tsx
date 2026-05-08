@@ -221,10 +221,10 @@ const quarterlyReviewsHistory: ReviewRecord[] = [
 // ── Shared expandable review detail ───────────────────────────────────
 function ReviewDetailExpanded({ review, navigate }: { review: ReviewRecord; navigate: ReturnType<typeof useNavigate> }) {
   return (
-    <div className="px-4 pb-4 pt-3 bg-slate-50/50 border-t border-slate-100 space-y-4">
+    <div className="px-4 pb-4 pt-3 bg-muted/50 border-t border-border/60 space-y-4">
       {/* Summary line */}
-      <div className="flex items-center gap-4 text-[12px] text-slate-500">
-        <span>By <span className="text-slate-700 font-medium">{review.completedBy}</span></span>
+      <div className="flex items-center gap-4 text-[12px] text-muted-foreground">
+        <span>By <span className="text-foreground font-medium">{review.completedBy}</span></span>
         <span>·</span>
         <span>Duration: {review.duration}</span>
         <span>·</span>
@@ -232,96 +232,96 @@ function ReviewDetailExpanded({ review, navigate }: { review: ReviewRecord; navi
         {review.exported && (
           <>
             <span>·</span>
-            <span className="text-emerald-600 flex items-center gap-1"><Download className="w-3 h-3" /> Exported</span>
+            <span className="text-muted-foreground flex items-center gap-1"><Download className="w-3 h-3" /> Exported</span>
           </>
         )}
       </div>
 
       {/* Commentary */}
       {review.commentary && (
-        <div className="bg-white rounded-lg border border-slate-200/60 p-3">
-          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-1">Review Summary</p>
-          <p className="text-[12px] leading-relaxed text-slate-600">{review.commentary}</p>
+        <div className="bg-white rounded-lg border border-border/60 p-3">
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground/70 mb-1">Review Summary</p>
+          <p className="text-[12px] leading-relaxed text-foreground/80">{review.commentary}</p>
         </div>
       )}
 
       {/* Two-column: RAG Changes + Metric Movements */}
       <div className="grid grid-cols-2 gap-4">
-        <div className="bg-white rounded-lg border border-slate-200/60 p-3">
-          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-2">RAG Status Changes</p>
+        <div className="bg-white rounded-lg border border-border/60 p-3">
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground/70 mb-2">RAG Status Changes</p>
           {review.ragChanges.length > 0 ? (
             <div className="space-y-1.5">
               {review.ragChanges.map((rc, j) => (
                 <div key={j} className="flex items-center gap-2 text-[12px]">
-                  <span className="text-slate-700 font-medium min-w-[80px]">{rc.company}</span>
+                  <span className="text-foreground font-medium min-w-[80px]">{rc.company}</span>
                   <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: getRAGColor(rc.from) }} />
-                  <span className="text-slate-400">→</span>
+                  <span className="text-muted-foreground/70">→</span>
                   <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: getRAGColor(rc.to) }} />
-                  <span className="text-[11px] text-slate-400">{rc.from} → {rc.to}</span>
+                  <span className="text-[11px] text-muted-foreground/70">{rc.from} → {rc.to}</span>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-[11px] text-slate-400">No RAG changes this review</p>
+            <p className="text-[11px] text-muted-foreground/70">No RAG changes this review</p>
           )}
         </div>
 
-        <div className="bg-white rounded-lg border border-slate-200/60 p-3">
-          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-2">Key Metric Movements</p>
+        <div className="bg-white rounded-lg border border-border/60 p-3">
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground/70 mb-2">Key Metric Movements</p>
           {review.metricMovements.length > 0 ? (
             <div className="space-y-1.5">
               {review.metricMovements.map((mm, j) => (
                 <div key={j} className="flex items-center gap-2 text-[12px]">
-                  <span className="text-slate-700 font-medium min-w-[80px]">{mm.company}</span>
-                  <span className="text-slate-500">{mm.metric}:</span>
-                  <span className="font-mono-num text-slate-500">{mm.from}</span>
-                  <span className="text-slate-400">→</span>
+                  <span className="text-foreground font-medium min-w-[80px]">{mm.company}</span>
+                  <span className="text-muted-foreground">{mm.metric}:</span>
+                  <span className="font-mono-num text-muted-foreground">{mm.from}</span>
+                  <span className="text-muted-foreground/70">→</span>
                   <span className={`font-mono-num font-medium ${mm.direction === 'up' ? 'text-emerald-600' : 'text-red-500'}`}>{mm.to}</span>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-[11px] text-slate-400">No significant metric movements</p>
+            <p className="text-[11px] text-muted-foreground/70">No significant metric movements</p>
           )}
         </div>
       </div>
 
       {/* Two-column: Flags + Actions */}
       <div className="grid grid-cols-2 gap-4">
-        <div className="bg-white rounded-lg border border-slate-200/60 p-3">
-          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-2">Flags</p>
+        <div className="bg-white rounded-lg border border-border/60 p-3">
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground/70 mb-2">Flags</p>
           <div className="space-y-1.5">
             {review.flagsRaised.map((f, j) => (
               <div key={`r-${j}`} className="flex items-start gap-2 text-[12px]">
                 <span className={`shrink-0 mt-0.5 w-1.5 h-1.5 rounded-full ${f.urgency === 'high' ? 'bg-red-500' : 'bg-amber-500'}`} />
-                <span className="text-slate-600"><span className="font-medium text-slate-700">{f.company}:</span> {f.flag}</span>
+                <span className="text-foreground/80"><span className="font-medium text-foreground">{f.company}:</span> {f.flag}</span>
               </div>
             ))}
             {review.flagsResolved.map((f, j) => (
               <div key={`v-${j}`} className="flex items-start gap-2 text-[12px]">
                 <CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
-                <span className="text-slate-500"><span className="font-medium text-slate-600">{f.company}:</span> {f.flag}</span>
+                <span className="text-muted-foreground"><span className="font-medium text-foreground/80">{f.company}:</span> {f.flag}</span>
               </div>
             ))}
             {review.flagsRaised.length === 0 && review.flagsResolved.length === 0 && (
-              <p className="text-[11px] text-slate-400">No flag activity</p>
+              <p className="text-[11px] text-muted-foreground/70">No flag activity</p>
             )}
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-slate-200/60 p-3">
-          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-2">Actions Created</p>
+        <div className="bg-white rounded-lg border border-border/60 p-3">
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground/70 mb-2">Actions Created</p>
           {review.actionsCreated.length > 0 ? (
             <div className="space-y-1.5">
               {review.actionsCreated.map((a, j) => (
                 <div key={j} className="flex items-start gap-2 text-[12px]">
-                  <span className="shrink-0 mt-0.5 w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                  <span className="text-slate-600"><span className="font-medium text-slate-700">{a.company}:</span> {a.action} <span className="text-slate-400">→ {a.assignee}</span></span>
+                  <span className="shrink-0 mt-0.5 w-1.5 h-1.5 rounded-full bg-primary" />
+                  <span className="text-foreground/80"><span className="font-medium text-foreground">{a.company}:</span> {a.action} <span className="text-muted-foreground/70">→ {a.assignee}</span></span>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-[11px] text-slate-400">No actions created</p>
+            <p className="text-[11px] text-muted-foreground/70">No actions created</p>
           )}
         </div>
       </div>
@@ -329,56 +329,63 @@ function ReviewDetailExpanded({ review, navigate }: { review: ReviewRecord; navi
       {/* Per-company review details */}
       {review.companyReviews && review.companyReviews.length > 0 && (
         <div>
-          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-3">Company Commentary</p>
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground/70 mb-3">Company Commentary</p>
           <div className="space-y-3">
             {review.companyReviews.map((cr, idx) => {
               const comp = sortedCompanies.find(c => c.name === cr.company);
               return (
-                <div key={idx} className="bg-white rounded-lg border border-slate-200/60 p-3 space-y-2.5">
+                <div key={idx} className="bg-white rounded-lg border border-border/60 p-3 space-y-2.5">
                   {/* Company header with send status */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       {comp && <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: getRAGColor(comp.rag) }} />}
-                      <span className="text-[13px] font-medium text-slate-800">{cr.company}</span>
+                      <span className="text-[13px] font-medium text-foreground">{cr.company}</span>
                     </div>
-                    <span className={`text-[11px] px-2 py-0.5 rounded-lg font-medium ${
-                      cr.sendStatus === 'Sent' ? 'bg-emerald-50 text-emerald-700' :
-                      cr.sendStatus === 'Draft' ? 'bg-amber-50 text-amber-700' :
-                      'bg-slate-50 text-slate-500'
-                    }`}>{cr.sendStatus}</span>
+                    <span className={`text-[11px] inline-flex items-center gap-1.5 ${
+                      cr.sendStatus === 'Sent' ? 'text-foreground/85' :
+                      cr.sendStatus === 'Draft' ? 'text-[#B8763A]' :
+                      'text-muted-foreground'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${
+                        cr.sendStatus === 'Sent' ? 'bg-[#5C7A6E]' :
+                        cr.sendStatus === 'Draft' ? 'bg-[#B8763A]' :
+                        'bg-muted-foreground/30'
+                      }`} />
+                      {cr.sendStatus}
+                    </span>
                   </div>
 
                   {/* Comment */}
                   <div>
-                    <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-slate-400 mb-0.5">Comment</p>
-                    <p className="text-[12px] leading-relaxed text-slate-600">{cr.comment}</p>
+                    <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-muted-foreground/70 mb-0.5">Comment</p>
+                    <p className="text-[12px] leading-relaxed text-foreground/80">{cr.comment}</p>
                   </div>
 
                   {/* Recent Progress */}
                   <div>
-                    <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-slate-400 mb-0.5">Recent Progress</p>
-                    <p className="text-[12px] leading-relaxed text-slate-600">{cr.recentProgress}</p>
+                    <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-muted-foreground/70 mb-0.5">Recent Progress</p>
+                    <p className="text-[12px] leading-relaxed text-foreground/80">{cr.recentProgress}</p>
                   </div>
 
                   {/* Summary */}
                   <div>
-                    <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-slate-400 mb-0.5">Summary</p>
-                    <p className="text-[12px] leading-relaxed text-slate-600">{cr.summary}</p>
+                    <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-muted-foreground/70 mb-0.5">Summary</p>
+                    <p className="text-[12px] leading-relaxed text-foreground/80">{cr.summary}</p>
                   </div>
 
                   {/* Concerns + Action Points + Induction Action in a row */}
                   <div className="grid grid-cols-3 gap-3">
                     <div>
-                      <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-slate-400 mb-0.5">Key Concerns</p>
-                      <p className="text-[12px] leading-relaxed text-slate-600">{cr.keyConcerns}</p>
+                      <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-muted-foreground/70 mb-0.5">Key Concerns</p>
+                      <p className="text-[12px] leading-relaxed text-foreground/80">{cr.keyConcerns}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-slate-400 mb-0.5">Action Points</p>
-                      <p className="text-[12px] leading-relaxed text-slate-600">{cr.actionPoints}</p>
+                      <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-muted-foreground/70 mb-0.5">Action Points</p>
+                      <p className="text-[12px] leading-relaxed text-foreground/80">{cr.actionPoints}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-slate-400 mb-0.5">Induction Action</p>
-                      <p className="text-[12px] leading-relaxed text-slate-600">{cr.inductionAction}</p>
+                      <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-muted-foreground/70 mb-0.5">Induction Action</p>
+                      <p className="text-[12px] leading-relaxed text-foreground/80">{cr.inductionAction}</p>
                     </div>
                   </div>
                 </div>
@@ -390,7 +397,7 @@ function ReviewDetailExpanded({ review, navigate }: { review: ReviewRecord; navi
 
       {/* Companies reviewed chips */}
       <div>
-        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400 mb-2">Companies Reviewed</p>
+        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground/70 mb-2">Companies Reviewed</p>
         <div className="flex flex-wrap gap-1.5">
           {review.companiesReviewed.map(name => {
             const comp = sortedCompanies.find(c => c.name === name);
@@ -398,7 +405,7 @@ function ReviewDetailExpanded({ review, navigate }: { review: ReviewRecord; navi
               <button
                 key={name}
                 onClick={() => comp && navigate(`/company/${comp.id}`)}
-                className="text-[11px] px-2 py-1 bg-white border border-slate-200 rounded-lg text-slate-600 hover:border-indigo-300 hover:text-indigo-600 transition-colors flex items-center gap-1.5"
+                className="text-[11px] px-2 py-1 bg-white border border-border rounded-lg text-foreground/80 hover:border-primary/40 hover:text-primary transition-colors flex items-center gap-1.5"
               >
                 {comp && <div className="w-2 h-2 rounded-full" style={{ background: getRAGColor(comp.rag) }} />}
                 {name}
@@ -492,8 +499,8 @@ function __removedMonthlyReview() {
       <div className="max-w-[900px] mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-[24px] font-semibold tracking-tight text-slate-800">Monthly Reviews</h1>
-            <p className="text-[13px] text-slate-500 mt-1">
+            <h1 className="font-display text-[34px] leading-tight text-foreground">Monthly Reviews</h1>
+            <p className="text-[13px] text-muted-foreground mt-1">
               Internal team review — step through companies, add commentary per company
             </p>
           </div>
@@ -501,14 +508,14 @@ function __removedMonthlyReview() {
             <select
               value={fundFilter}
               onChange={e => setFundFilter(e.target.value as any)}
-              className="text-[13px] border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-700"
+              className="text-[13px] border border-border rounded-lg px-3 py-1.5 bg-white text-foreground"
             >
               <option value="all">All Funds</option>
               {funds.map(f => <option key={f.id} value={f.name}>{f.name}</option>)}
             </select>
             <button
               onClick={() => { setMode('active'); setCurrentIndex(0); setReviewed(new Set()); setSkipped(new Set()); }}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg text-[13px] hover:bg-indigo-600 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-[13px] hover:bg-[var(--primary-muted)] transition-colors"
             >
               {inProgressReview ? (
                 <><FileText className="w-3.5 h-3.5" /> Edit {inProgressReview.month.split(' ')[0]} Review</>
@@ -521,30 +528,35 @@ function __removedMonthlyReview() {
 
         {/* Review history list */}
         <div>
-          <h3 className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400 mb-3">Review History</h3>
-          <div className="bg-white rounded-xl border border-slate-200/60 divide-y divide-slate-100">
+          <h3 className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground/70 mb-3">Review History</h3>
+          <div className="bg-card rounded-md border border-border/70 divide-y divide-border/60">
             {monthlyReviewsHistory.map((review) => (
               <button
                 key={review.id}
                 onClick={() => openReviewForEditing(review)}
-                className="w-full p-4 flex items-center gap-3 text-[13px] hover:bg-slate-50 transition-colors text-left"
+                className="w-full p-4 flex items-center gap-3 text-[13px] hover:bg-muted/60 transition-colors text-left"
               >
-                <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                  <Calendar className="w-4.5 h-4.5 text-indigo-500" />
+                <div className="w-9 h-9 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
+                  <Calendar className="w-4 h-4 text-muted-foreground" strokeWidth={1.6} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-medium text-slate-800">{review.month}</p>
-                  <p className="text-[12px] text-slate-500 mt-0.5">
+                  <p className="text-[14px] font-medium text-foreground">{review.month}</p>
+                  <p className="text-[12px] text-muted-foreground mt-0.5">
                     {review.date} · {review.completedBy}
-                    <span className="text-slate-400 ml-1">· Last edited by {review.lastEditedBy}, {review.lastEditedAt}</span>
+                    <span className="text-muted-foreground/70 ml-1">· Last edited by {review.lastEditedBy}, {review.lastEditedAt}</span>
                   </p>
                 </div>
-                <div className="flex items-center gap-4 flex-shrink-0">
-                  <p className="text-[12px] text-slate-500">{review.companyComments.length} companies</p>
-                  <span className={`text-[11px] px-2.5 py-1 rounded-lg font-medium ${
-                    review.status === 'Complete' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
-                  }`}>{review.status}</span>
-                  <Pencil className="w-3.5 h-3.5 text-slate-400" />
+                <div className="flex items-center gap-5 flex-shrink-0">
+                  <p className="text-[12px] text-muted-foreground font-mono-num">{review.companyComments.length} companies</p>
+                  <span className={`text-[11px] inline-flex items-center gap-1.5 ${
+                    review.status === 'Complete' ? 'text-foreground/85' : 'text-[#B8763A]'
+                  }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${
+                      review.status === 'Complete' ? 'bg-[#5C7A6E]' : 'bg-[#B8763A]'
+                    }`} />
+                    {review.status}
+                  </span>
+                  <Pencil className="w-3.5 h-3.5 text-muted-foreground/60" strokeWidth={1.6} />
                 </div>
               </button>
             ))}
@@ -561,27 +573,27 @@ function __removedMonthlyReview() {
     <div className="max-w-[1100px] mx-auto space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <button onClick={() => { setMode('list'); setEditingReview(null); }} className="text-[13px] text-slate-500 hover:text-slate-700 transition-colors">← Back to Reviews</button>
-          <h2 className="text-[18px] font-semibold tracking-tight text-slate-800">{reviewTitle}</h2>
+          <button onClick={() => { setMode('list'); setEditingReview(null); }} className="text-[13px] text-muted-foreground hover:text-foreground transition-colors">← Back to Reviews</button>
+          <h2 className="text-[18px] font-semibold tracking-tight text-foreground">{reviewTitle}</h2>
           {autoSaveStatus === 'saving' && (
-            <span className="text-[11px] text-slate-400 flex items-center gap-1"><Save className="w-3 h-3 animate-pulse" /> Saving...</span>
+            <span className="text-[11px] text-muted-foreground/70 flex items-center gap-1"><Save className="w-3 h-3 animate-pulse" /> Saving...</span>
           )}
           {autoSaveStatus === 'saved' && (
             <span className="text-[11px] text-emerald-500 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Saved</span>
           )}
           {editingReview && autoSaveStatus === 'idle' && (
-            <span className="text-[11px] text-slate-400">Last edited by {editingReview.lastEditedBy}, {editingReview.lastEditedAt}</span>
+            <span className="text-[11px] text-muted-foreground/70">Last edited by {editingReview.lastEditedBy}, {editingReview.lastEditedAt}</span>
           )}
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-[12px] text-slate-500">
+          <span className="text-[12px] text-muted-foreground">
             {currentIndex + 1} of {sortedCompanies.length}
           </span>
           <button
             onClick={() => { setMode('list'); setEditingReview(null); }}
-            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 text-white rounded-lg text-[13px] hover:bg-emerald-600 transition-colors"
+            className="flex items-center gap-1.5 px-4 h-9 bg-foreground text-background rounded-md text-[13px] font-medium hover:bg-foreground/90 transition-colors"
           >
-            <CheckCircle className="w-4 h-4" /> Complete Review
+            <CheckCircle className="w-3.5 h-3.5" strokeWidth={1.8} /> Complete Review
           </button>
         </div>
       </div>
@@ -590,10 +602,10 @@ function __removedMonthlyReview() {
         {/* Left sidebar — company list for jumping */}
         <div className="w-[240px] flex-shrink-0">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400">Companies</p>
-            <span className="text-[11px] text-slate-500">{companiesWithComments}/{sortedCompanies.length}</span>
+            <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground/70">Companies</p>
+            <span className="text-[11px] text-muted-foreground">{companiesWithComments}/{sortedCompanies.length}</span>
           </div>
-          <div className="bg-white rounded-xl border border-slate-200/60 divide-y divide-slate-100 max-h-[600px] overflow-y-auto">
+          <div className="bg-white rounded-xl border border-border/60 divide-y divide-border/60 max-h-[600px] overflow-y-auto">
             {sortedCompanies.map((c, i) => {
               const hasComment = (commentaries[c.id] || '').trim().length > 0;
               const isCurrent = i === currentIndex;
@@ -601,22 +613,24 @@ function __removedMonthlyReview() {
                 <button
                   key={c.id}
                   onClick={() => setCurrentIndex(i)}
-                  className={`w-full p-2.5 flex items-center gap-2 text-left transition-colors ${
-                    isCurrent ? 'bg-indigo-50 border-l-2 border-l-indigo-500' :
-                    hasComment ? 'bg-emerald-50/50' :
-                    'hover:bg-slate-50'
+                  className={`w-full p-2.5 flex items-center gap-2.5 text-left transition-colors relative ${
+                    isCurrent ? 'bg-muted text-foreground' :
+                    'hover:bg-muted/60'
                   }`}
                 >
-                  <div className="w-6 h-6 rounded flex items-center justify-center text-white text-[10px] flex-shrink-0" style={{ background: c.logoColor }}>{c.name[0]}</div>
+                  {isCurrent && <span className="absolute left-0 top-1.5 bottom-1.5 w-[2px] bg-foreground rounded-r" />}
+                  <div className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-medium flex-shrink-0 ${
+                    isCurrent ? 'bg-foreground text-background' : 'bg-muted-foreground/15 text-muted-foreground'
+                  }`}>{c.name[0]}</div>
                   <div className="flex-1 min-w-0">
-                    <p className={`text-[12px] truncate ${isCurrent ? 'text-indigo-700 font-medium' : 'text-slate-700'}`}>{c.name}</p>
-                    <div className="flex items-center gap-1 mt-0.5">
+                    <p className={`text-[12px] truncate ${isCurrent ? 'text-foreground font-medium' : 'text-foreground/85'}`}>{c.name}</p>
+                    <div className="flex items-center gap-0.5 mt-0.5">
                       {c.ragHistory.slice(-3).map((r, ri) => (
-                        <div key={ri} className="w-2 h-2 rounded-full" style={{ background: getRAGColor(r) }} />
+                        <div key={ri} className="w-1 h-1 rounded-full" style={{ background: getRAGColor(r) }} />
                       ))}
                     </div>
                   </div>
-                  {hasComment && <CheckCircle className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />}
+                  {hasComment && <span className="w-1.5 h-1.5 rounded-full bg-foreground/50 flex-shrink-0" title="Has commentary" />}
                 </button>
               );
             })}
@@ -626,32 +640,32 @@ function __removedMonthlyReview() {
         {/* Right — main review area */}
         <div className="flex-1">
           {current && (
-            <div className="bg-white rounded-xl border border-slate-200/60 p-5 space-y-3">
+            <div className="bg-white rounded-xl border border-border/60 p-5 space-y-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-[15px]" style={{ background: current.logoColor }}>
+                <div className="w-10 h-10 rounded-md bg-muted text-muted-foreground flex items-center justify-center text-[15px] font-medium">
                   {current.name[0]}
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-[16px] font-semibold text-slate-800">{current.name}</h2>
-                    <span className="text-[11px] px-2 py-0.5 bg-slate-100 rounded-md">{current.stage}</span>
-                    <span className="text-[11px] px-2 py-0.5 bg-slate-100 rounded-md">{current.fund}</span>
-                    <span className="text-[11px] px-2 py-0.5 rounded-md" style={{ background: getActionColor(current.action) + '15', color: getActionColor(current.action) }}>
+                  <div className="flex items-center gap-1.5">
+                    <h2 className="font-display text-[22px] leading-tight text-foreground">{current.name}</h2>
+                    <span className="text-[11px] px-2 py-0.5 bg-muted text-muted-foreground rounded-sm ml-1.5">{current.stage}</span>
+                    <span className="text-[11px] px-2 py-0.5 bg-muted text-muted-foreground rounded-sm">{current.fund}</span>
+                    <span className="text-[11px] px-2 py-0.5 rounded-sm bg-foreground/8 text-foreground/85">
                       {current.action}
                     </span>
                   </div>
-                  <p className="text-[13px] text-slate-500">{current.description}</p>
+                  <p className="text-[13px] text-muted-foreground mt-0.5">{current.description}</p>
                 </div>
               </div>
 
               {/* RAG History strip */}
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400">RAG History</span>
+                <span className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground/70">RAG History</span>
                 <div className="flex items-center gap-1.5">
                   {current.ragHistory.map((r, i) => (
                     <div key={i} className="flex items-center gap-1">
                       <div className="w-3.5 h-3.5 rounded-full" style={{ background: getRAGColor(r) }} title={`Q${i + 1}: ${r}`} />
-                      <span className="text-[10px] text-slate-400">Q{i + 1}</span>
+                      <span className="text-[10px] text-muted-foreground/70">Q{i + 1}</span>
                     </div>
                   ))}
                 </div>
@@ -659,23 +673,23 @@ function __removedMonthlyReview() {
 
               {/* Key metrics — kept as empty shell, data not available initially */}
               <div>
-                <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400">Key Metrics</span>
+                <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground/70">Key Metrics</span>
                 <div className="grid grid-cols-5 gap-2 mt-1">
                   {['Health', 'MRR', 'Burn', 'Runway', 'MoIC'].map(label => (
-                    <div key={label} className="bg-slate-50 rounded-lg px-3 py-2">
-                      <p className="text-[10px] text-slate-400">{label}</p>
-                      <p className="text-[13px] mt-0.5 text-slate-300">—</p>
+                    <div key={label} className="bg-muted/60 rounded-lg px-3 py-2">
+                      <p className="text-[10px] text-muted-foreground/70">{label}</p>
+                      <p className="text-[13px] mt-0.5 text-muted-foreground/50">—</p>
                     </div>
                   ))}
                 </div>
               </div>
 
               <div>
-                <label className="text-[12px] text-slate-500 flex items-center gap-1">
+                <label className="text-[12px] text-muted-foreground flex items-center gap-1">
                   <Users className="w-3 h-3" /> Team Commentary
                 </label>
                 <textarea
-                  className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white resize-none h-[72px]"
+                  className="w-full text-[12px] border border-border rounded-lg px-3 py-2 mt-1 bg-white resize-none h-[72px]"
                   placeholder={`Add commentary for ${current.name}...`}
                   value={commentaries[current.id] || ''}
                   onChange={e => setCommentaries(prev => ({ ...prev, [current.id]: e.target.value }))}
@@ -684,15 +698,15 @@ function __removedMonthlyReview() {
 
               <div className="flex items-center gap-3 pt-1">
                 {currentIndex < sortedCompanies.length - 1 ? (
-                  <button onClick={() => setCurrentIndex(currentIndex + 1)} className="px-4 py-2 bg-indigo-500 text-white rounded-lg text-[13px] hover:bg-indigo-600 transition-colors flex items-center gap-1.5">
+                  <button onClick={() => setCurrentIndex(currentIndex + 1)} className="px-4 py-2 bg-primary text-white rounded-lg text-[13px] hover:bg-[var(--primary-muted)] transition-colors flex items-center gap-1.5">
                     Next <ChevronRight className="w-4 h-4" />
                   </button>
                 ) : (
-                  <button onClick={() => setCurrentIndex(0)} className="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-[13px] hover:bg-slate-200 transition-colors">
+                  <button onClick={() => setCurrentIndex(0)} className="px-4 py-2 bg-muted text-foreground/80 rounded-lg text-[13px] hover:bg-secondary transition-colors">
                     Back to first
                   </button>
                 )}
-                <button onClick={() => navigate(`/company/${current.id}`)} className="ml-auto text-[12px] text-indigo-500 hover:text-indigo-700 flex items-center gap-1">
+                <button onClick={() => navigate(`/company/${current.id}`)} className="ml-auto text-[12px] text-primary hover:text-primary flex items-center gap-1">
                   View Full Detail <ChevronRight className="w-3 h-3" />
                 </button>
               </div>
@@ -739,11 +753,12 @@ export function QuarterlyReview() {
     '1': 'submitted', '2': 'sent', '3': 'sent', '4': 'partial', '5': 'not_sent',
   };
   const getFounderStatus = (id: string) => founderSubmissionStatus[id] ?? (parseInt(id) % 3 === 0 ? 'partial' : 'submitted');
+  // Tonal status — single dot conveys state, surrounding chrome stays neutral
   const founderStatusConfig = {
-    submitted: { label: 'Submitted', dot: '#10b981', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
-    partial:   { label: 'Partial',   dot: '#f59e0b', bg: 'bg-amber-50',   text: 'text-amber-700',   border: 'border-amber-200' },
-    sent:      { label: 'Awaiting',  dot: '#6366f1', bg: 'bg-indigo-50',  text: 'text-indigo-700',  border: 'border-indigo-200' },
-    not_sent:  { label: 'Not sent',  dot: '#94a3b8', bg: 'bg-slate-50',   text: 'text-slate-400',   border: 'border-slate-200' },
+    submitted: { label: 'Submitted', dot: '#5C7A6E', bg: 'bg-card',     text: 'text-foreground/85',  border: 'border-border' },
+    partial:   { label: 'Partial',   dot: '#B8763A', bg: 'bg-card',     text: 'text-[#B8763A]',      border: 'border-border' },
+    sent:      { label: 'Awaiting',  dot: '#6B6660', bg: 'bg-card',     text: 'text-muted-foreground', border: 'border-border' },
+    not_sent:  { label: 'Not sent',  dot: '#C8C2B0', bg: 'bg-muted/40', text: 'text-muted-foreground/70', border: 'border-border' },
   };
 
   // ── Autosave logic ──
@@ -809,14 +824,14 @@ export function QuarterlyReview() {
       <div className="max-w-[900px] mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-[24px] font-semibold tracking-tight text-slate-800">Quarterly Reviews</h1>
-            <p className="text-[13px] text-slate-500 mt-1">
+            <h1 className="font-display text-[34px] leading-tight text-foreground">Quarterly Reviews</h1>
+            <p className="text-[13px] text-muted-foreground mt-1">
               Full team review — add commentary per company, then export Asset Metrix XLSX{!isM1 && ' or LP Report PDF'}
             </p>
           </div>
           <button
             onClick={() => { setMode('active'); setCurrentIndex(0); setQuarterlyStep(1); }}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg text-[13px] hover:bg-indigo-600 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-[13px] hover:bg-[var(--primary-muted)] transition-colors"
           >
             {inProgressQuarterly ? (
               <><FileText className="w-3.5 h-3.5" /> Edit {inProgressQuarterly.quarter} Review</>
@@ -827,21 +842,21 @@ export function QuarterlyReview() {
         </div>
 
         {/* Upcoming / Current quarter callout */}
-        <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 flex items-center justify-between">
+        <div className="bg-card border border-border rounded-md p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center">
-              <Calendar className="w-5 h-5 text-indigo-600" />
+            <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center">
+              <Calendar className="w-4.5 h-4.5 text-muted-foreground" strokeWidth={1.6} />
             </div>
             <div>
-              <p className="text-[14px] font-medium text-indigo-900">{currentQuarterLabel} — Ready for Review</p>
-              <p className="text-[12px] text-indigo-600 mt-0.5">
+              <p className="text-[14px] font-medium text-foreground">{currentQuarterLabel} — Ready for Review</p>
+              <p className="text-[12px] text-muted-foreground mt-0.5">
                 {sortedCompanies.length} companies · Founder data collection {Math.round(sortedCompanies.length * 0.6)} of {sortedCompanies.length} submitted
               </p>
             </div>
           </div>
           <button
             onClick={() => { setMode('active'); setCurrentIndex(0); setQuarterlyStep(1); }}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg text-[13px] hover:bg-indigo-600 transition-colors"
+            className="flex items-center gap-2 px-4 h-9 bg-foreground text-background rounded-md text-[13px] font-medium hover:bg-foreground/90 transition-colors"
           >
             Begin Review <ArrowRight className="w-3.5 h-3.5" />
           </button>
@@ -849,40 +864,47 @@ export function QuarterlyReview() {
 
         {/* Review history list */}
         <div>
-          <h3 className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400 mb-3">Past Quarterly Reviews</h3>
-          <div className="bg-white rounded-xl border border-slate-200/60 divide-y divide-slate-100">
+          <h3 className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground/70 mb-3">Past Quarterly Reviews</h3>
+          <div className="bg-card rounded-md border border-border/70 divide-y divide-border/60">
             {quarterlyReviewsHistory.map((review) => (
               <button
                 key={review.id}
                 onClick={() => openQuarterlyForEditing(review)}
-                className="w-full p-4 flex items-center gap-3 text-[13px] hover:bg-slate-50 transition-colors text-left"
+                className="w-full p-4 flex items-center gap-3 text-[13px] hover:bg-muted/60 transition-colors text-left"
               >
-                <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
-                  <FileText className="w-4.5 h-4.5 text-purple-500" />
+                <div className="w-9 h-9 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-4 h-4 text-muted-foreground" strokeWidth={1.6} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-medium text-slate-800">{review.quarter}</p>
-                  <p className="text-[12px] text-slate-500 mt-0.5">
+                  <p className="text-[14px] font-medium text-foreground">{review.quarter}</p>
+                  <p className="text-[12px] text-muted-foreground mt-0.5">
                     {review.date} · {review.completedBy} · {review.duration}
-                    {review.lastEditedBy && <span className="text-slate-400 ml-1">· Last edited by {review.lastEditedBy}, {review.lastEditedAt}</span>}
+                    {review.lastEditedBy && <span className="text-muted-foreground/70 ml-1">· Last edited by {review.lastEditedBy}, {review.lastEditedAt}</span>}
                   </p>
                 </div>
-                <div className="flex items-center gap-4 flex-shrink-0">
+                <div className="flex items-center gap-5 flex-shrink-0">
                   <div className="text-right">
-                    <p className="text-[12px] text-slate-700">{review.companies} companies</p>
-                    <p className="text-[11px] text-slate-400">{review.changes} RAG changes</p>
+                    <p className="text-[12px] text-foreground font-mono-num">{review.companies} companies</p>
+                    <p className="text-[11px] text-muted-foreground/70 font-mono-num">{review.changes} RAG changes</p>
                   </div>
                   {review.exported && (
-                    <span className="text-[11px] px-2.5 py-1 rounded-lg font-medium bg-purple-50 text-purple-700 flex items-center gap-1">
+                    <span className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
                       <Download className="w-3 h-3" /> Exported
                     </span>
                   )}
-                  <span className={`text-[11px] px-2.5 py-1 rounded-lg font-medium ${
-                    review.status === 'Complete' ? 'bg-emerald-50 text-emerald-700' :
-                    review.status === 'In Progress' ? 'bg-amber-50 text-amber-700' :
-                    'bg-slate-50 text-slate-500'
-                  }`}>{review.status}</span>
-                  <Pencil className="w-3.5 h-3.5 text-slate-400" />
+                  <span className={`text-[11px] inline-flex items-center gap-1.5 ${
+                    review.status === 'Complete' ? 'text-foreground/85' :
+                    review.status === 'In Progress' ? 'text-[#B8763A]' :
+                    'text-muted-foreground/70'
+                  }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${
+                      review.status === 'Complete' ? 'bg-[#5C7A6E]' :
+                      review.status === 'In Progress' ? 'bg-[#B8763A]' :
+                      'bg-muted-foreground/30'
+                    }`} />
+                    {review.status}
+                  </span>
+                  <Pencil className="w-3.5 h-3.5 text-muted-foreground/60" strokeWidth={1.6} />
                 </div>
               </button>
             ))}
@@ -915,25 +937,25 @@ export function QuarterlyReview() {
   return (
     <div className="max-w-[1100px] mx-auto space-y-5">
       <div className="flex items-center justify-between">
-        <button onClick={() => { setMode('list'); setEditingReview(null); }} className="text-[13px] text-slate-500 hover:text-slate-700 transition-colors">← Back to Reviews</button>
+        <button onClick={() => { setMode('list'); setEditingReview(null); }} className="text-[13px] text-muted-foreground hover:text-foreground transition-colors">← Back to Reviews</button>
         <div className="flex items-center gap-3">
-          <h2 className="text-[18px] font-semibold tracking-tight text-slate-800">
+          <h2 className="text-[18px] font-semibold tracking-tight text-foreground">
             {quarterlyReviewTitle}
           </h2>
           {autoSaveStatus === 'saving' && (
-            <span className="text-[11px] text-slate-400 flex items-center gap-1"><Save className="w-3 h-3 animate-pulse" /> Saving...</span>
+            <span className="text-[11px] text-muted-foreground/70 flex items-center gap-1"><Save className="w-3 h-3 animate-pulse" /> Saving...</span>
           )}
           {autoSaveStatus === 'saved' && (
             <span className="text-[11px] text-emerald-500 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Saved</span>
           )}
           {editingReview && autoSaveStatus === 'idle' && editingReview.lastEditedBy && (
-            <span className="text-[11px] text-slate-400">Last edited by {editingReview.lastEditedBy}, {editingReview.lastEditedAt}</span>
+            <span className="text-[11px] text-muted-foreground/70">Last edited by {editingReview.lastEditedBy}, {editingReview.lastEditedAt}</span>
           )}
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => { generateAssetMetrixXLSX(selectedFund, companies); }}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg text-[13px] hover:bg-indigo-600 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-[13px] hover:bg-[var(--primary-muted)] transition-colors"
           >
             <Download className="w-3.5 h-3.5" /> Export Asset Metrix
           </button>
@@ -946,10 +968,10 @@ export function QuarterlyReview() {
           {/* Left sidebar */}
           <div className="w-[240px] flex-shrink-0">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400">Companies</p>
-              <span className="text-[11px] text-slate-500">{doneCount}/{sortedCompanies.length} done</span>
+              <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground/70">Companies</p>
+              <span className="text-[11px] text-muted-foreground">{doneCount}/{sortedCompanies.length} done</span>
             </div>
-            <div className="bg-white rounded-xl border border-slate-200/60 divide-y divide-slate-100 max-h-[680px] overflow-y-auto">
+            <div className="bg-white rounded-xl border border-border/60 divide-y divide-border/60 max-h-[680px] overflow-y-auto">
               {sortedCompanies.map((c, i) => {
                 const isCurrent = i === currentIndex;
                 const done = isCommentaryDone(c.id);
@@ -959,29 +981,31 @@ export function QuarterlyReview() {
                   <button
                     key={c.id}
                     onClick={() => setCurrentIndex(i)}
-                    className={`w-full p-2.5 flex items-center gap-2 text-left transition-colors ${
-                      isCurrent ? 'bg-indigo-50 border-l-2 border-l-indigo-500' :
-                      done ? 'bg-emerald-50/40' : 'hover:bg-slate-50'
+                    className={`w-full p-2.5 flex items-center gap-2.5 text-left transition-colors relative ${
+                      isCurrent ? 'bg-muted text-foreground' :
+                      'hover:bg-muted/60'
                     }`}
                   >
-                    <div className="w-6 h-6 rounded flex items-center justify-center text-white text-[10px] flex-shrink-0" style={{ background: c.logoColor }}>{c.name[0]}</div>
+                    {isCurrent && <span className="absolute left-0 top-1.5 bottom-1.5 w-[2px] bg-foreground rounded-r" />}
+                    <div className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-medium flex-shrink-0 ${
+                      isCurrent ? 'bg-foreground text-background' : 'bg-muted-foreground/15 text-muted-foreground'
+                    }`}>{c.name[0]}</div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-[12px] truncate ${isCurrent ? 'text-indigo-700 font-medium' : 'text-slate-700'}`}>{c.name}</p>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: getRAGColor(c.rag) }} title={c.rag} />
-                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: fCfg.dot }} title={`Founder: ${fCfg.label}`} />
-                        <span className="text-[10px] text-slate-400 truncate">{c.stage}</span>
+                      <p className={`text-[12px] truncate ${isCurrent ? 'text-foreground font-medium' : 'text-foreground/85'}`}>{c.name}</p>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: getRAGColor(c.rag) }} title={c.rag} />
+                        <span className="text-[10px] text-muted-foreground/70 truncate ml-0.5">{c.stage}</span>
                       </div>
                     </div>
-                    {done && <CheckCircle className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />}
+                    {done && <span className="w-1.5 h-1.5 rounded-full bg-foreground/50 flex-shrink-0" title="Commentary added" />}
                   </button>
                 );
               })}
             </div>
             <div className="mt-2.5 space-y-1">
-              <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
-                <div className="w-2 h-2 rounded-full bg-slate-300" />RAG status
-                <div className="w-2 h-2 rounded-full bg-indigo-400 ml-2" />Founder form
+              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/70">
+                <div className="w-2 h-2 rounded-full bg-muted-foreground/50" />RAG status
+                <div className="w-2 h-2 rounded-full bg-primary/70 ml-2" />Founder form
               </div>
             </div>
           </div>
@@ -990,25 +1014,25 @@ export function QuarterlyReview() {
           {qCurrent && (
             <div className="flex-1 min-w-0 space-y-3">
               {/* Company header */}
-              <div className="bg-white rounded-xl border border-slate-200/60 p-4">
+              <div className="bg-card rounded-md border border-border/70 p-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-[15px] flex-shrink-0" style={{ background: qCurrent.logoColor }}>
+                  <div className="w-10 h-10 rounded-md bg-muted text-muted-foreground flex items-center justify-center text-[15px] font-medium flex-shrink-0">
                     {qCurrent.name[0]}
                   </div>
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h2 className="text-[16px] font-semibold text-slate-800">{qCurrent.name}</h2>
-                      <div className="w-2.5 h-2.5 rounded-full" style={{ background: getRAGColor(qCurrent.rag) }} title={qCurrent.rag} />
-                      <span className="text-[11px] px-2 py-0.5 bg-slate-100 rounded-md text-slate-600">{qCurrent.stage}</span>
-                      <span className="text-[11px] px-2 py-0.5 bg-slate-100 rounded-md text-slate-600">{qCurrent.sector}</span>
-                      <div className="flex items-center gap-1 ml-auto">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <h2 className="font-display text-[24px] leading-tight text-foreground">{qCurrent.name}</h2>
+                      <div className="w-2 h-2 rounded-full ml-1" style={{ background: getRAGColor(qCurrent.rag) }} title={qCurrent.rag} />
+                      <span className="text-[11px] px-2 py-0.5 bg-muted text-muted-foreground rounded-sm">{qCurrent.stage}</span>
+                      <span className="text-[11px] px-2 py-0.5 bg-muted text-muted-foreground rounded-sm">{qCurrent.sector}</span>
+                      <div className="flex items-center gap-1.5 ml-auto">
                         {(qCurrent.ownerAvatars || []).map((a: string, i: number) => (
-                          <div key={i} className="w-5 h-5 rounded-full bg-indigo-500 text-white flex items-center justify-center text-[9px]">{a}</div>
+                          <div key={i} className="w-5 h-5 rounded-full bg-foreground/10 text-foreground/80 flex items-center justify-center text-[9px] font-medium">{a}</div>
                         ))}
-                        <span className="text-[11px] text-slate-500">{qCurrent.owners.join(', ')}</span>
+                        <span className="text-[11px] text-muted-foreground">{qCurrent.owners.join(', ')}</span>
                       </div>
                     </div>
-                    <p className="text-[12px] text-slate-500 mt-0.5">{qCurrent.description}</p>
+                    <p className="text-[12px] text-muted-foreground mt-1">{qCurrent.description}</p>
                   </div>
                 </div>
 
@@ -1020,7 +1044,7 @@ export function QuarterlyReview() {
                 const fCfg = founderStatusConfig[fStatus];
                 const isEditing = editingFounderId === qCurrent.id;
                 return (
-                  <div className={`rounded-xl border p-4 ${fCfg.bg} ${fCfg.border}`}>
+                  <div className="rounded-md border border-border bg-card p-4">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2 flex-wrap">
                         {(() => {
@@ -1028,20 +1052,20 @@ export function QuarterlyReview() {
                           const range = quarterDateRange(1, fyEnd, 2026);
                           return (
                             <>
-                              <p className="text-[12px] font-medium text-slate-700">Founder Submission — Q1 2026</p>
-                              <span className="text-[10px] text-slate-500 bg-white/70 px-1.5 py-0.5 rounded border border-slate-200" title={`This company's financial year ends in ${monthIndexToName(fyEnd)}`}>
+                              <p className="text-[12px] font-medium text-foreground">Founder Submission — Q1 2026</p>
+                              <span className="text-[10px] text-muted-foreground font-mono-num" title={`This company's financial year ends in ${monthIndexToName(fyEnd)}`}>
                                 {range} · FY ends {monthIndexToName(fyEnd)}
                               </span>
                             </>
                           );
                         })()}
-                        <span className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md border ${fCfg.bg} ${fCfg.text} ${fCfg.border}`}>
+                        <span className={`inline-flex items-center gap-1.5 text-[11px] ${fCfg.text}`}>
                           <span className="w-1.5 h-1.5 rounded-full" style={{ background: fCfg.dot }} />
                           {fCfg.label}
                         </span>
                         {/* Resend / Send only when NOT submitted */}
                         {fStatus !== 'submitted' && (
-                          <button className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
+                          <button className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-md bg-white border border-border text-foreground/80 hover:bg-muted/60 transition-colors">
                             <Send className="w-3 h-3" />
                             {fStatus === 'not_sent' ? 'Send form' : fStatus === 'sent' ? 'Resend reminder' : 'Resend form'}
                           </button>
@@ -1051,7 +1075,7 @@ export function QuarterlyReview() {
                         {!isEditing ? (
                           <button
                             onClick={() => { setEditingFounderId(qCurrent.id); setFounderDrafts({}); setFounderEditError(null); }}
-                            className="inline-flex items-center gap-1 text-[11px] px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+                            className="inline-flex items-center gap-1 text-[11px] px-3 py-1.5 rounded-lg bg-white border border-border text-foreground/80 hover:bg-muted/60 transition-colors"
                           >
                             <Pencil className="w-3 h-3" /> Edit
                           </button>
@@ -1059,7 +1083,7 @@ export function QuarterlyReview() {
                           <>
                             <button
                               onClick={() => { setEditingFounderId(null); setFounderDrafts({}); setFounderEditError(null); }}
-                              className="text-[11px] px-3 py-1.5 rounded-lg text-slate-500 hover:bg-white/50 transition-colors"
+                              className="text-[11px] px-3 py-1.5 rounded-lg text-muted-foreground hover:bg-white/50 transition-colors"
                             >
                               Cancel
                             </button>
@@ -1105,15 +1129,15 @@ export function QuarterlyReview() {
                       <div className="overflow-hidden rounded-lg border border-white/80">
                         <table className="w-full text-[11px]">
                           <thead className="sticky top-0 z-10">
-                            <tr className="bg-white/90 backdrop-blur border-b border-slate-100/50">
-                              <th className="text-left px-2.5 py-2 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.06em] w-[200px]">Metric</th>
-                              <th className="text-right px-2.5 py-2 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.06em]">
+                            <tr className="bg-white/90 backdrop-blur border-b border-border/50">
+                              <th className="text-left px-2.5 py-2 text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-[0.06em] w-[200px]">Metric</th>
+                              <th className="text-right px-2.5 py-2 text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-[0.06em]">
                                 <div>Q4 2025</div>
-                                <div className="text-[9px] font-normal text-slate-300 normal-case tracking-normal">Previous · {(() => { const fy = getCompanyFyEndMonth(qCurrent.id); return quarterDateRange(4, fy, 2025); })()}</div>
+                                <div className="text-[9px] font-normal text-muted-foreground/50 normal-case tracking-normal">Previous · {(() => { const fy = getCompanyFyEndMonth(qCurrent.id); return quarterDateRange(4, fy, 2025); })()}</div>
                               </th>
-                              <th className="text-right px-2.5 py-2 text-[10px] font-semibold text-slate-400 uppercase tracking-[0.06em]">
+                              <th className="text-right px-2.5 py-2 text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-[0.06em]">
                                 <div>Q1 2026</div>
-                                <div className="text-[9px] font-normal text-slate-300 normal-case tracking-normal">Current · {(() => { const fy = getCompanyFyEndMonth(qCurrent.id); return quarterDateRange(1, fy, 2026); })()}</div>
+                                <div className="text-[9px] font-normal text-muted-foreground/50 normal-case tracking-normal">Current · {(() => { const fy = getCompanyFyEndMonth(qCurrent.id); return quarterDateRange(1, fy, 2026); })()}</div>
                               </th>
                             </tr>
                           </thead>
@@ -1190,19 +1214,19 @@ export function QuarterlyReview() {
                                   <React.Fragment key={metric.key}>
                                     {showSection && (
                                       <tr key={`section-${metric.section}`}>
-                                        <td colSpan={3} className="px-2.5 pt-2 pb-1 text-[10px] font-semibold text-slate-500 uppercase tracking-[0.08em] bg-slate-50/30 border-t border-slate-100/50">
+                                        <td colSpan={3} className="px-2.5 pt-2 pb-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.08em] bg-muted/30 border-t border-border/50">
                                           {metric.section}
                                         </td>
                                       </tr>
                                     )}
-                                    <tr className="hover:bg-white/40 border-t border-slate-50/50">
-                                      <td className="px-2.5 py-1.5 text-slate-600">{metric.label}{metric.isCalc && <span className="ml-1 text-[9px] text-slate-400">(auto)</span>}</td>
+                                    <tr className="hover:bg-white/40 border-t border-border/40">
+                                      <td className="px-2.5 py-1.5 text-foreground/80">{metric.label}{metric.isCalc && <span className="ml-1 text-[9px] text-muted-foreground/70">(auto)</span>}</td>
                                       {/* Previous quarter — with amendment indicator */}
-                                      <td className="px-2.5 py-1.5 text-right font-mono-num text-slate-500">
+                                      <td className="px-2.5 py-1.5 text-right font-mono-num text-muted-foreground">
                                         {amendment ? (
                                           <div className="flex flex-col items-end gap-1">
                                             <div className="flex items-center gap-2">
-                                              <span className="line-through text-slate-400 text-[10px]">{formatVal(amendment.original, metric)}</span>
+                                              <span className="line-through text-muted-foreground/70 text-[10px]">{formatVal(amendment.original, metric)}</span>
                                               <span className="text-red-600 font-semibold">{formatVal(amendment.amended, metric)}</span>
                                             </div>
                                             <div className="flex items-center gap-1">
@@ -1222,7 +1246,7 @@ export function QuarterlyReview() {
                                                   ...prev,
                                                   [qCurrent.id]: { ...(prev[qCurrent.id] || {}), [metric.key]: 'rejected' }
                                                 }))}
-                                                className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+                                                className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded bg-muted text-foreground/80 hover:bg-secondary transition-colors"
                                                 title="Reject — keep the original value"
                                               >
                                                 ✕ Reject
@@ -1232,23 +1256,23 @@ export function QuarterlyReview() {
                                         ) : decision === 'accepted' ? (
                                           <span className="text-emerald-600">{formatVal(valPrev, metric) ?? '—'} <span className="text-[9px] text-emerald-500 ml-1">accepted</span></span>
                                         ) : decision === 'rejected' ? (
-                                          <span className="text-slate-500">{formatVal(valPrev, metric) ?? '—'} <span className="text-[9px] text-slate-400 ml-1">rejected</span></span>
+                                          <span className="text-muted-foreground">{formatVal(valPrev, metric) ?? '—'} <span className="text-[9px] text-muted-foreground/70 ml-1">rejected</span></span>
                                         ) : (
-                                          valPrev != null ? formatVal(valPrev, metric) : <span className="text-slate-300">—</span>
+                                          valPrev != null ? formatVal(valPrev, metric) : <span className="text-muted-foreground/50">—</span>
                                         )}
                                       </td>
                                       {/* Current quarter — editable as before */}
-                                      <td className="px-2.5 py-1.5 text-right font-mono-num text-slate-700">
+                                      <td className="px-2.5 py-1.5 text-right font-mono-num text-foreground">
                                         {isEditing && !metric.isCalc ? (
                                           <input
                                             type="text"
                                             value={inputValue}
                                             onChange={e => { setFounderDrafts(prev => ({ ...prev, [metric.key]: e.target.value })); setFounderEditError(null); }}
                                             placeholder={metric.isCurrency ? 'e.g. 176000 or 176K' : metric.isPercentage ? '0–100' : '0'}
-                                            className="w-[140px] text-right text-[11px] font-mono-num border border-slate-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300"
+                                            className="w-[140px] text-right text-[11px] font-mono-num border border-border rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40"
                                           />
                                         ) : (
-                                          valCurr != null ? formatVal(valCurr, metric) : <span className="text-slate-300">—</span>
+                                          valCurr != null ? formatVal(valCurr, metric) : <span className="text-muted-foreground/50">—</span>
                                         )}
                                       </td>
                                     </tr>
@@ -1260,9 +1284,9 @@ export function QuarterlyReview() {
                         </table>
                       </div>
                     ) : fStatus === 'sent' ? (
-                      <p className="text-[12px] text-slate-500">Form sent — awaiting founder response. You can send a reminder or proceed with last known values.</p>
+                      <p className="text-[12px] text-muted-foreground">Form sent — awaiting founder response. You can send a reminder or proceed with last known values.</p>
                     ) : (
-                      <p className="text-[12px] text-slate-500">No form has been sent to this founder for Q1 2026. Send the form to collect validated data.</p>
+                      <p className="text-[12px] text-muted-foreground">No form has been sent to this founder for Q1 2026. Send the form to collect validated data.</p>
                     )}
                   </div>
                 );
@@ -1283,17 +1307,17 @@ export function QuarterlyReview() {
                 }));
 
                 return (
-                  <div className="bg-white rounded-xl border border-slate-200/60 p-4 space-y-3">
+                  <div className="bg-white rounded-xl border border-border/60 p-4 space-y-3">
                     <div className="flex items-center justify-between">
-                      <p className="text-[12px] font-medium text-slate-700">Quarterly Commentary</p>
-                      <span className="text-[10px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded">M1: manual input · Post-M1: AI-generated</span>
+                      <p className="text-[12px] font-medium text-foreground">Quarterly Commentary</p>
+                      <span className="text-[10px] text-muted-foreground/70 bg-muted/60 px-2 py-0.5 rounded">M1: manual input · Post-M1: AI-generated</span>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="text-[11px] text-slate-500">RAG Status</label>
+                        <label className="text-[11px] text-muted-foreground">RAG Status</label>
                         <select
-                          className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white"
+                          className="w-full text-[12px] border border-border rounded-lg px-3 py-2 mt-1 bg-white"
                           defaultValue={cc.rag}
                           onChange={e => update('rag', e.target.value)}
                         >
@@ -1301,9 +1325,9 @@ export function QuarterlyReview() {
                         </select>
                       </div>
                       <div>
-                        <label className="text-[11px] text-slate-500">Cash Runway</label>
+                        <label className="text-[11px] text-muted-foreground">Cash Runway</label>
                         <input
-                          className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white"
+                          className="w-full text-[12px] border border-border rounded-lg px-3 py-2 mt-1 bg-white"
                           defaultValue={cc.cashRunway}
                           placeholder="e.g. 18 months"
                           onBlur={e => update('cashRunway', e.target.value)}
@@ -1312,17 +1336,17 @@ export function QuarterlyReview() {
                     </div>
 
                     <div>
-                      <label className="text-[11px] text-slate-500 inline-flex items-center gap-1">
+                      <label className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
                         Summary <span className="text-red-400">*</span>
                         <span className="group/tip relative inline-flex">
-                          <Info className="w-3 h-3 text-slate-300 hover:text-slate-500 cursor-help" />
-                          <span className="invisible group-hover/tip:visible absolute left-0 top-5 z-10 bg-slate-800 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap shadow-lg">
+                          <Info className="w-3 h-3 text-muted-foreground/50 hover:text-muted-foreground cursor-help" />
+                          <span className="invisible group-hover/tip:visible absolute left-0 top-5 z-10 bg-foreground text-white text-[10px] px-2 py-1 rounded whitespace-nowrap shadow-lg">
                             2–3 sentences: overall performance, current ARR, growth, key metrics
                           </span>
                         </span>
                       </label>
                       <textarea
-                        className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white resize-none h-[72px]"
+                        className="w-full text-[12px] border border-border rounded-lg px-3 py-2 mt-1 bg-white resize-none h-[72px]"
                         defaultValue={cc.summary}
                         placeholder="Performance summary including ARR, quarterly growth, and key relevant metrics..."
                         onBlur={e => update('summary', e.target.value)}
@@ -1330,17 +1354,17 @@ export function QuarterlyReview() {
                     </div>
 
                     <div>
-                      <label className="text-[11px] text-slate-500 inline-flex items-center gap-1">
+                      <label className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
                         Recent Progress <span className="text-red-400">*</span>
                         <span className="group/tip relative inline-flex">
-                          <Info className="w-3 h-3 text-slate-300 hover:text-slate-500 cursor-help" />
-                          <span className="invisible group-hover/tip:visible absolute left-0 top-5 z-10 bg-slate-800 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap shadow-lg">
+                          <Info className="w-3 h-3 text-muted-foreground/50 hover:text-muted-foreground cursor-help" />
+                          <span className="invisible group-hover/tip:visible absolute left-0 top-5 z-10 bg-foreground text-white text-[10px] px-2 py-1 rounded whitespace-nowrap shadow-lg">
                             2–3 sentences: team, customers, revenue, partnerships, product
                           </span>
                         </span>
                       </label>
                       <textarea
-                        className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white resize-none h-[72px]"
+                        className="w-full text-[12px] border border-border rounded-lg px-3 py-2 mt-1 bg-white resize-none h-[72px]"
                         defaultValue={cc.recentProgress}
                         placeholder="Recent progress on team, customer growth, revenue, partnerships, key product announcements..."
                         onBlur={e => update('recentProgress', e.target.value)}
@@ -1348,9 +1372,9 @@ export function QuarterlyReview() {
                     </div>
 
                     <div>
-                      <label className="text-[11px] text-slate-500">Key Concerns</label>
+                      <label className="text-[11px] text-muted-foreground">Key Concerns</label>
                       <textarea
-                        className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white resize-none h-[60px]"
+                        className="w-full text-[12px] border border-border rounded-lg px-3 py-2 mt-1 bg-white resize-none h-[60px]"
                         defaultValue={cc.keyConcerns}
                         placeholder="Any concerns mentioned — runway, churn, growth slowdown, team gaps..."
                         onBlur={e => update('keyConcerns', e.target.value)}
@@ -1358,9 +1382,9 @@ export function QuarterlyReview() {
                     </div>
 
                     <div>
-                      <label className="text-[11px] text-slate-500">Action Points</label>
+                      <label className="text-[11px] text-muted-foreground">Action Points</label>
                       <textarea
-                        className="w-full text-[12px] border border-slate-200 rounded-lg px-3 py-2 mt-1 bg-white resize-none h-[60px]"
+                        className="w-full text-[12px] border border-border rounded-lg px-3 py-2 mt-1 bg-white resize-none h-[60px]"
                         defaultValue={cc.actionPoints}
                         placeholder="Actions for founders or the board to take..."
                         onBlur={e => update('actionPoints', e.target.value)}
@@ -1375,30 +1399,30 @@ export function QuarterlyReview() {
                 <button
                   onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
                   disabled={currentIndex === 0}
-                  className="text-[13px] text-slate-500 hover:text-slate-700 disabled:opacity-30 transition-colors"
+                  className="text-[13px] text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
                 >
                   ← Previous
                 </button>
                 <div className="flex items-center gap-3">
-                  <span className="text-[12px] text-slate-400">{currentIndex + 1} of {sortedCompanies.length}</span>
+                  <span className="text-[12px] text-muted-foreground/70">{currentIndex + 1} of {sortedCompanies.length}</span>
                   {currentIndex < sortedCompanies.length - 1 ? (
                     <button
                       onClick={() => setCurrentIndex(currentIndex + 1)}
-                      className="px-4 py-2 bg-indigo-500 text-white rounded-lg text-[13px] hover:bg-indigo-600 transition-colors"
+                      className="px-4 py-2 bg-primary text-white rounded-lg text-[13px] hover:bg-[var(--primary-muted)] transition-colors"
                     >
                       Next company →
                     </button>
                   ) : !isM1 ? (
                     <button
                       onClick={() => setQuarterlyStep(2)}
-                      className="px-4 py-2 bg-indigo-500 text-white rounded-lg text-[13px] hover:bg-indigo-600 transition-colors flex items-center gap-1.5"
+                      className="px-4 py-2 bg-primary text-white rounded-lg text-[13px] hover:bg-[var(--primary-muted)] transition-colors flex items-center gap-1.5"
                     >
                       <CheckCircle className="w-4 h-4" /> Finish & Export
                     </button>
                   ) : (
                     <button
                       onClick={() => { setCurrentIndex(0); }}
-                      className="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-[13px] hover:bg-slate-200 transition-colors"
+                      className="px-4 py-2 bg-muted text-foreground/80 rounded-lg text-[13px] hover:bg-secondary transition-colors"
                     >
                       Back to first
                     </button>
@@ -1415,8 +1439,8 @@ export function QuarterlyReview() {
         <div className="space-y-4">
           <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-6 text-center">
             <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
-            <h3 className="text-[18px] mb-2 text-slate-700 font-semibold">Ready to Export</h3>
-            <p className="text-[13px] text-slate-500 mb-4">
+            <h3 className="text-[18px] mb-2 text-foreground font-semibold">Ready to Export</h3>
+            <p className="text-[13px] text-muted-foreground mb-4">
               Q1 2026 data is ready. {activeCompanies.length} companies reviewed. Export Asset Metrix XLSX or optionally generate LP Report PDF.
             </p>
           </div>
@@ -1426,43 +1450,43 @@ export function QuarterlyReview() {
               onClick={() => { generateAssetMetrixXLSX(selectedFund, companies); }}
               className="bg-white border-2 border-primary/30 rounded-xl p-5 hover:shadow-lg hover:border-primary/50 transition-all text-left ring-2 ring-primary/10 relative"
             >
-              <div className="absolute top-3 right-3 text-[10px] px-2 py-0.5 bg-indigo-500 text-white rounded-full font-medium">Primary</div>
+              <div className="absolute top-3 right-3 text-[10px] px-2 py-0.5 bg-primary text-white rounded-full font-medium">Primary</div>
               <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mb-3">
-                <Download className="w-5 h-5 text-purple-600" />
+                <Download className="w-5 h-5 text-primary" />
               </div>
-              <h3 className="text-[14px] mb-1 text-slate-700 font-medium">Asset Metrix XLSX</h3>
-              <p className="text-[11px] text-slate-500">Multi-sheet XLSX matching Asset Metrix template: Company Commentary, Static Data, and Periodic KPIs.</p>
+              <h3 className="text-[14px] mb-1 text-foreground font-medium">Asset Metrix XLSX</h3>
+              <p className="text-[11px] text-muted-foreground">Multi-sheet XLSX matching Asset Metrix template: Company Commentary, Static Data, and Periodic KPIs.</p>
               <p className="text-[11px] text-emerald-600 mt-2 flex items-center gap-1"><Download className="w-3 h-3" /> Download XLSX</p>
             </button>
             <button
               onClick={() => setMode('lp-report-preview')}
-              className="bg-white rounded-xl border border-slate-200/60 p-5 hover:shadow-md transition-shadow text-left relative"
+              className="bg-white rounded-xl border border-border/60 p-5 hover:shadow-md transition-shadow text-left relative"
             >
-              <div className="absolute top-3 right-3 text-[10px] px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full font-medium">Optional</div>
+              <div className="absolute top-3 right-3 text-[10px] px-2 py-0.5 bg-muted text-muted-foreground rounded-full font-medium">Optional</div>
               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mb-3">
                 <Printer className="w-5 h-5 text-blue-600" />
               </div>
-              <h3 className="text-[14px] mb-1 text-slate-700 font-medium">LP Report PDF</h3>
-              <p className="text-[11px] text-slate-500">Full quarterly report matching Crane structure: cover, standing data, commentary, company snapshots.</p>
-              <p className="text-[11px] text-indigo-600 mt-2 flex items-center gap-1">Preview & Print →</p>
+              <h3 className="text-[14px] mb-1 text-foreground font-medium">LP Report PDF</h3>
+              <p className="text-[11px] text-muted-foreground">Full quarterly report matching Crane structure: cover, standing data, commentary, company snapshots.</p>
+              <p className="text-[11px] text-primary mt-2 flex items-center gap-1">Preview & Print →</p>
             </button>
             <button
               onClick={() => { const csv = generateFundSummaryCSV(selectedFund); downloadCSV(csv, `${selectedFund.name.replace(/\s/g, '_')}_Fund_Summary_Q1_2026.csv`); }}
-              className="bg-white rounded-xl border border-slate-200/60 p-5 hover:shadow-md transition-shadow text-left relative"
+              className="bg-white rounded-xl border border-border/60 p-5 hover:shadow-md transition-shadow text-left relative"
             >
-              <div className="absolute top-3 right-3 text-[10px] px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full font-medium">Optional</div>
+              <div className="absolute top-3 right-3 text-[10px] px-2 py-0.5 bg-muted text-muted-foreground rounded-full font-medium">Optional</div>
               <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mb-3">
                 <FileText className="w-5 h-5 text-gray-600" />
               </div>
-              <h3 className="text-[14px] mb-1 text-slate-700 font-medium">Fund Summary CSV</h3>
-              <p className="text-[11px] text-slate-500">TVPI history, NAV waterfall, uses of funds, geographic distribution. Full fund data export.</p>
+              <h3 className="text-[14px] mb-1 text-foreground font-medium">Fund Summary CSV</h3>
+              <p className="text-[11px] text-muted-foreground">TVPI history, NAV waterfall, uses of funds, geographic distribution. Full fund data export.</p>
               <p className="text-[11px] text-emerald-600 mt-2 flex items-center gap-1"><Download className="w-3 h-3" /> Download CSV</p>
             </button>
           </div>
 
           <div className="flex justify-between">
-            <button onClick={() => { setQuarterlyStep(1); setCurrentIndex(0); }} className="text-[13px] text-slate-500">← Back to Commentary</button>
-            <button onClick={() => setMode('list')} className="px-4 py-2 border border-slate-200 rounded-lg text-[13px]">Done</button>
+            <button onClick={() => { setQuarterlyStep(1); setCurrentIndex(0); }} className="text-[13px] text-muted-foreground">← Back to Commentary</button>
+            <button onClick={() => setMode('list')} className="px-4 py-2 border border-border rounded-lg text-[13px]">Done</button>
           </div>
         </div>
       )}

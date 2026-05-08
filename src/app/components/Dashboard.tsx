@@ -242,7 +242,7 @@ export function Dashboard() {
         title: flag.type,
         detail: flag.headline,
         sortDate: new Date(flag.createdAt).getTime(),
-        tone: flag.urgency === 'medium' ? 'text-amber-600 bg-amber-400' : 'text-slate-600 bg-slate-400',
+        tone: flag.urgency === 'medium' ? 'text-amber-600 bg-amber-400' : 'text-foreground/80 bg-muted-foreground',
       })),
     ...filteredActivity.map((event) => ({
       id: `activity-${event.id}`,
@@ -258,7 +258,7 @@ export function Dashboard() {
         ? 'text-amber-600 bg-amber-500'
         : event.severity === 'low'
         ? 'text-blue-600 bg-blue-500'
-        : 'text-slate-600 bg-slate-400',
+        : 'text-foreground/80 bg-muted-foreground',
       icon: activityIcons[event.type] || Globe,
     })),
   ]
@@ -292,20 +292,20 @@ export function Dashboard() {
   return (
     <div className="max-w-[1400px] mx-auto space-y-5">
       {/* Portfolio Brief */}
-      <section className="rounded-xl border border-slate-200/60 bg-white px-6 py-5">
+      <section className="rounded-xl border border-border/60 bg-white px-6 py-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-1.5">
             <div className="flex items-center gap-3">
-              <span className="rounded-full border border-indigo-200/60 bg-indigo-50/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-indigo-600">
+              <span className="rounded-full border border-primary/25/60 bg-accent/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-primary">
                 Portfolio Brief
               </span>
-              <span className="text-[12px] text-slate-400">{pageDate}</span>
+              <span className="text-[12px] text-muted-foreground/70">{pageDate}</span>
             </div>
             <div>
-              <h1 className="text-[22px] font-semibold tracking-tight text-slate-800">
+              <h1 className="text-[22px] font-semibold tracking-tight text-foreground">
                 {currentUser.name}, here&apos;s what changed since your last review.
               </h1>
-              <p className="mt-1.5 max-w-[860px] text-[13px] leading-relaxed text-slate-500">
+              <p className="mt-1.5 max-w-[860px] text-[13px] leading-relaxed text-muted-foreground">
                 {briefLine}
               </p>
             </div>
@@ -314,7 +314,7 @@ export function Dashboard() {
             <select
               value={fundFilter}
               onChange={(event) => setFundFilter(event.target.value as Fund | 'all')}
-              className="min-w-[132px] rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] font-medium text-slate-700 transition-colors hover:border-indigo-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/15"
+              className="min-w-[132px] rounded-xl border border-border bg-muted/60 px-3 py-2 text-[13px] font-medium text-foreground transition-colors hover:border-primary/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15"
             >
               <option value="all">All Funds</option>
               <option value="Fund I">Fund I</option>
@@ -323,28 +323,28 @@ export function Dashboard() {
             </select>
             <button
               onClick={() => setShowLogNote(true)}
-              className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 transition-colors"
+              className="rounded-lg border border-border bg-muted/60 p-2 text-muted-foreground hover:text-primary hover:border-primary/25 transition-colors"
               title="Log note"
             >
               <StickyNote className="h-4 w-4" />
             </button>
             <button
               onClick={() => setShowNewTodo(true)}
-              className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 transition-colors"
+              className="rounded-lg border border-border bg-muted/60 p-2 text-muted-foreground hover:text-primary hover:border-primary/25 transition-colors"
               title="New to-do"
             >
               <ListTodo className="h-4 w-4" />
             </button>
             <button
               onClick={() => setShowCheckIn({ open: true })}
-              className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 transition-colors"
+              className="rounded-lg border border-border bg-muted/60 p-2 text-muted-foreground hover:text-primary hover:border-primary/25 transition-colors"
               title="Schedule check-in"
             >
               <Phone className="h-4 w-4" />
             </button>
             <button
               onClick={() => navigate('/portfolio')}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-[13px] font-medium text-slate-700 transition-all hover:border-slate-300 hover:bg-white hover:shadow-sm"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-muted/60 px-4 py-2 text-[13px] font-medium text-foreground transition-all hover:border-border hover:bg-white hover:shadow-sm"
             >
               Open Command Center
               <ChevronRight className="h-3.5 w-3.5" />
@@ -354,15 +354,15 @@ export function Dashboard() {
       </section>
 
       {/* Material Changes */}
-      <section className="rounded-xl border border-slate-200/60 bg-white px-6 py-5">
+      <section className="rounded-xl border border-border/60 bg-white px-6 py-5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400">Material Changes</p>
-            <h2 className="mt-1.5 text-[16px] font-semibold tracking-tight text-slate-700">The handful of things worth acting on.</h2>
+            <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground/70">Material Changes</p>
+            <h2 className="mt-1.5 text-[16px] font-semibold tracking-tight text-foreground">The handful of things worth acting on.</h2>
           </div>
           <button
             onClick={() => navigate('/matrix')}
-            className="rounded-full border border-slate-200 px-3 py-1.5 text-[12px] font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-50"
+            className="rounded-full border border-border px-3 py-1.5 text-[12px] font-medium text-foreground/80 transition-colors hover:border-border hover:bg-muted/60"
           >
             Open action matrix
           </button>
@@ -378,13 +378,13 @@ export function Dashboard() {
                   className={`flex-none w-[300px] rounded-xl border p-4 transition-all hover:-translate-y-0.5 hover:shadow-md ${
                     isHigh
                       ? 'border-red-200/70 bg-red-50/40'
-                      : 'border-slate-200/70 bg-slate-50/50'
+                      : 'border-border/70 bg-muted/50'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <span className={`h-2 w-2 shrink-0 rounded-full ${isHigh ? 'bg-red-400' : 'bg-indigo-400'}`} />
-                      <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400">
+                      <span className={`h-2 w-2 shrink-0 rounded-full ${isHigh ? 'bg-red-400' : 'bg-primary/70'}`} />
+                      <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground/70">
                         {moment.companyName}
                       </span>
                     </div>
@@ -393,21 +393,21 @@ export function Dashboard() {
                     ) : (
                       <button
                         onClick={() => navigate(moment.kind === 'board' ? '/board-prep' : `/company/${moment.companyId}`)}
-                        className="shrink-0 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50"
+                        className="shrink-0 rounded-lg border border-border bg-white px-2.5 py-1 text-[11px] font-medium text-foreground transition-colors hover:border-border hover:bg-muted/60"
                       >
                         {moment.kind === 'board' ? 'Prep board' : 'Open company'}
                       </button>
                     )}
                   </div>
-                  <h3 className="mt-2 text-[13px] font-semibold text-slate-700 line-clamp-1">{moment.title}</h3>
-                  <p className="mt-1.5 text-[12px] leading-5 text-slate-500 line-clamp-2">{moment.detail}</p>
-                  <p className="mt-2 text-[11px] text-slate-400 line-clamp-1">{moment.meta}</p>
+                  <h3 className="mt-2 text-[13px] font-semibold text-foreground line-clamp-1">{moment.title}</h3>
+                  <p className="mt-1.5 text-[12px] leading-5 text-muted-foreground line-clamp-2">{moment.detail}</p>
+                  <p className="mt-2 text-[11px] text-muted-foreground/70 line-clamp-1">{moment.meta}</p>
                 </div>
               );
             })}
           </div>
         ) : (
-          <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-4 text-[13px] text-slate-500">
+          <div className="mt-3 rounded-lg border border-border bg-muted/60 px-4 py-4 text-[13px] text-muted-foreground">
             No material changes in the current slice. Use the command center for a deeper inspection pass.
           </div>
         )}
@@ -442,10 +442,10 @@ export function Dashboard() {
             detail: '30+ days since last touch',
           },
         ].map((stat) => (
-          <div key={stat.label} className="rounded-xl border border-slate-200/60 bg-white px-4 py-3">
-            <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400">{stat.label}</p>
-            <p className="mt-1 font-mono-num text-[22px] font-bold tracking-tight text-slate-700">{stat.value}</p>
-            <p className="mt-1 text-[11px] text-slate-400">{stat.detail}</p>
+          <div key={stat.label} className="rounded-xl border border-border/60 bg-white px-4 py-3">
+            <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground/70">{stat.label}</p>
+            <p className="mt-1 font-mono-num text-[22px] font-bold tracking-tight text-foreground">{stat.value}</p>
+            <p className="mt-1 text-[11px] text-muted-foreground/70">{stat.detail}</p>
           </div>
         ))}
       </section>
@@ -456,12 +456,12 @@ export function Dashboard() {
           <div className="space-y-3">
             <div className="flex items-end justify-between gap-4">
               <div>
-                <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400">Focus Companies</p>
-                <h2 className="mt-1.5 text-[16px] font-semibold tracking-tight text-slate-700">The portfolio names most likely to shape this week.</h2>
+                <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground/70">Focus Companies</p>
+                <h2 className="mt-1.5 text-[16px] font-semibold tracking-tight text-foreground">The portfolio names most likely to shape this week.</h2>
               </div>
               <button
                 onClick={() => navigate('/portfolio')}
-                className="text-[13px] font-medium text-indigo-600 transition-colors hover:text-indigo-700"
+                className="text-[13px] font-medium text-primary transition-colors hover:text-primary"
               >
                 See full portfolio
               </button>
@@ -481,7 +481,7 @@ export function Dashboard() {
                   <button
                     key={company.id}
                     onClick={() => navigate(`/company/${company.id}`)}
-                    className="group overflow-hidden rounded-xl border border-slate-200/60 bg-white p-4 text-left transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+                    className="group overflow-hidden rounded-xl border border-border/60 bg-white p-4 text-left transition-all hover:-translate-y-0.5 hover:border-border hover:shadow-md"
                   >
                     <div className="space-y-3">
                       <div className="flex items-start justify-between gap-3">
@@ -494,7 +494,7 @@ export function Dashboard() {
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                              <h3 className="truncate text-[15px] font-semibold text-slate-800 transition-colors group-hover:text-indigo-600">
+                              <h3 className="truncate text-[15px] font-semibold text-foreground transition-colors group-hover:text-primary">
                                 {company.name}
                               </h3>
                               <span
@@ -503,7 +503,7 @@ export function Dashboard() {
                                 title={company.rag}
                               />
                             </div>
-                            <p className="text-[12px] text-slate-500">
+                            <p className="text-[12px] text-muted-foreground">
                               {company.stage} · {company.sector} · {company.fund}
                             </p>
                           </div>
@@ -516,13 +516,13 @@ export function Dashboard() {
                         </span>
                       </div>
 
-                      <p className="line-clamp-2 text-[12px] leading-5 text-slate-500">{company.summary}</p>
+                      <p className="line-clamp-2 text-[12px] leading-5 text-muted-foreground">{company.summary}</p>
 
                       <div className="grid grid-cols-3 gap-3">
-                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                          <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-slate-400">MRR</p>
+                        <div className="rounded-lg border border-border bg-muted/60 px-3 py-2">
+                          <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground/70">MRR</p>
                           <div className="mt-1 flex items-center gap-1.5">
-                            <span className="font-mono-num text-[15px] font-bold text-slate-700">
+                            <span className="font-mono-num text-[15px] font-bold text-foreground">
                               {formatCurrency(company.mrr, company.currency)}
                             </span>
                             <span className={`flex items-center text-[11px] font-semibold ${
@@ -533,19 +533,19 @@ export function Dashboard() {
                             </span>
                           </div>
                         </div>
-                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                          <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-slate-400">Runway</p>
-                          <p className="mt-1 font-mono-num text-[15px] font-bold text-slate-700">{company.runway}mo</p>
+                        <div className="rounded-lg border border-border bg-muted/60 px-3 py-2">
+                          <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground/70">Runway</p>
+                          <p className="mt-1 font-mono-num text-[15px] font-bold text-foreground">{company.runway}mo</p>
                         </div>
-                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                          <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-slate-400">Updated</p>
-                          <p className="mt-1 text-[14px] font-semibold text-slate-950">{daysSinceUpdate}d ago</p>
+                        <div className="rounded-lg border border-border bg-muted/60 px-3 py-2">
+                          <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground/70">Updated</p>
+                          <p className="mt-1 text-[14px] font-semibold text-foreground">{daysSinceUpdate}d ago</p>
                         </div>
                       </div>
 
-                      <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-3">
-                        <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-slate-400">Why it matters</p>
-                        <p className="mt-1 line-clamp-2 text-[12px] leading-5 text-slate-600">{whyItMatters}</p>
+                      <div className="rounded-lg border border-border bg-muted/80 p-3">
+                        <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground/70">Why it matters</p>
+                        <p className="mt-1 line-clamp-2 text-[12px] leading-5 text-foreground/80">{whyItMatters}</p>
                       </div>
 
                       <div className="flex items-center justify-between gap-3">
@@ -578,17 +578,17 @@ export function Dashboard() {
           <div>
             <div className="flex items-end justify-between gap-4 mb-3">
               <div>
-                <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400">Up Next</p>
-                <p className="mt-1 text-[14px] font-semibold tracking-tight text-slate-700">Boards and overdue tasks.</p>
+                <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground/70">Up Next</p>
+                <p className="mt-1 text-[14px] font-semibold tracking-tight text-foreground">Boards and overdue tasks.</p>
               </div>
               <button
                 onClick={() => navigate('/board-prep')}
-                className="text-[12px] font-medium text-indigo-600 hover:text-indigo-700"
+                className="text-[12px] font-medium text-primary hover:text-primary"
               >
                 Board prep
               </button>
             </div>
-            <div className="rounded-xl border border-slate-200/60 bg-white overflow-hidden">
+            <div className="rounded-xl border border-border/60 bg-white overflow-hidden">
               {boardsSoon.length > 0 ? boardsSoon
                 .sort((a, b) => new Date(a.nextBoard!).getTime() - new Date(b.nextBoard!).getTime())
                 .slice(0, 4)
@@ -596,11 +596,11 @@ export function Dashboard() {
                   <button
                     key={company.id}
                     onClick={() => navigate('/board-prep')}
-                    className={`flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-slate-50 ${idx < arr.length - 1 ? 'border-b border-slate-100' : ''}`}
+                    className={`flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-muted/60 ${idx < arr.length - 1 ? 'border-b border-border/60' : ''}`}
                   >
                     <div>
-                      <p className="text-[13px] font-medium text-slate-700">{company.name}</p>
-                      <p className="mt-0.5 text-[11px] text-slate-400">
+                      <p className="text-[13px] font-medium text-foreground">{company.name}</p>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground/70">
                         {company.nextBoard ? formatShortDate(company.nextBoard) : 'No board scheduled'}
                       </p>
                     </div>
@@ -609,14 +609,14 @@ export function Dashboard() {
                     </span>
                   </button>
                 )) : (
-                  <div className="px-3 py-2 text-[13px] text-slate-500">
+                  <div className="px-3 py-2 text-[13px] text-muted-foreground">
                     No board meetings inside the next two weeks.
                   </div>
                 )}
 
               {overdueTodos.length > 0 && (
                 <>
-                  <div className="border-t border-slate-200 my-1" />
+                  <div className="border-t border-border my-1" />
                   {overdueTodos.slice(0, 3).map((todo, idx, arr) => (
                     <button
                       key={todo.id}
@@ -624,11 +624,11 @@ export function Dashboard() {
                         const companyId = companies.find((c) => c.name === todo.companyName)?.id;
                         if (companyId) navigate(`/company/${companyId}`);
                       }}
-                      className={`flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-slate-50 ${idx < arr.length - 1 ? 'border-b border-slate-100' : ''}`}
+                      className={`flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-muted/60 ${idx < arr.length - 1 ? 'border-b border-border/60' : ''}`}
                     >
                       <div>
-                        <p className="text-[13px] font-medium text-slate-700">{todo.title}</p>
-                        <p className="mt-0.5 text-[11px] text-slate-400">{todo.companyName}</p>
+                        <p className="text-[13px] font-medium text-foreground">{todo.title}</p>
+                        <p className="mt-0.5 text-[11px] text-muted-foreground/70">{todo.companyName}</p>
                       </div>
                       <span className="shrink-0 rounded-full bg-red-50/70 px-2.5 py-1 text-[11px] font-medium text-red-500">
                         Overdue
@@ -643,14 +643,14 @@ export function Dashboard() {
           <div>
             <div className="flex items-end justify-between gap-4 mb-3">
               <div>
-                <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400">Activity Log</p>
-                <p className="mt-1 text-[14px] font-semibold tracking-tight text-slate-700">Recent signals and updates.</p>
+                <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground/70">Activity Log</p>
+                <p className="mt-1 text-[14px] font-semibold tracking-tight text-foreground">Recent signals and updates.</p>
               </div>
-              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500">
+              <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
                 {recentTimeline.length}
               </span>
             </div>
-            <div className="rounded-xl border border-slate-200/60 bg-white overflow-hidden divide-y divide-slate-100 stagger-children">
+            <div className="rounded-xl border border-border/60 bg-white overflow-hidden divide-y divide-border/60 stagger-children">
               {recentTimeline.length > 0 ? recentTimeline.map((item) => {
                 const ActivityIcon = item.kind === 'activity' ? item.icon : AlertTriangle;
                 const dotClass = item.tone.split(' ')[1];
@@ -658,22 +658,22 @@ export function Dashboard() {
                   <button
                     key={item.id}
                     onClick={() => item.companyId && navigate(`/company/${item.companyId}`)}
-                    className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-slate-50"
+                    className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-muted/60"
                   >
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                       <ActivityIcon className="h-3.5 w-3.5" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
-                        <span className="truncate text-[13px] font-medium text-slate-700">{item.companyName}</span>
+                        <span className="truncate text-[13px] font-medium text-foreground">{item.companyName}</span>
                         <span className={`h-1.5 w-1.5 rounded-full ${dotClass}`} />
                       </div>
-                      <p className="text-[12px] text-slate-500 line-clamp-1">{item.title}</p>
+                      <p className="text-[12px] text-muted-foreground line-clamp-1">{item.title}</p>
                     </div>
                   </button>
                 );
               }) : (
-                <div className="py-2 text-[13px] text-slate-500">
+                <div className="py-2 text-[13px] text-muted-foreground">
                   No fresh activity right now.
                 </div>
               )}

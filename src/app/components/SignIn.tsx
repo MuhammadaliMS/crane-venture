@@ -30,55 +30,57 @@ export function SignIn() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4" style={{ fontFamily: "'Inter', sans-serif" }}>
-      <div className="w-full max-w-[420px]">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="w-full max-w-[400px]">
         {/* Logo + tagline */}
-        <div className="text-center mb-8">
-          <img src="/crane-logo.png" alt="Crane Venture Partners" className="h-10 mx-auto mb-4" />
-          <p className="text-[14px] text-slate-500 mt-1">Portfolio intelligence platform</p>
+        <div className="text-center mb-10">
+          <img src="/crane-logo.png" alt="Crane Venture Partners" className="h-9 mx-auto mb-5" />
+          <p className="font-display-italic text-[20px] text-muted-foreground leading-snug">
+            Portfolio intelligence, quietly considered.
+          </p>
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
+        <div className="bg-card rounded-md border border-border shadow-[var(--shadow-card)] p-7 space-y-5">
           <div>
-            <h2 className="text-[18px] font-semibold text-slate-900">Sign in to Crane</h2>
-            <p className="text-[13px] text-slate-500 mt-0.5">
+            <h2 className="font-display text-[26px] leading-tight text-foreground">Sign in to Crane</h2>
+            <p className="text-[13px] text-muted-foreground mt-1.5 leading-relaxed">
               Use your Crane Venture Google Workspace account to continue.
             </p>
           </div>
 
           {error && (
-            <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-              <p className="text-[12px] text-red-700">{error}</p>
+            <div className="flex items-start gap-2 bg-destructive/8 border border-destructive/20 rounded-md px-3 py-2">
+              <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+              <p className="text-[12px] text-destructive">{error}</p>
             </div>
           )}
 
           <button
             onClick={signInWithGoogle}
             disabled={loading}
-            className={`w-full inline-flex items-center justify-center gap-3 py-2.5 rounded-lg text-[14px] font-medium transition-all border ${
+            className={`w-full inline-flex items-center justify-center gap-3 h-11 rounded-md text-[14px] font-medium transition-all border ${
               loading
-                ? 'bg-slate-50 text-slate-400 border-slate-200 cursor-wait'
-                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300 hover:shadow-sm'
+                ? 'bg-muted text-muted-foreground border-border cursor-wait'
+                : 'bg-card text-foreground border-border hover:bg-muted hover:shadow-[var(--shadow-card)]'
             }`}
           >
             {loading ? (
               <>
-                <span className="w-4 h-4 border-2 border-slate-300 border-t-slate-500 rounded-full animate-spin" />
+                <span className="w-4 h-4 border-2 border-border border-t-foreground/60 rounded-full animate-spin" />
                 Signing in…
               </>
             ) : (
               <>
                 <GoogleIcon className="w-5 h-5" />
                 Continue with Google
-                <ArrowRight className="w-4 h-4 text-slate-400" />
+                <ArrowRight className="w-4 h-4 text-muted-foreground/70" />
               </>
             )}
           </button>
 
           <div className="text-center pt-1">
-            <p className="text-[11px] text-slate-400 inline-flex items-center gap-1">
+            <p className="text-[11px] text-muted-foreground/70 inline-flex items-center gap-1">
               <Lock className="w-3 h-3" />
               Only authorised Crane Venture team members can sign in.
             </p>
@@ -86,8 +88,8 @@ export function SignIn() {
         </div>
 
         <div className="text-center mt-6">
-          <p className="text-[12px] text-slate-400">
-            Don't have access? <span className="text-slate-600">Contact your admin to be invited.</span>
+          <p className="text-[12px] text-muted-foreground/70">
+            Don't have access? <span className="text-foreground/80">Contact your admin to be invited.</span>
           </p>
         </div>
       </div>
