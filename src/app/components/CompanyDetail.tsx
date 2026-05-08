@@ -307,7 +307,7 @@ export function CompanyDetail() {
           <div className={`space-y-4 ${isM1 ? '' : 'col-span-3'}`}>
 
             {/* Company Details */}
-            <div className="bg-white rounded-xl border border-border/60 p-5">
+            <div className="bg-card rounded-md border border-border p-5">
               <h3 className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-3">Company Details</h3>
               <div className="grid grid-cols-2 gap-3 text-[13px]">
                 <div><span className="text-muted-foreground/70">Legal Name:</span> <span className="ml-1 text-foreground">{company.name} Ltd</span></div>
@@ -322,19 +322,19 @@ export function CompanyDetail() {
             </div>
 
             {/* Description */}
-            <div className="bg-white rounded-xl border border-border/60 p-5">
+            <div className="bg-card rounded-md border border-border p-5">
               <h3 className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">Description</h3>
               <p className="text-[13px] leading-relaxed text-foreground/80">{company.description}</p>
             </div>
 
             {/* Recent Progress */}
-            {!isM1 && <div className="bg-white rounded-xl border border-border/60 p-5">
+            {!isM1 && <div className="bg-card rounded-md border border-border p-5">
               <h3 className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">Recent Progress</h3>
               <p className="text-[13px] leading-relaxed text-foreground/80">{company.recentProgress}</p>
             </div>}
 
             {/* Summary */}
-            {!isM1 && <div className="bg-white rounded-xl border border-border/60 p-5">
+            {!isM1 && <div className="bg-card rounded-md border border-border p-5">
               <h3 className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">Summary</h3>
               <p className="text-[13px] leading-relaxed text-foreground/80">{company.summary}</p>
             </div>}
@@ -369,7 +369,7 @@ export function CompanyDetail() {
 
             {/* Exit Data */}
             {company.exitData && (
-              <div className="bg-white rounded-xl border border-border/60 p-5">
+              <div className="bg-card rounded-md border border-border p-5">
                 <h3 className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-3">Exit Data</h3>
                 <div className="grid grid-cols-2 gap-3 text-[13px]">
                   <div><span className="text-muted-foreground/70">Exit Date:</span> <span className="ml-1 text-foreground">{company.exitData.exitDate}</span></div>
@@ -421,7 +421,7 @@ export function CompanyDetail() {
 
           {/* Latest Financials Summary */}
           {latestFin && (
-            <div className="bg-white rounded-xl border border-border/60 p-5">
+            <div className="bg-card rounded-md border border-border p-5">
               <h3 className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-4">Latest Financials</h3>
               <div className="grid grid-cols-4 gap-4">
                 <div className="bg-muted/60 rounded-lg p-3">
@@ -471,39 +471,45 @@ export function CompanyDetail() {
               { key: 'cashBurn', label: 'Cash Burn (Monthly)', pyKey: 'cashBurnPY' },
               { key: 'cashBalance', label: 'Cash Balance', pyKey: 'cashBalancePY' },
             ].map(chart => (
-              <div key={chart.key} className="bg-white rounded-xl border border-border/60 p-5">
+              <div key={chart.key} className="bg-card rounded-md border border-border p-5">
                 <h3 className="text-[13px] font-medium text-foreground mb-2">{chart.label}</h3>
                 <ResponsiveContainer width="100%" height={180}>
                   <BarChart data={chartMonths}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-                    <YAxis tick={{ fontSize: 10 }} tickFormatter={v => chart.isPct ? `${v}%` : formatCurrency(v, company.currency)} />
-                    <Tooltip formatter={(v: number) => chart.isPct ? `${v}%` : formatCurrency(v, company.currency)} />
-                    <Legend wrapperStyle={{ fontSize: 10 }} />
-                    <Bar dataKey={chart.pyKey} fill="#CBD5E1" name="Prior Year" radius={[2, 2, 0, 0]} />
-                    <Bar dataKey={chart.key} fill="#6366f1" name="Current" radius={[2, 2, 0, 0]} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E0D2" />
+                    <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#6B675B', fontFamily: 'JetBrains Mono, monospace' }} axisLine={{ stroke: '#E5E0D2' }} tickLine={false} />
+                    <YAxis tick={{ fontSize: 10, fill: '#6B675B', fontFamily: 'JetBrains Mono, monospace' }} axisLine={{ stroke: '#E5E0D2' }} tickLine={false} tickFormatter={v => chart.isPct ? `${v}%` : formatCurrency(v, company.currency)} />
+                    <Tooltip
+                      formatter={(v: number) => chart.isPct ? `${v}%` : formatCurrency(v, company.currency)}
+                      cursor={{ fill: 'rgba(14, 23, 51, 0.04)' }}
+                      contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E0D2', borderRadius: 8, fontSize: 11, fontFamily: 'Inter, sans-serif', boxShadow: '0 8px 24px rgba(14, 23, 51, 0.07)', padding: '8px 10px' }}
+                      labelStyle={{ color: '#6B675B', fontWeight: 500, marginBottom: 4 }}
+                      itemStyle={{ color: '#0E1733', fontFamily: 'JetBrains Mono, monospace' }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 10, fontFamily: 'Inter, sans-serif', color: '#6B675B', paddingTop: 8 }} iconType="square" iconSize={8} />
+                    <Bar dataKey={chart.pyKey} fill="#D9CFB6" name="Prior Year" radius={[3, 3, 0, 0]} animationDuration={600} animationEasing="ease-out" />
+                    <Bar dataKey={chart.key} fill="#0E1733" name="Current" radius={[3, 3, 0, 0]} animationDuration={600} animationEasing="ease-out" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             ))}
 
             {/* Headcount */}
-            <div className="bg-white rounded-xl border border-border/60 p-5">
+            <div className="bg-card rounded-md border border-border p-5">
               <h3 className="text-[13px] font-medium text-foreground mb-2">Headcount (FTE)</h3>
               <ResponsiveContainer width="100%" height={180}>
                 <BarChart data={chartMonths}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 10 }} />
-                  <Tooltip />
-                  <Bar dataKey="headcount" fill="#8B5CF6" name="FTE" radius={[2, 2, 0, 0]} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E0D2" />
+                  <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#6B675B', fontFamily: 'JetBrains Mono, monospace' }} axisLine={{ stroke: '#E5E0D2' }} tickLine={false} />
+                  <YAxis tick={{ fontSize: 10, fill: '#6B675B', fontFamily: 'JetBrains Mono, monospace' }} axisLine={{ stroke: '#E5E0D2' }} tickLine={false} />
+                  <Tooltip cursor={{ fill: 'rgba(14, 23, 51, 0.04)' }} contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E0D2', borderRadius: 8, fontSize: 11, fontFamily: 'Inter, sans-serif', boxShadow: '0 8px 24px rgba(14, 23, 51, 0.07)', padding: '8px 10px' }} labelStyle={{ color: '#6B675B', fontWeight: 500 }} itemStyle={{ color: '#0E1733', fontFamily: 'JetBrains Mono, monospace' }} />
+                  <Bar dataKey="headcount" fill="#0E1733" name="FTE" radius={[3, 3, 0, 0]} animationDuration={600} animationEasing="ease-out" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
 
           {/* Diversity Metrics Section */}
-          <div className="bg-white rounded-xl border border-border/60 p-5">
+          <div className="bg-card rounded-md border border-border p-5">
             <h3 className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-4">Diversity Metrics</h3>
             {latestFin && (
               <div className="grid grid-cols-3 gap-4 mb-6">
@@ -523,14 +529,14 @@ export function CompanyDetail() {
                       <span className="font-mono-num font-medium text-foreground">{latestFin.headcountFemale || Math.round((latestFin.femalePctFTE || 0) / 100 * (latestFin.headcountFTE || 0))}</span>
                     </div>
                     <div className="w-full bg-secondary rounded-full h-1.5">
-                      <div className="bg-rose-500 h-1.5 rounded-full" style={{ width: `${latestFin.femalePctFTE || 0}%` }} />
+                      <div className="bg-[#8E5C2C] h-1.5 rounded-full" style={{ width: `${latestFin.femalePctFTE || 0}%` }} />
                     </div>
                     <div className="flex items-center justify-between text-[12px]">
                       <span className="text-muted-foreground/70">Ethnic Minority</span>
                       <span className="font-mono-num font-medium text-foreground">{latestFin.headcountEthnicMinority || Math.round((latestFin.ethnicMinorityPctFTE || 0) / 100 * (latestFin.headcountFTE || 0))}</span>
                     </div>
                     <div className="w-full bg-secondary rounded-full h-1.5">
-                      <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: `${latestFin.ethnicMinorityPctFTE || 0}%` }} />
+                      <div className="bg-[#5C7A6E] h-1.5 rounded-full" style={{ width: `${latestFin.ethnicMinorityPctFTE || 0}%` }} />
                     </div>
                   </div>
                 </div>
@@ -550,14 +556,14 @@ export function CompanyDetail() {
                       <span className="font-mono-num font-medium text-foreground">{latestFin.boardFemale || Math.round((latestFin.femalePctBoard || 0) / 100 * (latestFin.boardHeadcount || 0))}</span>
                     </div>
                     <div className="w-full bg-secondary rounded-full h-1.5">
-                      <div className="bg-rose-500 h-1.5 rounded-full" style={{ width: `${latestFin.femalePctBoard || 0}%` }} />
+                      <div className="bg-[#8E5C2C] h-1.5 rounded-full" style={{ width: `${latestFin.femalePctBoard || 0}%` }} />
                     </div>
                     <div className="flex items-center justify-between text-[12px]">
                       <span className="text-muted-foreground/70">Ethnic Minority</span>
                       <span className="font-mono-num font-medium text-foreground">{latestFin.boardEthnicMinority || Math.round((latestFin.ethnicMinorityPctBoard || 0) / 100 * (latestFin.boardHeadcount || 0))}</span>
                     </div>
                     <div className="w-full bg-secondary rounded-full h-1.5">
-                      <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: `${latestFin.ethnicMinorityPctBoard || 0}%` }} />
+                      <div className="bg-[#5C7A6E] h-1.5 rounded-full" style={{ width: `${latestFin.ethnicMinorityPctBoard || 0}%` }} />
                     </div>
                   </div>
                 </div>
@@ -597,62 +603,62 @@ export function CompanyDetail() {
             {/* Diversity trend charts */}
             <div className="grid grid-cols-2 gap-4">
               {/* Gender Split FTE */}
-              <div className="bg-white rounded-xl border border-border/60 p-5">
+              <div className="bg-card rounded-md border border-border p-5">
                 <h3 className="text-[13px] font-medium text-foreground mb-2">Gender Split (FTE)</h3>
                 <ResponsiveContainer width="100%" height={160}>
                   <BarChart data={chartMonths}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-                    <YAxis tick={{ fontSize: 10 }} tickFormatter={v => `${v}%`} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E0D2" />
+                    <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#6B675B', fontFamily: 'JetBrains Mono, monospace' }} axisLine={{ stroke: '#E5E0D2' }} tickLine={false} />
+                    <YAxis tick={{ fontSize: 10, fill: '#6B675B', fontFamily: 'JetBrains Mono, monospace' }} axisLine={{ stroke: '#E5E0D2' }} tickLine={false} tickFormatter={v => `${v}%`} />
                     <Tooltip formatter={(v: number) => `${v}%`} />
-                    <Legend wrapperStyle={{ fontSize: 10 }} />
-                    <Bar dataKey="femalePct" stackId="g" fill="#EF4444" name="Female %" />
-                    <Bar dataKey="malePct" stackId="g" fill="#8B5CF6" name="Male %" />
+                    <Legend wrapperStyle={{ fontSize: 10, fontFamily: 'Inter, sans-serif', color: '#6B675B', paddingTop: 8 }} iconType="square" iconSize={8} />
+                    <Bar dataKey="femalePct" stackId="g" fill="#8E5C2C" name="Female %" />
+                    <Bar dataKey="malePct" stackId="g" fill="#0E1733" name="Male %" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
               {/* Gender Split Board */}
-              <div className="bg-white rounded-xl border border-border/60 p-5">
+              <div className="bg-card rounded-md border border-border p-5">
                 <h3 className="text-[13px] font-medium text-foreground mb-2">Gender Split (Board)</h3>
                 <ResponsiveContainer width="100%" height={160}>
                   <BarChart data={chartMonths}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-                    <YAxis tick={{ fontSize: 10 }} tickFormatter={v => `${v}%`} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E0D2" />
+                    <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#6B675B', fontFamily: 'JetBrains Mono, monospace' }} axisLine={{ stroke: '#E5E0D2' }} tickLine={false} />
+                    <YAxis tick={{ fontSize: 10, fill: '#6B675B', fontFamily: 'JetBrains Mono, monospace' }} axisLine={{ stroke: '#E5E0D2' }} tickLine={false} tickFormatter={v => `${v}%`} />
                     <Tooltip formatter={(v: number) => `${v}%`} />
-                    <Legend wrapperStyle={{ fontSize: 10 }} />
-                    <Bar dataKey="femalePctBoard" stackId="g" fill="#EF4444" name="Female %" />
-                    <Bar dataKey="malePctBoard" stackId="g" fill="#8B5CF6" name="Male %" />
+                    <Legend wrapperStyle={{ fontSize: 10, fontFamily: 'Inter, sans-serif', color: '#6B675B', paddingTop: 8 }} iconType="square" iconSize={8} />
+                    <Bar dataKey="femalePctBoard" stackId="g" fill="#8E5C2C" name="Female %" />
+                    <Bar dataKey="malePctBoard" stackId="g" fill="#0E1733" name="Male %" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
               {/* Ethnic Minority FTE */}
-              <div className="bg-white rounded-xl border border-border/60 p-5">
+              <div className="bg-card rounded-md border border-border p-5">
                 <h3 className="text-[13px] font-medium text-foreground mb-2">Ethnic Minority (FTE)</h3>
                 <ResponsiveContainer width="100%" height={160}>
                   <BarChart data={chartMonths.map(m => ({ ...m, nonMinority: 100 - m.ethnicMinorityPct }))}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-                    <YAxis tick={{ fontSize: 10 }} tickFormatter={v => `${v}%`} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E0D2" />
+                    <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#6B675B', fontFamily: 'JetBrains Mono, monospace' }} axisLine={{ stroke: '#E5E0D2' }} tickLine={false} />
+                    <YAxis tick={{ fontSize: 10, fill: '#6B675B', fontFamily: 'JetBrains Mono, monospace' }} axisLine={{ stroke: '#E5E0D2' }} tickLine={false} tickFormatter={v => `${v}%`} />
                     <Tooltip formatter={(v: number) => `${v}%`} />
-                    <Legend wrapperStyle={{ fontSize: 10 }} />
-                    <Bar dataKey="ethnicMinorityPct" stackId="e" fill="#F59E0B" name="Ethnic Minority %" />
-                    <Bar dataKey="nonMinority" stackId="e" fill="#CBD5E1" name="Non-Minority %" />
+                    <Legend wrapperStyle={{ fontSize: 10, fontFamily: 'Inter, sans-serif', color: '#6B675B', paddingTop: 8 }} iconType="square" iconSize={8} />
+                    <Bar dataKey="ethnicMinorityPct" stackId="e" fill="#5C7A6E" name="Ethnic Minority %" />
+                    <Bar dataKey="nonMinority" stackId="e" fill="#D9CFB6" name="Non-Minority %" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
               {/* Ethnic Minority Board */}
-              <div className="bg-white rounded-xl border border-border/60 p-5">
+              <div className="bg-card rounded-md border border-border p-5">
                 <h3 className="text-[13px] font-medium text-foreground mb-2">Ethnic Minority (Board)</h3>
                 <ResponsiveContainer width="100%" height={160}>
                   <BarChart data={chartMonths.map(m => ({ ...m, nonMinorityBoard: 100 - m.ethnicMinorityPctBoard }))}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-                    <YAxis tick={{ fontSize: 10 }} tickFormatter={v => `${v}%`} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E0D2" />
+                    <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#6B675B', fontFamily: 'JetBrains Mono, monospace' }} axisLine={{ stroke: '#E5E0D2' }} tickLine={false} />
+                    <YAxis tick={{ fontSize: 10, fill: '#6B675B', fontFamily: 'JetBrains Mono, monospace' }} axisLine={{ stroke: '#E5E0D2' }} tickLine={false} tickFormatter={v => `${v}%`} />
                     <Tooltip formatter={(v: number) => `${v}%`} />
-                    <Legend wrapperStyle={{ fontSize: 10 }} />
-                    <Bar dataKey="ethnicMinorityPctBoard" stackId="e" fill="#F59E0B" name="Ethnic Minority %" />
-                    <Bar dataKey="nonMinorityBoard" stackId="e" fill="#CBD5E1" name="Non-Minority %" />
+                    <Legend wrapperStyle={{ fontSize: 10, fontFamily: 'Inter, sans-serif', color: '#6B675B', paddingTop: 8 }} iconType="square" iconSize={8} />
+                    <Bar dataKey="ethnicMinorityPctBoard" stackId="e" fill="#5C7A6E" name="Ethnic Minority %" />
+                    <Bar dataKey="nonMinorityBoard" stackId="e" fill="#D9CFB6" name="Non-Minority %" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -688,7 +694,7 @@ export function CompanyDetail() {
       {/* ============ Market Context Tab ============ */}
       {activeTab === 'market' && (
         <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-border/60 p-5">
+          <div className="bg-card rounded-md border border-border p-5">
             <h3 className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-3">Sector Overview -- {company.sector}</h3>
             <div className="grid grid-cols-4 gap-3">
               {[
@@ -705,7 +711,7 @@ export function CompanyDetail() {
               ))}
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-border/60 p-5">
+          <div className="bg-card rounded-md border border-border p-5">
             <h3 className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-3">Competitor Watch</h3>
             <div className="space-y-2">
               {[
@@ -734,7 +740,7 @@ export function CompanyDetail() {
       {/* ============ Notes & Actions Tab ============ */}
       {activeTab === 'notes' && (
         <div className="grid grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl border border-border/60 p-5">
+          <div className="bg-card rounded-md border border-border p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground/70">Notes</h3>
               <button onClick={() => setShowLogNote(true)} className="text-[12px] px-3 py-2 bg-primary text-white rounded-lg hover:bg-[var(--primary-muted)] transition-colors flex items-center gap-1">
@@ -775,7 +781,7 @@ export function CompanyDetail() {
               )}
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-border/60 p-5">
+          <div className="bg-card rounded-md border border-border p-5">
             <h3 className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-4">Pending Actions</h3>
             <div className="space-y-2">
               {companyTodos.map(todo => (
@@ -814,24 +820,24 @@ export function CompanyDetail() {
       {activeTab === 'fundraising' && (
         <div className="space-y-4">
           <div className="grid grid-cols-4 gap-3">
-            <div className="bg-white rounded-xl border border-border/60 p-5">
+            <div className="bg-card rounded-md border border-border p-5">
               <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">Equity Fundraising</p>
               <p className="text-[15px] font-medium text-foreground mt-1">{company.equityFundraisingStatus}</p>
             </div>
-            <div className="bg-white rounded-xl border border-border/60 p-5">
+            <div className="bg-card rounded-md border border-border p-5">
               <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">Debt Fundraising</p>
               <p className="text-[15px] font-medium text-foreground mt-1">{company.debtFundraisingStatus}</p>
             </div>
-            <div className="bg-white rounded-xl border border-border/60 p-5">
+            <div className="bg-card rounded-md border border-border p-5">
               <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">Current Runway</p>
               <p className="text-[15px] font-mono-num font-medium text-foreground mt-1">{company.runway} months</p>
             </div>
-            <div className="bg-white rounded-xl border border-border/60 p-5">
+            <div className="bg-card rounded-md border border-border p-5">
               <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">Crane Follow-on</p>
               <p className="text-[15px] font-medium text-foreground mt-1">Under Review</p>
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-border/60 p-5">
+          <div className="bg-card rounded-md border border-border p-5">
             <h3 className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-3">Fundraising Timeline</h3>
             <div className="space-y-3">
               <div className="flex items-center gap-3 text-[13px]">
