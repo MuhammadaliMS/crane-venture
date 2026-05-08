@@ -10,40 +10,42 @@
 :root {
   --font-size: 16px;
 
-  /* Surfaces — tuned to match crane.vc cream + ink */
-  --background: #F5EFE3;            /* crane.vc cream */
+  /* Surfaces — three-tone hierarchy on warm cream paper.
+     sidebar (warmest cream) → body (mid cream) → cards (clean white).
+     White cards create clear figure/ground separation against cream paper. */
+  --background: #F2EBD9;            /* slightly richer cream — more pigment */
   --foreground: #0E1733;            /* crane.vc deep navy */
-  --card: #FAF6EC;                  /* card sits one notch lighter than body */
+  --card: #FFFFFF;                  /* PURE WHITE — clear contrast vs cream body */
   --card-foreground: #0E1733;
-  --popover: #FAF6EC;
+  --popover: #FFFFFF;
   --popover-foreground: #0E1733;
 
   /* Brand */
   --primary: #0E1733;               /* deep navy — crane.vc heading colour */
-  --primary-foreground: #F5EFE3;
+  --primary-foreground: #FFFFFF;
   --primary-muted: #1F2A4F;         /* hover */
 
-  /* Secondary surfaces (warm cream tones) */
-  --secondary: #ECE5D4;
+  /* Secondary surfaces (warm cream tones — for inactive UI surfaces) */
+  --secondary: #E8E0CB;
   --secondary-foreground: #0E1733;
-  --muted: #ECE5D4;
-  --muted-foreground: #6B6960;      /* warm gray, not slate */
-  --accent: #E5DCC4;                /* parchment */
+  --muted: #E8E0CB;
+  --muted-foreground: #5F5C53;      /* warm gray, slightly stronger contrast */
+  --accent: #E0D5BC;                /* parchment */
   --accent-foreground: #0E1733;
 
   --destructive: #9C2D24;           /* deep brick — quiet, not alarming */
-  --destructive-foreground: #F5EFE3;
+  --destructive-foreground: #FFFFFF;
   --success: #4F6B5F;               /* muted sage */
   --warning: #8E5C2C;               /* warm amber, dialled down */
 
-  --border: #DDD3BD;                /* warm hairline */
-  --shadow-card: 0 1px 2px rgba(14, 23, 51, 0.04), 0 1px 1px rgba(14, 23, 51, 0.02);
-  --shadow-card-hover: 0 8px 24px rgba(14, 23, 51, 0.06), 0 4px 8px rgba(14, 23, 51, 0.03);
-  --shadow-lg: 0 10px 40px rgba(14, 23, 51, 0.08);
+  --border: #D2C5A7;                /* warm hairline — slightly stronger */
+  --shadow-card: 0 1px 2px rgba(14, 23, 51, 0.05), 0 1px 1px rgba(14, 23, 51, 0.03);
+  --shadow-card-hover: 0 8px 24px rgba(14, 23, 51, 0.08), 0 4px 8px rgba(14, 23, 51, 0.04);
+  --shadow-lg: 0 12px 48px rgba(14, 23, 51, 0.10);
 
   --input: transparent;
-  --input-background: #EFE7D2;
-  --switch-background: #C5BCA4;
+  --input-background: #FFFFFF;      /* clean white inputs on cream body */
+  --switch-background: #C0B69D;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
   --ring: #0E1733;
