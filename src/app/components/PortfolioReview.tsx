@@ -601,11 +601,12 @@ function __removedMonthlyReview() {
       <div className="flex gap-4">
         {/* Left sidebar — company list for jumping */}
         <div className="w-[240px] flex-shrink-0">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground/70">Companies</p>
-            <span className="text-[11px] text-muted-foreground">{companiesWithComments}/{sortedCompanies.length}</span>
-          </div>
-          <div className="bg-card rounded-md border border-border divide-y divide-border/60 ">
+          <div className="bg-card rounded-md border border-border overflow-hidden">
+            <div className="flex items-center justify-between px-3 py-2.5 border-b border-border/60">
+              <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground/70">Companies</p>
+              <span className="text-[11px] text-muted-foreground font-mono-num">{companiesWithComments}/{sortedCompanies.length}</span>
+            </div>
+            <div className="divide-y divide-border/60">
             {sortedCompanies.map((c, i) => {
               const hasComment = (commentaries[c.id] || '').trim().length > 0;
               const isCurrent = i === currentIndex;
@@ -634,6 +635,7 @@ function __removedMonthlyReview() {
                 </button>
               );
             })}
+            </div>
           </div>
         </div>
 
@@ -967,11 +969,12 @@ export function QuarterlyReview() {
         <div className="flex gap-4">
           {/* Left sidebar */}
           <div className="w-[240px] flex-shrink-0">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground/70">Companies</p>
-              <span className="text-[11px] text-muted-foreground">{doneCount}/{sortedCompanies.length} done</span>
-            </div>
-            <div className="bg-card rounded-md border border-border divide-y divide-border/60 ">
+            <div className="bg-card rounded-md border border-border overflow-hidden">
+              <div className="flex items-center justify-between px-3 py-2.5 border-b border-border/60">
+                <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground/70">Companies</p>
+                <span className="text-[11px] text-muted-foreground font-mono-num">{doneCount}/{sortedCompanies.length} done</span>
+              </div>
+              <div className="divide-y divide-border/60">
               {sortedCompanies.map((c, i) => {
                 const isCurrent = i === currentIndex;
                 const done = isCommentaryDone(c.id);
@@ -1001,6 +1004,7 @@ export function QuarterlyReview() {
                   </button>
                 );
               })}
+              </div>
             </div>
             <div className="mt-2.5 space-y-1">
               <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/70">

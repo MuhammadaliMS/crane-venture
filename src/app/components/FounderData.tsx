@@ -262,10 +262,10 @@ export function FounderData() {
           const isCopied = copiedId === company.id;
 
           return (
-            <div key={company.id} className={`border-b border-border/60 last:border-0 ${isExpanded ? 'bg-muted/60' : ''}`}>
+            <div key={company.id} className={`border-b border-border/60 last:border-0 ${isExpanded ? 'bg-card' : ''}`}>
               {/* Main row */}
               <div
-                className={`grid items-center cursor-pointer hover:bg-muted/60 transition-colors ${isExpanded ? 'bg-muted/60' : ''}`}
+                className={`grid items-center cursor-pointer hover:bg-muted/60 transition-colors ${isExpanded ? 'bg-muted/40' : ''}`}
                 style={{ gridTemplateColumns: '2fr repeat(4, 1fr) 120px' }}
                 onClick={() => setExpandedId(isExpanded ? null : company.id)}
               >
@@ -371,26 +371,14 @@ export function FounderData() {
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-2">
-                          {/* "View submission" removed — form is private to founders, only data shown */}
-                          {sub.status === 'not_sent' && (
-                            <button className="flex items-center gap-1 text-[11px] px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-[var(--primary-muted)] transition-colors">
-                              <Send className="w-3 h-3" /> Send form
-                            </button>
-                          )}
-                          {sub.status === 'sent' && (
-                            <button className="flex items-center gap-1 text-[11px] px-3 py-1.5 bg-accent text-primary border border-primary/25 rounded-lg hover:bg-primary/15 transition-colors">
-                              <RefreshCw className="w-3 h-3" /> Resend
-                            </button>
-                          )}
-                        </div>
+                        {/* Send / Resend buttons removed — already on the row, no need to duplicate inside */}
                       </div>
 
                       {/* Founder note */}
                       {sub.founderNote && (
-                        <div className="bg-white rounded-lg border border-border/60 p-2.5">
-                          <p className="text-[10px] text-muted-foreground/70 mb-0.5 uppercase tracking-[0.06em]">Founder note</p>
-                          <p className="text-[12px] text-foreground/80 italic">"{sub.founderNote}"</p>
+                        <div className="bg-card rounded-md border border-border p-3">
+                          <p className="text-[10px] text-muted-foreground/70 mb-1 uppercase tracking-[0.16em] font-medium">Founder note</p>
+                          <p className="text-[13px] text-foreground italic leading-relaxed">"{sub.founderNote}"</p>
                         </div>
                       )}
 
@@ -404,12 +392,12 @@ export function FounderData() {
 
                       {/* Quarterly values — 9 metrics matching founder form, one quarter column */}
                       {(sub.status === 'submitted' || sub.status === 'partial') && (
-                        <div className="overflow-hidden rounded-lg border border-border/60">
-                          <table className="w-full text-[11px]">
+                        <div className="overflow-hidden rounded-md border border-border bg-card">
+                          <table className="w-full text-[12px]">
                             <thead>
-                              <tr className="bg-muted/60 border-b border-border/60">
-                                <th className="text-left px-2.5 py-2 text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-[0.06em] w-[260px]">Metric</th>
-                                <th className="text-right px-2.5 py-2 text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-[0.06em]">{activeQuarter}</th>
+                              <tr className="border-b border-border/60">
+                                <th className="text-left px-3 py-2 text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-[0.16em] w-[260px]">Metric</th>
+                                <th className="text-right px-3 py-2 text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-[0.16em]">{activeQuarter}</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -423,17 +411,17 @@ export function FounderData() {
                                     <React.Fragment key={metric.key}>
                                       {showSection && (
                                         <tr key={`section-${metric.section}`}>
-                                          <td colSpan={2} className="px-2.5 pt-2.5 pb-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.08em] bg-muted/50 border-t border-border/60">
+                                          <td colSpan={2} className="px-3 pt-3 pb-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.16em] border-t border-border/60">
                                             {metric.section}
                                           </td>
                                         </tr>
                                       )}
-                                      <tr className="hover:bg-muted/40 border-t border-border/50">
-                                        <td className="px-2.5 py-1.5 text-foreground/80">
+                                      <tr className="hover:bg-muted/40">
+                                        <td className="px-3 py-1.5 text-foreground/85">
                                           {metric.label}
-                                          {metric.isCalc && <span className="ml-1 text-[9px] text-muted-foreground/70">(auto)</span>}
+                                          {metric.isCalc && <span className="ml-1 text-[10px] text-muted-foreground/70">(auto)</span>}
                                         </td>
-                                        <td className="px-2.5 py-1.5 text-right font-mono-num text-foreground">
+                                        <td className="px-3 py-1.5 text-right font-mono-num text-foreground">
                                           {val != null
                                             ? metric.isCurrency
                                               ? formatCurrency(val as number, company.currency)
