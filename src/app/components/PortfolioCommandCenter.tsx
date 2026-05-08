@@ -429,12 +429,12 @@ export function PortfolioCommandCenter() {
                                       <div className="text-amber-300 font-medium mb-1">Pending change (not saved)</div>
                                       <div>Previous: <span className="font-mono-num">{display}</span></div>
                                       <div>New: <span className="font-mono-num text-amber-200">{staged}</span></div>
-                                      <div className="mt-1 pt-1 border-t border-white/10 text-muted-foreground/50">Source: {src.source} · {src.when}</div>
+                                      <div className="mt-1 pt-1 border-t border-background/15 text-background/55">Source: {src.source} · {src.when}</div>
                                     </>
                                   ) : (
                                     <>
                                       <div>Source: <span className="font-medium text-white">{src.source}</span></div>
-                                      <div className="text-muted-foreground/50">{src.when}</div>
+                                      <div className="text-background/55">{src.when}</div>
                                     </>
                                   )}
                                 </span>
@@ -503,12 +503,12 @@ export function PortfolioCommandCenter() {
                                     <div className="text-amber-300 font-medium mb-1">Pending change (not saved)</div>
                                     <div>Previous: <span className="font-mono-num">{displayValue}</span></div>
                                     <div>New: <span className="font-mono-num text-amber-200">{staged}</span></div>
-                                    <div className="mt-1 pt-1 border-t border-white/10 text-muted-foreground/50">Source: {hcSrc.source} · {hcSrc.when}</div>
+                                    <div className="mt-1 pt-1 border-t border-background/15 text-background/55">Source: {hcSrc.source} · {hcSrc.when}</div>
                                   </>
                                 ) : (
                                   <>
                                     <div>Source: <span className="font-medium text-white">{hcSrc.source}</span></div>
-                                    <div className="text-muted-foreground/50">{hcSrc.when}</div>
+                                    <div className="text-background/55">{hcSrc.when}</div>
                                   </>
                                 )}
                               </span>

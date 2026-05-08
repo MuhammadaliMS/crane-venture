@@ -233,8 +233,8 @@ export function CompanyDetail() {
                   <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70 leading-tight">{m.label}</p>
                   <p className={`text-[16px] font-mono-num font-bold mt-1 ${m.red ? 'text-red-600' : 'text-foreground'}`}>{m.value}</p>
                   <span className="invisible group-hover/m:visible absolute z-30 bottom-full left-1/2 -translate-x-1/2 mb-1 bg-foreground text-white text-[10px] font-normal rounded-lg shadow-lg px-3 py-2 whitespace-nowrap text-left pointer-events-none">
-                    <div>Source: <span className="font-medium text-white">{m.source}</span></div>
-                    <div className="text-muted-foreground/50">{m.when}</div>
+                    <div className="text-background/70">Source: <span className="font-medium text-background">{m.source}</span></div>
+                    <div className="text-background/55">{m.when}</div>
                   </span>
                 </div>
               ))}
