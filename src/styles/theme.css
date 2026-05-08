@@ -10,12 +10,12 @@
 :root {
   --font-size: 16px;
 
-  /* Surfaces — three-tone hierarchy on warm cream paper.
-     sidebar (warmest cream) → body (mid cream) → cards (clean white).
-     White cards create clear figure/ground separation against cream paper. */
-  --background: #F2EBD9;            /* slightly richer cream — more pigment */
+  /* Surfaces — content stays mostly white, cream lives in the sidebar only.
+     Cream is the Crane signature, used as accent — not a wash.
+     Three tones: cream sidebar (signature) → near-white body → pure white cards. */
+  --background: #FBF9F4;            /* near-white with warm hint */
   --foreground: #0E1733;            /* crane.vc deep navy */
-  --card: #FFFFFF;                  /* PURE WHITE — clear contrast vs cream body */
+  --card: #FFFFFF;                  /* pure white */
   --card-foreground: #0E1733;
   --popover: #FFFFFF;
   --popover-foreground: #0E1733;
@@ -25,12 +25,12 @@
   --primary-foreground: #FFFFFF;
   --primary-muted: #1F2A4F;         /* hover */
 
-  /* Secondary surfaces (warm cream tones — for inactive UI surfaces) */
-  --secondary: #E8E0CB;
+  /* Secondary surfaces — light warm gray, NOT cream */
+  --secondary: #F2EFE7;             /* near-white warm gray */
   --secondary-foreground: #0E1733;
-  --muted: #E8E0CB;
-  --muted-foreground: #5F5C53;      /* warm gray, slightly stronger contrast */
-  --accent: #E0D5BC;                /* parchment */
+  --muted: #F2EFE7;                 /* near-white warm gray */
+  --muted-foreground: #6B675B;      /* warm gray, readable on near-white */
+  --accent: #EDE5D1;                /* cream accent — same family as sidebar */
   --accent-foreground: #0E1733;
 
   --destructive: #9C2D24;           /* deep brick — quiet, not alarming */
@@ -38,14 +38,14 @@
   --success: #4F6B5F;               /* muted sage */
   --warning: #8E5C2C;               /* warm amber, dialled down */
 
-  --border: #D2C5A7;                /* warm hairline — slightly stronger */
-  --shadow-card: 0 1px 2px rgba(14, 23, 51, 0.05), 0 1px 1px rgba(14, 23, 51, 0.03);
-  --shadow-card-hover: 0 8px 24px rgba(14, 23, 51, 0.08), 0 4px 8px rgba(14, 23, 51, 0.04);
+  --border: #E5E0D2;                /* light warm gray — visible but quiet */
+  --shadow-card: 0 1px 2px rgba(14, 23, 51, 0.04), 0 1px 1px rgba(14, 23, 51, 0.02);
+  --shadow-card-hover: 0 8px 24px rgba(14, 23, 51, 0.07), 0 4px 8px rgba(14, 23, 51, 0.04);
   --shadow-lg: 0 12px 48px rgba(14, 23, 51, 0.10);
 
   --input: transparent;
-  --input-background: #FFFFFF;      /* clean white inputs on cream body */
-  --switch-background: #C0B69D;
+  --input-background: #FFFFFF;      /* clean white inputs */
+  --switch-background: #C8C2B0;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
   --ring: #0E1733;
