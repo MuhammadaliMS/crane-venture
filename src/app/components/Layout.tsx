@@ -108,19 +108,13 @@ export function Layout() {
             className={`${collapsed ? 'w-[60px]' : 'w-60'} bg-sidebar text-sidebar-foreground border-r border-sidebar-border flex flex-col transition-[width] duration-[280ms] shrink-0 select-none`}
             style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}
           >
-            {/* Logo + serif wordmark + venture partners signature */}
-            <div className="h-16 flex items-center px-4 gap-2.5 shrink-0 border-b border-sidebar-border/50">
+            {/* Logo only — wordmark is part of the image */}
+            <div className="h-16 flex items-center px-4 shrink-0 border-b border-sidebar-border/50">
               <img
                 src="/crane-logo.png"
                 alt="Crane Venture Partners"
-                className={`object-contain shrink-0 ${collapsed ? 'h-6 w-6' : 'h-6 w-6'}`}
+                className={`object-contain ${collapsed ? 'h-7 w-7' : 'h-8'}`}
               />
-              {!collapsed && (
-                <div className="flex flex-col leading-none">
-                  <span className="font-display text-[22px] text-foreground tracking-tight leading-none">Crane</span>
-                  <span className="text-[9px] uppercase tracking-[0.22em] text-muted-foreground/80 mt-1.5 font-medium">Venture Partners</span>
-                </div>
-              )}
             </div>
 
             {/* Milestone toggle — quiet, ink hairline */}
