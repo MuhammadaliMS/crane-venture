@@ -27,10 +27,11 @@ const actionColors: Record<string, { bg: string; text: string; dot: string }> = 
   'De-prioritise': { bg: 'bg-muted/60', text: 'text-muted-foreground', dot: 'bg-muted-foreground/40' },
 };
 
+// Health is conveyed by the column header dot — cells stay neutral
 const columnBorder: Record<HealthStatus, string> = {
-  'On Track': 'border-l-emerald-400',
-  'At Risk': 'border-l-amber-400',
-  'Underperforming': 'border-l-red-400',
+  'On Track': 'border-l-border',
+  'At Risk': 'border-l-border',
+  'Underperforming': 'border-l-border',
 };
 
 export function ActionMatrix() {
@@ -197,10 +198,7 @@ export function ActionMatrix() {
                             onClick={() => navigate(`/company/${company.id}`)}
                             className="flex items-center gap-2 rounded-md bg-muted/80 hover:bg-muted px-2 py-1.5 cursor-pointer transition-all hover:-translate-y-px hover:shadow-sm group"
                           >
-                            <div
-                              className="w-5 h-5 rounded-md flex items-center justify-center text-white text-[9px] font-bold shrink-0"
-                              style={{ background: company.logoColor }}
-                            >
+                            <div className="w-5 h-5 rounded-md bg-muted text-muted-foreground flex items-center justify-center text-[10px] font-medium shrink-0 group-hover:bg-foreground group-hover:text-background transition-colors">
                               {company.name[0]}
                             </div>
                             <div className="flex-1 min-w-0">

@@ -605,7 +605,7 @@ function __removedMonthlyReview() {
             <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground/70">Companies</p>
             <span className="text-[11px] text-muted-foreground">{companiesWithComments}/{sortedCompanies.length}</span>
           </div>
-          <div className="bg-white rounded-xl border border-border/60 divide-y divide-border/60 max-h-[600px] overflow-y-auto">
+          <div className="bg-card rounded-md border border-border divide-y divide-border/60 ">
             {sortedCompanies.map((c, i) => {
               const hasComment = (commentaries[c.id] || '').trim().length > 0;
               const isCurrent = i === currentIndex;
@@ -971,7 +971,7 @@ export function QuarterlyReview() {
               <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground/70">Companies</p>
               <span className="text-[11px] text-muted-foreground">{doneCount}/{sortedCompanies.length} done</span>
             </div>
-            <div className="bg-white rounded-xl border border-border/60 divide-y divide-border/60 max-h-[680px] overflow-y-auto">
+            <div className="bg-card rounded-md border border-border divide-y divide-border/60 ">
               {sortedCompanies.map((c, i) => {
                 const isCurrent = i === currentIndex;
                 const done = isCommentaryDone(c.id);
